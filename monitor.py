@@ -3,12 +3,13 @@ Runs every 5 minutes during market hours, and hourly the rest of the time
 (via two GitHub Actions cron schedules -- see .github/workflows/monitor.yml).
 
 For each ticker you own:
-  1. During market hours only: alerts on every sequential
-     PRICE_CHANGE_THRESHOLD_PCT move, in either direction, starting from
-     the previous close. E.g. with a 5% threshold: first alert fires at
-     +5% from close; if it then moves another 5% up OR down from THAT
-     point, another alert fires, and so on throughout the day (resets
-     each morning to the new previous close).
+  1. During market hours only: alerts whenever price is
+     PRICE_CHANGE_THRESHOLD_PCT or more away from the PRIOR DAY'S CLOSE
+     (not a moving checkpoint). E.g. with a 5% threshold: an alert fires
+     the first time price is 5%+ above/below yesterday's close, and again
+     if it goes on to reach 10%+, 15%+, etc. away from that SAME close --
+     each threshold-from-close is a one-time alert per day, in each
+     direction (resets each morning to the new previous close).
   2. Anytime (market hours or not): alerts on new, *material* news --
      analyst upgrades/downgrades, M&A/partnership/collaboration
      announcements, delivery/production numbers, and similar catalysts
@@ -58,12 +59,14 @@ def today_str() -> str:
 
 
 def check_price_moves(ticker: str, state: dict) -> None:
-    """Sequential-threshold alerting: fires every time price moves
-    PRICE_CHANGE_THRESHOLD_PCT from the last alerted reference point (not
-    just from the day's previous close), in either direction. Resets each
-    trading day. If a single check catches a move spanning multiple
-    thresholds (e.g. a 12% gap-up), it sends one alert per threshold
-    crossed, walking the reference price forward in threshold-sized steps.
+    """Fixed-anchor threshold alerting: fires whenever price is
+    PRICE_CHANGE_THRESHOLD_PCT or more away from the PRIOR DAY'S CLOSE,
+    in either direction. Unlike a moving-checkpoint scheme, the anchor
+    never changes during the day -- only the day's previous close does,
+    each morning. Each threshold step away from that close (5%, 10%,
+    15%, ...) alerts at most once per day per direction; if a single
+    check catches a move spanning multiple thresholds (e.g. a 12%
+    gap-up), it sends one alert per threshold crossed.
     """
     key = f"price_ref::{ticker}"
     today = today_str()
@@ -81,42 +84,40 @@ def check_price_moves(ticker: str, state: dict) -> None:
 
     saved = state.get(key, {})
     if saved.get("date") == today:
-        reference_price = saved.get("reference_price", prev_close)
-        moves_today = saved.get("moves_today", 0)
+        max_step_up = saved.get("max_step_up", 0)
+        max_step_down = saved.get("max_step_down", 0)
     else:
-        # New trading day: reset the reference point to today's previous close.
-        reference_price = prev_close
-        moves_today = 0
+        # New trading day: reset both directions' step counters.
+        max_step_up = 0
+        max_step_down = 0
 
-    threshold = PRICE_CHANGE_THRESHOLD_PCT / 100
+    pct_from_close = (last_price - prev_close) / prev_close * 100
+    direction_up = pct_from_close >= 0
+    target_step = int(abs(pct_from_close) // PRICE_CHANGE_THRESHOLD_PCT)
+    max_step = max_step_up if direction_up else max_step_down
 
-    # Walk the reference price toward last_price in threshold-sized steps,
-    # sending one alert per step crossed (usually 0 or 1 per run, but can
-    # be more than one if the price gapped hard between checks).
-    while True:
-        pct_from_ref = (last_price - reference_price) / reference_price * 100
-        if abs(pct_from_ref) < PRICE_CHANGE_THRESHOLD_PCT:
-            break
-
-        direction_up = pct_from_ref > 0
-        new_reference = reference_price * (1 + threshold if direction_up else 1 - threshold)
-        moves_today += 1
-        pct_from_close = (new_reference - prev_close) / prev_close * 100
-
+    # Send one alert per threshold step newly crossed (usually 0 or 1 per
+    # run, but can be more than one if the price gapped hard between checks).
+    while max_step < target_step:
+        max_step += 1
+        step_pct = max_step * PRICE_CHANGE_THRESHOLD_PCT
         emoji = "\U0001F4C8" if direction_up else "\U0001F4C9"
         msg = (
-            f"{emoji} *{ticker}* move #{moves_today} today: "
-            f"{'up' if direction_up else 'down'} {PRICE_CHANGE_THRESHOLD_PCT:.1f}% "
-            f"from its last checkpoint\n"
+            f"{emoji} *{ticker}* now {step_pct:.0f}%+ {'above' if direction_up else 'below'} "
+            f"yesterday's close\n"
             f"Now: ${last_price:.2f}  |  {pct_from_close:+.1f}% vs prev close (${prev_close:.2f})"
         )
         send_telegram_message(msg)
-        reference_price = new_reference
+
+    if direction_up:
+        max_step_up = max_step
+    else:
+        max_step_down = max_step
 
     state[key] = {
         "date": today,
-        "reference_price": reference_price,
-        "moves_today": moves_today,
+        "max_step_up": max_step_up,
+        "max_step_down": max_step_down,
     }
 
 
