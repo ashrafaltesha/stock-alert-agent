@@ -1,15 +1,25 @@
 """
-Runs every 15 minutes during market hours (via GitHub Actions cron).
+Runs every 5 minutes during market hours, and hourly the rest of the time
+(via two GitHub Actions cron schedules -- see .github/workflows/monitor.yml).
 
 For each ticker you own:
-  1. Alerts if the price has moved >= PRICE_CHANGE_THRESHOLD_PCT from the
-     previous close (once per direction per day, so it won't spam you).
-  2. Alerts on any new news headline seen since the last run, pulled from
-     both Yahoo Finance's news feed and Google News (which aggregates
-     Reuters, CNBC, Bloomberg, MarketWatch, Benzinga, Seeking Alpha, etc.).
+  1. During market hours only: alerts on every sequential
+     PRICE_CHANGE_THRESHOLD_PCT move, in either direction, starting from
+     the previous close. E.g. with a 5% threshold: first alert fires at
+     +5% from close; if it then moves another 5% up OR down from THAT
+     point, another alert fires, and so on throughout the day (resets
+     each morning to the new previous close).
+  2. Anytime (market hours or not): alerts on new, *material* news --
+     analyst upgrades/downgrades, M&A/partnership/collaboration
+     announcements, delivery/production numbers, and similar catalysts
+     (see MATERIAL_NEWS_KEYWORDS in config.py) -- pulled from both Yahoo
+     Finance's news feed and Google News (which aggregates Reuters, CNBC,
+     Bloomberg, MarketWatch, Benzinga, Seeking Alpha, etc.). Routine/non-
+     material headlines are tracked for dedup but not sent.
 
-State (what's already been alerted today) is kept in state.json, which this
-script updates and the workflow commits back to the repo.
+State (reference price per ticker, already-seen news ids) is kept in
+state.json, which this script updates and the workflow commits back to
+the repo.
 """
 
 import json
@@ -27,12 +37,22 @@ from config import (
     TICKERS,
     PRICE_CHANGE_THRESHOLD_PCT,
     NEWS_LOOKBACK_MINUTES,
+    MATERIAL_NEWS_KEYWORDS,
     STATE_FILE,
 )
 from market_hours import is_market_hours
 from telegram_utils import send_telegram_message
 
 GOOGLE_NEWS_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+
+
+def is_material(title: str) -> bool:
+    """Keyword-based material-news filter. Simple substring matching --
+    not true NLP classification, so it can occasionally miss unusually
+    worded stories or match a loosely related one. Tune the keyword list
+    in config.py if it's too noisy or too quiet."""
+    title_lower = title.lower()
+    return any(keyword in title_lower for keyword in MATERIAL_NEWS_KEYWORDS)
 
 
 def load_state() -> dict:
@@ -52,11 +72,15 @@ def today_str() -> str:
 
 
 def check_price_moves(ticker: str, state: dict) -> None:
-    key = f"price_alert::{ticker}"
+    """Sequential-threshold alerting: fires every time price moves
+    PRICE_CHANGE_THRESHOLD_PCT from the last alerted reference point (not
+    just from the day's previous close), in either direction. Resets each
+    trading day. If a single check catches a move spanning multiple
+    thresholds (e.g. a 12% gap-up), it sends one alert per threshold
+    crossed, walking the reference price forward in threshold-sized steps.
+    """
+    key = f"price_ref::{ticker}"
     today = today_str()
-    already = state.get(key, {})
-    if already.get("date") == today and already.get("alerted"):
-        return  # already alerted for this ticker today
 
     try:
         info = yf.Ticker(ticker).fast_info
@@ -69,16 +93,45 @@ def check_price_moves(ticker: str, state: dict) -> None:
     if not prev_close:
         return
 
-    pct_change = (last_price - prev_close) / prev_close * 100
+    saved = state.get(key, {})
+    if saved.get("date") == today:
+        reference_price = saved.get("reference_price", prev_close)
+        moves_today = saved.get("moves_today", 0)
+    else:
+        # New trading day: reset the reference point to today's previous close.
+        reference_price = prev_close
+        moves_today = 0
 
-    if abs(pct_change) >= PRICE_CHANGE_THRESHOLD_PCT:
-        emoji = "\U0001F4C8" if pct_change > 0 else "\U0001F4C9"
+    threshold = PRICE_CHANGE_THRESHOLD_PCT / 100
+
+    # Walk the reference price toward last_price in threshold-sized steps,
+    # sending one alert per step crossed (usually 0 or 1 per run, but can
+    # be more than one if the price gapped hard between checks).
+    while True:
+        pct_from_ref = (last_price - reference_price) / reference_price * 100
+        if abs(pct_from_ref) < PRICE_CHANGE_THRESHOLD_PCT:
+            break
+
+        direction_up = pct_from_ref > 0
+        new_reference = reference_price * (1 + threshold if direction_up else 1 - threshold)
+        moves_today += 1
+        pct_from_close = (new_reference - prev_close) / prev_close * 100
+
+        emoji = "\U0001F4C8" if direction_up else "\U0001F4C9"
         msg = (
-            f"{emoji} *{ticker}* moved {pct_change:+.1f}% today\n"
-            f"Last: ${last_price:.2f}  |  Prev close: ${prev_close:.2f}"
+            f"{emoji} *{ticker}* move #{moves_today} today: "
+            f"{'up' if direction_up else 'down'} {PRICE_CHANGE_THRESHOLD_PCT:.1f}% "
+            f"from its last checkpoint\n"
+            f"Now: ${last_price:.2f}  |  {pct_from_close:+.1f}% vs prev close (${prev_close:.2f})"
         )
         send_telegram_message(msg)
-        state[key] = {"date": today, "alerted": True, "pct_change": round(pct_change, 2)}
+        reference_price = new_reference
+
+    state[key] = {
+        "date": today,
+        "reference_price": reference_price,
+        "moves_today": moves_today,
+    }
 
 
 def check_yahoo_news(ticker: str, state: dict) -> None:
@@ -117,10 +170,11 @@ def check_yahoo_news(ticker: str, state: dict) -> None:
 
         age_minutes = (now - published).total_seconds() / 60
 
-        # Always remember we've seen it, but only alert if it's fresh.
+        # Always remember we've seen it (so it's never re-evaluated), but
+        # only alert if it's fresh AND passes the material-news filter.
         new_ids.append(article_id)
-        if age_minutes <= NEWS_LOOKBACK_MINUTES:
-            title = content.get("title") or "New article"
+        title = content.get("title") or "New article"
+        if age_minutes <= NEWS_LOOKBACK_MINUTES and is_material(title):
             link = (
                 content.get("canonicalUrl", {}).get("url")
                 or content.get("clickThroughUrl", {}).get("url")
@@ -178,8 +232,8 @@ def check_google_news(ticker: str, state: dict) -> None:
         age_minutes = (now - published).total_seconds() / 60
 
         new_ids.append(article_id)
-        if age_minutes <= NEWS_LOOKBACK_MINUTES:
-            title = item.findtext("title") or "New article"
+        title = item.findtext("title") or "New article"
+        if age_minutes <= NEWS_LOOKBACK_MINUTES and is_material(title):
             link = item.findtext("link") or ""
             source_el = item.find("source")
             publisher = source_el.text if source_el is not None else "Google News"
@@ -194,14 +248,20 @@ def check_google_news(ticker: str, state: dict) -> None:
 
 
 def main() -> None:
-    force = "--force" in sys.argv  # allow manual testing outside market hours
-    if not force and not is_market_hours():
-        print("Outside market hours, skipping.")
-        return
+    force = "--force" in sys.argv  # allow manual testing of price checks outside market hours
+    market_open = is_market_hours()
+
+    if market_open or force:
+        print("Market hours: checking prices + material news.")
+    else:
+        print("Outside market hours: checking material news only.")
 
     state = load_state()
     for ticker in TICKERS:
-        check_price_moves(ticker, state)
+        if market_open or force:
+            check_price_moves(ticker, state)
+        # News checks always run -- 5-min cadence during market hours,
+        # hourly the rest of the time, per the two cron schedules.
         check_yahoo_news(ticker, state)
         check_google_news(ticker, state)
     save_state(state)
