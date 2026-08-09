@@ -117,6 +117,11 @@ def format_pct_signed(x: float) -> str:
     return f"{x:+.1f}%"
 
 
+def format_usd_signed(x: float) -> str:
+    sign = "+" if x >= 0 else "-"
+    return f"{sign}${abs(x):,.2f}"
+
+
 def get_updates(offset: int | None) -> list[dict]:
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates"
     params = {"timeout": 0}
@@ -147,20 +152,20 @@ def send_summary(holdings: dict) -> None:
 
         price = get_current_price(ticker)
         lines.append("")
-        lines.append(f"*{ticker}*: {shares:,.0f} sh @ avg {format_usd(avg_cost)}")
-        lines.append(f"Book value: {format_usd(book_value)}")
+        lines.append(f"*{ticker}*:")
+        lines.append(f"{shares:,.0f} shares @ avg {format_usd(avg_cost)}")
         if price is None:
             lines.append("Current price: unavailable")
+            lines.append(f"Book value: {format_usd(book_value)}")
             have_market_total = False
         else:
             market_value = shares * price
             total_market += market_value
             pct = (price - avg_cost) / avg_cost * 100 if avg_cost else 0.0
             arrow = "\U0001F7E2" if pct >= 0 else "\U0001F534"
-            lines.append(
-                f"Current: {format_usd(price)}/sh ({format_pct_signed(pct)}) "
-                f"{arrow}  |  Mkt value: {format_usd(market_value)}"
-            )
+            lines.append(f"Current: {format_usd(price)}/share ({format_pct_signed(pct)}) {arrow}")
+            diff = market_value - book_value
+            lines.append(f"Book value: {format_usd(book_value)} ({format_usd_signed(diff)})")
 
     lines.append("")
     if have_market_total and total_book:
