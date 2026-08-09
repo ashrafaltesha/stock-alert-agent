@@ -7,7 +7,7 @@ optional):
   add <TICKER> to my list
   remove <TICKER> from my list
   added <NUMBER> shares of <TICKER> at <PRICE>
-  sold <NUMBER> shares of <TICKER>
+  sold <NUMBER> shares of <TICKER> at <PRICE>
   summary
   earnings today
   earnings for <TICKER>[, <TICKER> ...]
@@ -15,12 +15,21 @@ optional):
 "added ... at ..." recalculates your weighted-average book price per share
 for that ticker (existing shares/cost blended with the new lot), and adds
 the ticker to your watchlist automatically if it isn't already there.
-"sold ..." just reduces your share count -- the average cost per remaining
-share is left unchanged, which is standard average-cost-basis accounting
-(selling doesn't change what you paid for what's left).
+"sold ... at ..." reduces your share count -- the average cost per
+remaining share is left unchanged, which is standard average-cost-basis
+accounting (selling doesn't change what you paid for what's left) -- and
+requires the sale price so it can track two running totals stored directly
+in holdings.json: CASH (total proceeds from all sales, i.e. qty * sale
+price, added up across every "sold" command) and REALIZED_PNL (total
+realized gain/loss across all sales, i.e. sum of qty * (sale price - avg
+cost at the time of each sale)). Both are portfolio-wide running totals,
+not per-ticker. The old "sold <NUMBER> shares of <TICKER>" form (no price)
+is no longer enough to record a sale -- you'll get a reminder to include
+the price instead.
 "summary" sends your current holdings: shares, avg book price, total book
 value, live market price, and % upside/downside per position, plus a
-portfolio total.
+portfolio total, plus your running cash-from-sales balance and realized
+P&L from sales (if either is non-zero).
 "earnings today" immediately sends the day's top market-cap and
 most-analyst-attention earnings reporters -- there's no more automatic
 daily 3:55pm send, this is fully on-demand now.
@@ -72,6 +81,13 @@ from market_earnings_watch import select_top_reporters, format_list_line
 TICKERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tickers.json")
 HOLDINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "holdings.json")
 
+# Portfolio-wide running totals stored as top-level scalar entries in
+# holdings.json, alongside the per-ticker {"shares", "avg_cost"} dicts.
+# Reserved -- can't be used as ticker symbols in add/sold commands.
+CASH_KEY = "CASH"
+REALIZED_PNL_KEY = "REALIZED_PNL"
+RESERVED_HOLDINGS_KEYS = {CASH_KEY, REALIZED_PNL_KEY}
+
 _NUM = r"[\d,]+(?:\.\d+)?"
 _TICKER = r"\$?([A-Za-z.\-]{1,10})"
 
@@ -82,6 +98,11 @@ ADD_SHARES_RE = re.compile(
     re.IGNORECASE,
 )
 SOLD_SHARES_RE = re.compile(
+    rf"^\s*sold\s+({_NUM})\s+shares?\s+of\s+{_TICKER}\s+at\s+\$?({_NUM})\s*\.?\s*$", re.IGNORECASE
+)
+# Matches the old no-price form, purely to catch it and tell the user a
+# price is now required (rather than silently ignoring the message).
+SOLD_SHARES_NO_PRICE_RE = re.compile(
     rf"^\s*sold\s+({_NUM})\s+shares?\s+of\s+{_TICKER}\s*\.?\s*$", re.IGNORECASE
 )
 SUMMARY_RE = re.compile(r"^\s*summary\s*\.?\s*$", re.IGNORECASE)
@@ -177,8 +198,14 @@ def get_updates(offset: int | None) -> list[dict]:
 
 
 def send_summary(holdings: dict) -> None:
-    tickers_held = sorted(t for t, pos in holdings.items() if pos.get("shares", 0) > 0)
-    if not tickers_held:
+    cash = holdings.get(CASH_KEY, 0.0)
+    realized_pnl = holdings.get(REALIZED_PNL_KEY, 0.0)
+    tickers_held = sorted(
+        t
+        for t, pos in holdings.items()
+        if t not in RESERVED_HOLDINGS_KEYS and isinstance(pos, dict) and pos.get("shares", 0) > 0
+    )
+    if not tickers_held and not cash and not realized_pnl:
         send_telegram_message("You don't have any tracked positions yet.")
         return
 
@@ -220,6 +247,14 @@ def send_summary(holdings: dict) -> None:
         )
     else:
         lines.append(f"*Total book value*: {format_usd(total_book)}")
+
+    if cash:
+        lines.append(f"*Cash from sales*: {format_usd(cash)}")
+    if realized_pnl:
+        arrow = "\U0001F7E2" if realized_pnl >= 0 else "\U0001F534"
+        lines.append(f"*Realized P&L (sales)*: {format_usd_signed(realized_pnl)} {arrow}")
+    if cash and have_market_total:
+        lines.append(f"*Portfolio value (stocks + cash)*: {format_usd(total_market + cash)}")
 
     send_telegram_message("\n".join(lines))
 
@@ -360,6 +395,10 @@ def process_message(text: str, tickers: list[str], holdings: dict, state: dict) 
         ticker = add_shares_match.group(2).upper()
         price = parse_num(add_shares_match.group(3))
 
+        if ticker in RESERVED_HOLDINGS_KEYS:
+            send_telegram_message(f"*{ticker}* is a reserved name and can't be used as a ticker symbol.")
+            return False, False
+
         tickers_changed = False
         if ticker not in tickers:
             if not validate_ticker(ticker):
@@ -390,9 +429,14 @@ def process_message(text: str, tickers: list[str], holdings: dict, state: dict) 
     if sold_match:
         qty = parse_num(sold_match.group(1))
         ticker = sold_match.group(2).upper()
-        pos = holdings.get(ticker)
+        price = parse_num(sold_match.group(3))
 
-        if not pos or pos.get("shares", 0) <= 0:
+        if ticker in RESERVED_HOLDINGS_KEYS:
+            send_telegram_message(f"*{ticker}* is a reserved name and can't be used as a ticker symbol.")
+            return False, False
+
+        pos = holdings.get(ticker)
+        if not isinstance(pos, dict) or pos.get("shares", 0) <= 0:
             send_telegram_message(f"You don't have a tracked position in *{ticker}* to sell from.")
             return False, False
         if qty > pos["shares"] + 1e-9:
@@ -401,16 +445,39 @@ def process_message(text: str, tickers: list[str], holdings: dict, state: dict) 
             )
             return False, False
 
+        # Standard average-cost-basis accounting: selling doesn't change the
+        # avg_cost of what's left. Proceeds and realized gain/loss (vs. that
+        # avg_cost) roll into two portfolio-wide running totals in
+        # holdings.json rather than per-ticker fields.
+        avg_cost = pos["avg_cost"]
+        proceeds = qty * price
+        realized_gain = qty * (price - avg_cost)
+
         new_shares = pos["shares"] - qty
         if new_shares < 1e-9:
             new_shares = 0.0
         holdings[ticker]["shares"] = new_shares
-        book_value = new_shares * pos["avg_cost"]
+        holdings[CASH_KEY] = holdings.get(CASH_KEY, 0.0) + proceeds
+        holdings[REALIZED_PNL_KEY] = holdings.get(REALIZED_PNL_KEY, 0.0) + realized_gain
+
+        book_value = new_shares * avg_cost
+        gain_word = "gain" if realized_gain >= 0 else "loss"
         send_telegram_message(
-            f"\U0001F5D1 Sold {qty:,.0f} shares of *{ticker}*.\n"
-            f"Remaining: {new_shares:,.0f} sh @ avg {format_usd(pos['avg_cost'])} (book {format_usd(book_value)})."
+            f"\U0001F5D1 Sold {qty:,.0f} shares of *{ticker}* at {format_usd(price)}.\n"
+            f"Proceeds: {format_usd(proceeds)}  |  Realized {gain_word}: {format_usd_signed(realized_gain)}\n"
+            f"Remaining: {new_shares:,.0f} sh @ avg {format_usd(avg_cost)} (book {format_usd(book_value)}).\n"
+            f"Cash balance: {format_usd(holdings[CASH_KEY])}  |  "
+            f"Total realized P&L: {format_usd_signed(holdings[REALIZED_PNL_KEY])}"
         )
         return False, True
+
+    sold_no_price_match = SOLD_SHARES_NO_PRICE_RE.match(text)
+    if sold_no_price_match:
+        send_telegram_message(
+            'To track cash and realized P&L I need the sale price -- try '
+            '"sold 100 shares of AAPL at 150".'
+        )
+        return False, False
 
     add_match = ADD_RE.match(text)
     if add_match:
