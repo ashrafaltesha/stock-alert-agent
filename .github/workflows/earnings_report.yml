@@ -2,7 +2,7 @@ name: Daily earnings report
 
 on:
   schedule:
-    # ~5:30pm ET / 21:30 UTC (EST) or 22:30 UTC (EDT) â set for EST here;
+    # ~5:30pm ET / 21:30 UTC (EST) or 22:30 UTC (EDT) - set for EST here;
     # adjust by 1 hour if you want it precise during daylight saving time.
     - cron: "30 21 * * 1-5"
   workflow_dispatch: {}
