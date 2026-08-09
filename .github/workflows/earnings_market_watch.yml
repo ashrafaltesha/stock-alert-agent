@@ -1,12 +1,11 @@
 name: Market-wide earnings watch
 
 on:
-  schedule:
-    # 19:30 UTC covers just before 3:55pm ET in both EST (20:55 UTC) and EDT
-    # (19:55 UTC). The script sleeps until the exact local times itself
-    # (~3:55pm ET for the heads-up lists, ~4:15pm ET to start polling), so
-    # this only needs to fire early enough, not exactly on time. Weekdays only.
-    - cron: "30 19 * * 1-5"
+  # No schedule -- this workflow is manual-only now. The daily automatic
+  # list-send + poll-everything has been replaced by on-demand Telegram
+  # commands ("earnings today" / "earnings for TICKER, ...") handled by
+  # telegram_commands.yml. This workflow_dispatch trigger is kept for
+  # manually re-running the old full flow if you ever want to.
   workflow_dispatch:
     inputs:
       test_mode:
