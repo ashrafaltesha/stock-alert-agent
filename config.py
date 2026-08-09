@@ -88,7 +88,7 @@ ANALYST_LOOKUP_POOL_SIZE = 40
 MARKET_EARNINGS_LIST_TIME_ET = "15:55"
 # Time to start polling for each of those companies' releases (assumes most
 # after-close reporters release at/soon after the 4:00pm close).
-MARKET_EARNINGS_POLL_START_ET = "16:15"
+MARKET_EARNINGS_POLL_START_ET = "16:00"
 
 # Telegram credentials — supplied via GitHub Actions secrets, never hardcode here.
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
