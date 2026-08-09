@@ -45,53 +45,50 @@ MATERIAL_NEWS_KEYWORDS = [
     "guidance", "contract win", "contract award", "regulatory approval",
 ]
 
-# How many top market-wide earnings movers to include in the daily report,
-# ranked by market cap.
+# -- Per-holding earnings reminders + release watcher (earnings_watch.py) --
+#
+# Nasdaq's calendar only tells us before-open / after-close / "not
+# supplied" -- not an exact release minute -- so these are reasonable
+# assumptions, not confirmed company schedules. Adjust per your experience
+# with a given holding (e.g. if one of your tickers reliably reports later).
+#
+# Day-before reminder time (local ET, 24h "HH:MM") for holdings reporting
+# before market open the next day.
+EARNINGS_BMO_REMINDER_TIME_ET = "18:00"
+# When to start polling for a before-market-open release.
+EARNINGS_BMO_POLL_START_ET = "06:30"
+# Same-day reminder time for holdings reporting after market close.
+EARNINGS_AMC_REMINDER_TIME_ET = "15:00"
+# When to start polling for an after-market-close release (assumes released
+# at/soon after the 4:00pm close).
+EARNINGS_AMC_POLL_START_ET = "16:00"
+# How often to re-check for the release once polling starts.
+EARNINGS_POLL_INTERVAL_SECONDS = 60
+# Give up (and send one heads-up that it's still not detected) after this
+# many minutes of polling.
+EARNINGS_POLL_TIMEOUT_MINUTES = 180
+
+# -- Market-wide earnings watcher (market_earnings_watch.py) --
+#
+# How many top market-wide earnings reporters to watch, ranked by market cap.
 TOP_N_EARNINGS = 10
 
-# How many additional companies to surface based on analyst attention
-# (number of analysts covering the stock), among that day's earnings reporters.
-TOP_N_ANALYST_ATTENTION = 10
+# How many additional companies to watch based on analyst attention (number
+# of analysts covering the stock), among that day's earnings reporters that
+# aren't already in the market-cap list above.
+TOP_N_ANALYST_ATTENTION = 5
 
 # Cap on how many of the day's reporters get an analyst-coverage lookup.
 # Keeps the job fast/reliable on busy earnings days (100+ companies reporting)
 # by only checking analyst counts for the largest-cap subset.
 ANALYST_LOOKUP_POOL_SIZE = 40
 
-# Telegram credentials — supplied via GitHub Actions secrets, never hardcode here.
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
-
-STATE_FILE = "state.json"
-"""
-Central configuration for the stock alert agent.
-Edit TICKERS to change which stocks you hold.
-"""
-
-import os
-
-# Tickers you own — edit this list any time.
-TICKERS = ["GENI", "EVH", "XPEV", "QURE", "UAVS", "WOLF", "FOUR"]
-
-# Alert threshold: percent move from previous close that triggers a price alert.
-PRICE_CHANGE_THRESHOLD_PCT = 5.0
-
-# How far back to look for "new" news articles on each run (minutes).
-# Should be >= the cron interval (15 min) with a little buffer.
-NEWS_LOOKBACK_MINUTES = 20
-
-# How many top market-wide earnings movers to include in the daily report,
-# ranked by market cap.
-TOP_N_EARNINGS = 10
-
-# How many additional companies to surface based on analyst attention
-# (number of analysts covering the stock), among that day's earnings reporters.
-TOP_N_ANALYST_ATTENTION = 10
-
-# Cap on how many of the day's reporters get an analyst-coverage lookup.
-# Keeps the job fast/reliable on busy earnings days (100+ companies reporting)
-# by only checking analyst counts for the largest-cap subset.
-ANALYST_LOOKUP_POOL_SIZE = 40
+# Time (local ET, "HH:MM") to send the heads-up list of today's top
+# market-wide earnings reporters + most-analyst-attention names.
+MARKET_EARNINGS_LIST_TIME_ET = "15:55"
+# Time to start polling for each of those companies' releases (assumes most
+# after-close reporters release at/soon after the 4:00pm close).
+MARKET_EARNINGS_POLL_START_ET = "16:15"
 
 # Telegram credentials — supplied via GitHub Actions secrets, never hardcode here.
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
