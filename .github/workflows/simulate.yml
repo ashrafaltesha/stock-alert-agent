@@ -1,0 +1,32 @@
+name: Backtest simulation (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      sim_date:
+        description: "Date to simulate (YYYY-MM-DD)"
+        required: false
+        default: "2026-08-07"
+
+permissions:
+  contents: read
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run backtest simulation
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python simulate.py "${{ github.event.inputs.sim_date }}"
