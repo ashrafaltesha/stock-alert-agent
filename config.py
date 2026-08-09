@@ -23,10 +23,11 @@ def _load_tickers() -> list[str]:
 
 TICKERS = _load_tickers()
 
-# Alert threshold: percent move that triggers a price alert. Alerts fire on
-# every sequential move of this size in either direction (e.g. at 5%: +5%
-# from previous close alerts, then +/-5% from THAT point alerts again, and
-# so on through the day).
+# Alert threshold: percent move away from the PRIOR DAY'S CLOSE that
+# triggers a price alert (the anchor never moves during the day). Alerts
+# fire on every threshold step reached in either direction (e.g. at 5%:
+# +5% from previous close alerts, and if price keeps climbing, +10%,
+# +15%, etc. from that SAME close each alert once per day).
 PRICE_CHANGE_THRESHOLD_PCT = 5.0
 
 # How far back to look for "new" news articles on each run (minutes).
@@ -105,7 +106,7 @@ MARKET_EARNINGS_LIST_TIME_ET = "15:55"
 # after-close reporters release at/soon after the 4:00pm close).
 MARKET_EARNINGS_POLL_START_ET = "16:00"
 
-# Telegram credentials — supplied via GitHub Actions secrets, never hardcode here.
+# Telegram credentials â supplied via GitHub Actions secrets, never hardcode here.
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
