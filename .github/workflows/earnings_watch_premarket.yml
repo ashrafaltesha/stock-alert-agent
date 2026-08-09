@@ -1,0 +1,55 @@
+name: Earnings pre-market watch
+
+on:
+  schedule:
+    # 10:00 UTC covers just before 6:30am ET in both EST (11:30 UTC) and EDT
+    # (10:30 UTC). The script sleeps until the exact local 06:30 ET before
+    # it starts polling, then polls roughly once a minute until it detects
+    # the release or hits EARNINGS_POLL_TIMEOUT_MINUTES (config.py).
+    # Weekdays only -- before-market-open earnings don't land on weekends.
+    - cron: "0 10 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: "Run in --test mode (skips sleeping, short poll timeout)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  premarket-watch:
+    runs-on: ubuntu-latest
+    # Sleep-to-06:30 (~1.5h worst case) + up to EARNINGS_POLL_TIMEOUT_MINUTES
+    # (default 180) of polling + buffer. Stays comfortably under GitHub's
+    # 360-minute hard cap for hosted runners.
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pre-market earnings watch
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          if [ "${{ inputs.test_mode }}" = "true" ]; then
+            python earnings_watch.py premarket_watch --test
+          else
+            python earnings_watch.py premarket_watch
+          fi
+
+      - name: Commit updated state
+        run: |
+          git config user.name "stock-agent-bot"
+          git config user.email "actions@github.com"
+          git add state.json
+          git diff --cached --quiet || git commit -m "Update alert state [skip ci]"
+          git push
