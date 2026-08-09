@@ -1,0 +1,52 @@
+name: Earnings BMO day-before reminder
+
+on:
+  schedule:
+    # 21:45 UTC covers just before 6:00pm ET in both EST (23:00 UTC) and EDT
+    # (22:00 UTC) -- the script itself sleeps until the exact local 18:00 ET
+    # before sending, so this only needs to fire early enough, not exactly
+    # on time. Runs daily (including weekends) so a Monday before-open
+    # report still gets its Sunday-evening reminder.
+    - cron: "45 21 * * *"
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: "Run in --test mode (skips sleeping, quick smoke test)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  bmo-reminder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run BMO reminder check
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          if [ "${{ inputs.test_mode }}" = "true" ]; then
+            python earnings_watch.py bmo_reminder --test
+          else
+            python earnings_watch.py bmo_reminder
+          fi
+
+      - name: Commit updated state
+        run: |
+          git config user.name "stock-agent-bot"
+          git config user.email "actions@github.com"
+          git add state.json
+          git diff --cached --quiet || git commit -m "Update alert state [skip ci]"
+          git push
