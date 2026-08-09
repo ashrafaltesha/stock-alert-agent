@@ -110,4 +110,13 @@ MARKET_EARNINGS_POLL_START_ET = "16:00"
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
+# Finnhub API key (free tier, finnhub.io/register) â supplied via GitHub
+# Actions secrets, never hardcode here. Used for per-symbol earnings-date/
+# timing lookups (classify_holdings_for_date, and the "earnings for X"
+# not-reporting-today check), which don't need market cap. The market-wide
+# top-by-market-cap reporters list still uses Nasdaq's calendar (see
+# fetch_earnings_calendar in earnings_utils.py) since Finnhub's free
+# earnings-calendar endpoint doesn't include market cap.
+FINNHUB_API_KEY = os.environ.get("FINNHUB_API_KEY", "")
+
 STATE_FILE = "state.json"
