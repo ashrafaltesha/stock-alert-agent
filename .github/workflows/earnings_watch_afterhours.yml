@@ -1,0 +1,55 @@
+name: Earnings after-hours watch
+
+on:
+  schedule:
+    # 18:30 UTC covers just before 3:00pm ET in both EST (20:00 UTC) and EDT
+    # (19:00 UTC). The script sleeps until the exact local 15:00 ET before
+    # sending the "reports after close today" reminder, then sleeps until
+    # 16:00 ET and polls roughly once a minute until it detects the release
+    # or hits EARNINGS_POLL_TIMEOUT_MINUTES (config.py). Weekdays only.
+    - cron: "30 18 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: "Run in --test mode (skips sleeping, short poll timeout)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  afterhours-watch:
+    runs-on: ubuntu-latest
+    # Sleep-to-15:00 (~1.5h) + reminder + sleep-to-16:00 (~1h) + up to
+    # EARNINGS_POLL_TIMEOUT_MINUTES (default 180) of polling + buffer.
+    # Stays comfortably under GitHub's 360-minute hard cap for hosted runners.
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run after-hours earnings watch
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          if [ "${{ inputs.test_mode }}" = "true" ]; then
+            python earnings_watch.py afterhours_watch --test
+          else
+            python earnings_watch.py afterhours_watch
+          fi
+
+      - name: Commit updated state
+        run: |
+          git config user.name "stock-agent-bot"
+          git config user.email "actions@github.com"
+          git add state.json
+          git diff --cached --quiet || git commit -m "Update alert state [skip ci]"
+          git push
