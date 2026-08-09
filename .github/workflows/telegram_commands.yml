@@ -1,0 +1,41 @@
+name: Telegram ticker commands
+
+on:
+  schedule:
+    # Every 5 minutes. GitHub Actions doesn't guarantee this runs exactly
+    # on time -- expect it to sometimes lag a few minutes, more on busy
+    # days -- so treat this as "checked roughly every few minutes," not
+    # real-time.
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  process-commands:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Process Telegram ticker commands
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python telegram_commands.py
+
+      - name: Commit updated tickers/state
+        run: |
+          git config user.name "stock-agent-bot"
+          git config user.email "actions@github.com"
+          git add tickers.json state.json
+          git diff --cached --quiet || git commit -m "Update tickers/state via Telegram command [skip ci]"
+          git push
