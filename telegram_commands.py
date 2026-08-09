@@ -25,7 +25,7 @@ portfolio total.
 most-analyst-attention earnings reporters -- there's no more automatic
 daily 3:55pm send, this is fully on-demand now.
 "earnings for <TICKER, TICKER, ...>" first checks each symbol against
-Nasdaq's earnings calendar for today -- any ticker NOT reporting today
+Finnhub's earnings calendar for today -- any ticker NOT reporting today
 gets an immediate reply saying so instead of being queued (so you don't
 wait hours only to be told "still not detected"). Whatever's left gets
 queued to be polled starting at MARKET_EARNINGS_POLL_START_ET ET that
@@ -34,9 +34,10 @@ beat/miss summary is sent as soon as each release is detected, using the
 same detection method as earnings_watch.py. Polling continues across
 runs of this same 5-minute cron job (see check_on_demand_earnings
 below), so it keeps checking even if you don't text anything else. If
-the Nasdaq calendar fetch itself fails (data source hiccup), we can't
-confidently rule anything out, so everything gets queued as before
-rather than risk a false "not reporting" reply.
+the Finnhub calendar fetch itself fails or FINNHUB_API_KEY isn't set
+(data source hiccup), we can't confidently rule anything out, so
+everything gets queued as before rather than risk a false "not
+reporting" reply.
 
 Runs on a schedule via .github/workflows/telegram_commands.yml (every ~5
 min). GitHub Actions cron isn't guaranteed to fire exactly on time -- it
@@ -64,7 +65,7 @@ from config import (
 )
 from telegram_utils import send_telegram_message
 from state_utils import load_state, save_state
-from earnings_utils import now_et, date_str_et, fetch_earnings_calendar
+from earnings_utils import now_et, date_str_et, fetch_earnings_calendar_finnhub
 from earnings_summary import get_earnings_release, build_summary_message
 from market_earnings_watch import select_top_reporters, format_list_line
 
@@ -256,13 +257,14 @@ def handle_earnings_for(raw: str, state: dict) -> None:
 
     today = date_str_et(0)
 
-    # Check today's Nasdaq earnings calendar before queuing anything, so a
+    # Check today's Finnhub earnings calendar before queuing anything, so a
     # ticker that isn't reporting today gets told immediately instead of
     # sitting in a 3-hour poll that's doomed to end in a "still not
     # detected" message. If the calendar fetch itself fails/comes back
-    # empty (data-source hiccup), we can't confidently rule anything out,
-    # so skip this check and queue everything as before.
-    calendar_rows = fetch_earnings_calendar(today)
+    # empty (data-source hiccup, or FINNHUB_API_KEY not set), we can't
+    # confidently rule anything out, so skip this check and queue
+    # everything as before.
+    calendar_rows = fetch_earnings_calendar_finnhub(today)
     if calendar_rows:
         reporting_today = {row.get("symbol") for row in calendar_rows if row.get("symbol")}
         not_reporting = [t for t in valid if t not in reporting_today]
@@ -274,7 +276,7 @@ def handle_earnings_for(raw: str, state: dict) -> None:
     if not_reporting:
         verb = "isn't" if len(not_reporting) == 1 else "aren't"
         send_telegram_message(
-            f"Per Nasdaq's calendar, {', '.join(not_reporting)} {verb} reporting earnings "
+            f"Per Finnhub's calendar, {', '.join(not_reporting)} {verb} reporting earnings "
             f"today ({today}), so I won't poll for {'it' if len(not_reporting) == 1 else 'them'}."
         )
 
