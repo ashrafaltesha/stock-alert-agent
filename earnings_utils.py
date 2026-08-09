@@ -2,6 +2,17 @@
 sleep-until-a-time helper -- used by earnings_watch.py (per-holding reminder
 + release-detection watcher) and market_earnings_watch.py (market-wide
 top-cap / most-analyst-attention watcher).
+
+Two earnings-calendar sources, used for different jobs:
+  fetch_earnings_calendar (Nasdaq's public calendar API) -- includes market
+    cap, so it's used wherever ranking by market cap matters:
+    select_top_reporters() in market_earnings_watch.py.
+  fetch_earnings_calendar_finnhub (Finnhub's calendar API, requires
+    FINNHUB_API_KEY) -- no market cap, but a documented, stable, ToS-clean
+    public API. Used wherever we only need to know WHICH symbols report on a
+    given date and WHEN (bmo/amc/unsupplied): classify_holdings_for_date()
+    below (used by earnings_watch.py), and telegram_commands.py's
+    "earnings for X" not-reporting-today check.
 """
 
 import sys
@@ -12,7 +23,7 @@ from zoneinfo import ZoneInfo
 import requests
 import yfinance as yf
 
-from config import EARNINGS_POLL_INTERVAL_SECONDS, EARNINGS_POLL_TIMEOUT_MINUTES
+from config import EARNINGS_POLL_INTERVAL_SECONDS, EARNINGS_POLL_TIMEOUT_MINUTES, FINNHUB_API_KEY
 
 EASTERN = ZoneInfo("America/New_York")
 
@@ -62,7 +73,11 @@ def sleep_until_et(target_hm: str) -> None:
 
 
 def fetch_earnings_calendar(date_str: str) -> list[dict]:
-    """Pull a day's earnings calendar from Nasdaq's public API."""
+    """Pull a day's earnings calendar from Nasdaq's public API. Includes
+    market cap -- use this when ranking by market cap matters (see
+    select_top_reporters in market_earnings_watch.py). For simple "is this
+    symbol reporting, and when" lookups, prefer fetch_earnings_calendar_finnhub
+    below."""
     url = f"https://api.nasdaq.com/api/calendar/earnings?date={date_str}"
     try:
         resp = requests.get(url, headers=NASDAQ_HEADERS, timeout=20)
@@ -72,6 +87,38 @@ def fetch_earnings_calendar(date_str: str) -> list[dict]:
     except Exception as e:
         print(f"Nasdaq earnings calendar fetch failed for {date_str}: {e}")
         return []
+
+
+def fetch_earnings_calendar_finnhub(date_str: str) -> list[dict]:
+    """Pull a single day's earnings calendar from Finnhub's API (requires
+    FINNHUB_API_KEY, free tier at finnhub.io/register). Returns rows shaped
+    like fetch_earnings_calendar's Nasdaq rows -- {"symbol": ..., "time":
+    BMO_LABEL/AMC_LABEL/UNSUPPLIED_LABEL} -- so callers that only need
+    symbol + timing (not market cap or company name) can use either source
+    interchangeably. Returns [] (not an error) if FINNHUB_API_KEY isn't set,
+    so callers should treat an empty result the same as "can't confirm
+    either way" rather than "confirmed nothing reporting"."""
+    if not FINNHUB_API_KEY:
+        print("FINNHUB_API_KEY not set; skipping Finnhub earnings calendar fetch.")
+        return []
+    url = "https://finnhub.io/api/v1/calendar/earnings"
+    params = {"from": date_str, "to": date_str, "token": FINNHUB_API_KEY}
+    try:
+        resp = requests.get(url, params=params, timeout=20)
+        resp.raise_for_status()
+        rows = resp.json().get("earningsCalendar") or []
+    except Exception as e:
+        print(f"Finnhub earnings calendar fetch failed for {date_str}: {e}")
+        return []
+
+    hour_to_label = {"bmo": BMO_LABEL, "amc": AMC_LABEL}
+    result = []
+    for row in rows:
+        symbol = row.get("symbol")
+        if not symbol:
+            continue
+        result.append({"symbol": symbol, "time": hour_to_label.get(row.get("hour"), UNSUPPLIED_LABEL)})
+    return result
 
 
 def parse_market_cap(raw: str) -> float:
@@ -105,9 +152,9 @@ def after_hours_snapshot(ticker: str, info: dict | None = None) -> str:
 
 def classify_holdings_for_date(date_str: str, tickers: list[str]) -> dict:
     """Returns {ticker: 'bmo' | 'amc' | 'unsupplied'} for tickers that are on
-    that date's Nasdaq earnings calendar. Tickers not reporting that date are
-    simply absent from the returned dict."""
-    rows = fetch_earnings_calendar(date_str)
+    that date's Finnhub earnings calendar. Tickers not reporting that date
+    are simply absent from the returned dict."""
+    rows = fetch_earnings_calendar_finnhub(date_str)
     by_symbol = {row.get("symbol"): row for row in rows if row.get("symbol")}
 
     result = {}
