@@ -1,12 +1,27 @@
 """
 Central configuration for the stock alert agent.
-Edit TICKERS to change which stocks you hold.
 """
 
+import json
 import os
 
-# Tickers you own — edit this list any time.
-TICKERS = ["GENI", "EVH", "XPEV", "QURE", "UAVS", "WOLF", "FOUR"]
+
+def _load_tickers() -> list[str]:
+    """Your held tickers live in tickers.json, not here, so they can be
+    updated automatically -- text the bot "add TICKER to my list" or
+    "remove TICKER from my list" and telegram_commands.py updates the file
+    for you (see .github/workflows/telegram_commands.yml). You can also
+    edit tickers.json by hand any time."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tickers.json")
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Failed to load tickers.json: {e}")
+        return []
+
+
+TICKERS = _load_tickers()
 
 # Alert threshold: percent move that triggers a price alert. Alerts fire on
 # every sequential move of this size in either direction (e.g. at 5%: +5%
