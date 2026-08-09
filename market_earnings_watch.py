@@ -1,15 +1,26 @@
-"""Market-wide (not-your-holdings) earnings watcher. Runs once daily via
-GitHub Actions cron (see .github/workflows/earnings_market_watch.yml),
-weekdays.
+"""Market-wide (not-your-holdings) earnings watcher.
 
-At ~3:55pm ET (config.MARKET_EARNINGS_LIST_TIME_ET):
+NOTE: this no longer runs automatically. The old daily 3:55pm list-send +
+auto-poll-everything behavior has been replaced by on-demand Telegram
+commands handled in telegram_commands.py:
+  "earnings today"            -- sends the day's list immediately.
+  "earnings for TICKER, ..."  -- polls those specific tickers starting at
+                                 MARKET_EARNINGS_POLL_START_ET ET.
+
+select_top_reporters() and format_list_line() below are imported by
+telegram_commands.py's "earnings today" handler. main() below (the old
+full list-send + poll-everything flow) is kept only for manual testing via
+workflow_dispatch (see .github/workflows/earnings_market_watch.yml, which
+no longer has a schedule trigger).
+
+At ~3:55pm ET (config.MARKET_EARNINGS_LIST_TIME_ET), if manually run:
   Sends two heads-up lists --
     - Top TOP_N_EARNINGS companies reporting earnings today, by market cap.
     - Up to TOP_N_ANALYST_ATTENTION additional companies (not already in the
       market-cap list) getting the most analyst attention among today's
       reporters.
 
-At ~4:15pm ET (config.MARKET_EARNINGS_POLL_START_ET):
+At ~4:00pm ET (config.MARKET_EARNINGS_POLL_START_ET), if manually run:
   Polls roughly once a minute for each of those companies' earnings release
   (same detection method as earnings_watch.py -- see earnings_summary.py),
   sending an individual beat/miss + revenue/EPS + QoQ/YoY summary as soon as
