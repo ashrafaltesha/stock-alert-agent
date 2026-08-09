@@ -1,6 +1,6 @@
 """Polls Telegram for new messages and processes natural-language commands
-for managing your watchlist (tickers.json) and your position tracking
-(holdings.json).
+for managing your watchlist (tickers.json), your position tracking
+(holdings.json), and on-demand earnings lookups.
 
 Recognized commands (case-insensitive, a leading "$" on a ticker is
 optional):
@@ -9,6 +9,8 @@ optional):
   added <NUMBER> shares of <TICKER> at <PRICE>
   sold <NUMBER> shares of <TICKER>
   summary
+  earnings today
+  earnings for <TICKER>[, <TICKER> ...]
 
 "added ... at ..." recalculates your weighted-average book price per share
 for that ticker (existing shares/cost blended with the new lot), and adds
@@ -19,6 +21,17 @@ share is left unchanged, which is standard average-cost-basis accounting
 "summary" sends your current holdings: shares, avg book price, total book
 value, live market price, and % upside/downside per position, plus a
 portfolio total.
+"earnings today" immediately sends the day's top market-cap and
+most-analyst-attention earnings reporters -- there's no more automatic
+daily 3:55pm send, this is fully on-demand now.
+"earnings for <TICKER, TICKER, ...>" queues those specific tickers (any
+symbol, not just ones on your watchlist) to be polled starting at
+MARKET_EARNINGS_POLL_START_ET ET that same day (or immediately, if that
+time has already passed) -- a beat/miss summary is sent as soon as each
+release is detected, using the same detection method as earnings_watch.py.
+Polling continues across runs of this same 5-minute cron job (see
+check_on_demand_earnings below), so it keeps checking even if you don't
+text anything else.
 
 Runs on a schedule via .github/workflows/telegram_commands.yml (every ~5
 min). GitHub Actions cron isn't guaranteed to fire exactly on time -- it
@@ -33,13 +46,22 @@ reply), so normal chatter with the bot doesn't trigger anything.
 import json
 import os
 import re
+from datetime import timedelta
 
 import requests
 import yfinance as yf
 
-from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+from config import (
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID,
+    MARKET_EARNINGS_POLL_START_ET,
+    EARNINGS_POLL_TIMEOUT_MINUTES,
+)
 from telegram_utils import send_telegram_message
 from state_utils import load_state, save_state
+from earnings_utils import now_et, date_str_et
+from earnings_summary import get_earnings_release, build_summary_message
+from market_earnings_watch import select_top_reporters, format_list_line
 
 TICKERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tickers.json")
 HOLDINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "holdings.json")
@@ -57,10 +79,26 @@ SOLD_SHARES_RE = re.compile(
     rf"^\s*sold\s+({_NUM})\s+shares?\s+of\s+{_TICKER}\s*\.?\s*$", re.IGNORECASE
 )
 SUMMARY_RE = re.compile(r"^\s*summary\s*\.?\s*$", re.IGNORECASE)
+EARNINGS_TODAY_RE = re.compile(r"^\s*earnings\s+today\.?\s*$", re.IGNORECASE)
+EARNINGS_FOR_RE = re.compile(r"^\s*earnings\s+for\s+(.+?)\.?\s*$", re.IGNORECASE)
 
 
 def parse_num(s: str) -> float:
     return float(s.replace(",", ""))
+
+
+def parse_ticker_list(raw: str) -> list[str]:
+    """Splits a free-form ticker list on commas and/or "and" -- handles
+    "AAPL, MSFT", "AAPL and MSFT", "AAPL, MSFT and GOOGL", etc."""
+    parts = re.split(r",|\band\b", raw, flags=re.IGNORECASE)
+    seen = set()
+    result = []
+    for part in parts:
+        t = part.strip().strip(".").lstrip("$").upper()
+        if t and t not in seen:
+            seen.add(t)
+            result.append(t)
+    return result
 
 
 def load_tickers() -> list[str]:
@@ -180,13 +218,107 @@ def send_summary(holdings: dict) -> None:
     send_telegram_message("\n".join(lines))
 
 
-def process_message(text: str, tickers: list[str], holdings: dict) -> tuple[bool, bool]:
+def handle_earnings_today() -> None:
+    today = date_str_et(0)
+    top_cap, top_analyst = select_top_reporters(today)
+    if not top_cap and not top_analyst:
+        send_telegram_message(f"No market-wide earnings calendar data for today ({today}).")
+        return
+
+    lines = [f"\U0001F4CB *Top {len(top_cap)} market-wide earnings today* ({today}):"]
+    lines += [format_list_line(r) for r in top_cap] if top_cap else ["None found."]
+    send_telegram_message("\n".join(lines))
+
+    lines2 = ["\U0001F4CB *Most analyst attention today*:"]
+    lines2 += [format_list_line(r) for r in top_analyst] if top_analyst else ["None found."]
+    send_telegram_message("\n".join(lines2))
+
+
+def handle_earnings_for(raw: str, state: dict) -> None:
+    requested = parse_ticker_list(raw)
+    if not requested:
+        send_telegram_message('Couldn\'t parse any tickers from that -- try "earnings for AAPL, MSFT".')
+        return
+
+    valid = [t for t in requested if validate_ticker(t)]
+    invalid = [t for t in requested if t not in valid]
+    if invalid:
+        send_telegram_message(
+            f"Couldn't find market data for: {', '.join(invalid)} -- double-check the symbol(s)."
+        )
+    if not valid:
+        return
+
+    today = date_str_et(0)
+    key = f"ew_on_demand::{today}"
+    existing = set(state.get(key, []))
+    existing.update(valid)
+    state[key] = sorted(existing)
+
+    send_telegram_message(
+        f"\U0001F514 Got it -- I'll start checking for earnings from {', '.join(valid)} "
+        f"starting at {MARKET_EARNINGS_POLL_START_ET} ET today, and text you a summary as soon "
+        f"as each is released."
+    )
+
+
+def check_on_demand_earnings(state: dict) -> bool:
+    """Called on every run. Once it's on/after MARKET_EARNINGS_POLL_START_ET
+    ET, checks any tickers requested today via "earnings for ..." once per
+    run -- sending a summary the moment a release is detected, and a
+    one-time give-up notice after EARNINGS_POLL_TIMEOUT_MINUTES past the
+    poll-start time. Returns whether state was mutated."""
+    now = now_et()
+    today = date_str_et(0)
+    hh, mm = (int(p) for p in MARKET_EARNINGS_POLL_START_ET.split(":"))
+    poll_start = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+    if now < poll_start:
+        return False
+
+    key = f"ew_on_demand::{today}"
+    requested = state.get(key, [])
+    if not requested:
+        return False
+
+    deadline = poll_start + timedelta(minutes=EARNINGS_POLL_TIMEOUT_MINUTES)
+    changed = False
+    for ticker in requested:
+        sent_key = f"ew_summary_sent::{ticker}::{today}"
+        giveup_key = f"ew_on_demand_giveup::{ticker}::{today}"
+        if state.get(sent_key) or state.get(giveup_key):
+            continue
+        data = get_earnings_release(ticker, today)
+        if data:
+            send_telegram_message(build_summary_message(ticker, today, data))
+            state[sent_key] = True
+            changed = True
+        elif now >= deadline:
+            send_telegram_message(
+                f"⚠️ *{ticker}*: earnings still not detected as released after "
+                f"~{EARNINGS_POLL_TIMEOUT_MINUTES} min of checking. It may be delayed -- worth a manual look."
+            )
+            state[giveup_key] = True
+            changed = True
+
+    return changed
+
+
+def process_message(text: str, tickers: list[str], holdings: dict, state: dict) -> tuple[bool, bool]:
     """Handles one message's text, mutating `tickers` and/or `holdings` in
     place and sending a Telegram reply. Returns (tickers_changed,
     holdings_changed)."""
 
     if SUMMARY_RE.match(text):
         send_summary(holdings)
+        return False, False
+
+    if EARNINGS_TODAY_RE.match(text):
+        handle_earnings_today()
+        return False, False
+
+    earnings_for_match = EARNINGS_FOR_RE.match(text)
+    if earnings_for_match:
+        handle_earnings_for(earnings_for_match.group(1), state)
         return False, False
 
     add_shares_match = ADD_SHARES_RE.match(text)
@@ -285,33 +417,35 @@ def main() -> None:
 
     state = load_state()
     offset = state.get("tg_update_offset")
-
-    updates = get_updates(offset)
-    if not updates:
-        print("No new Telegram messages.")
-        return
-
     tickers = load_tickers()
     holdings = load_holdings()
     tickers_changed = False
     holdings_changed = False
 
-    for update in updates:
-        state["tg_update_offset"] = update["update_id"] + 1
+    updates = get_updates(offset)
+    if updates:
+        for update in updates:
+            state["tg_update_offset"] = update["update_id"] + 1
 
-        message = update.get("message") or update.get("edited_message")
-        if not message:
-            continue
+            message = update.get("message") or update.get("edited_message")
+            if not message:
+                continue
 
-        chat_id = str(message.get("chat", {}).get("id", ""))
-        if str(TELEGRAM_CHAT_ID) != chat_id:
-            print(f"Ignoring message from unexpected chat_id={chat_id}")
-            continue
+            chat_id = str(message.get("chat", {}).get("id", ""))
+            if str(TELEGRAM_CHAT_ID) != chat_id:
+                print(f"Ignoring message from unexpected chat_id={chat_id}")
+                continue
 
-        text = message.get("text", "")
-        t_changed, h_changed = process_message(text, tickers, holdings)
-        tickers_changed = tickers_changed or t_changed
-        holdings_changed = holdings_changed or h_changed
+            text = message.get("text", "")
+            t_changed, h_changed = process_message(text, tickers, holdings, state)
+            tickers_changed = tickers_changed or t_changed
+            holdings_changed = holdings_changed or h_changed
+    else:
+        print("No new Telegram messages.")
+
+    # Runs every invocation (not just when there's a new Telegram message)
+    # so on-demand earnings polling keeps going in the background.
+    check_on_demand_earnings(state)
 
     if tickers_changed:
         save_tickers(tickers)
