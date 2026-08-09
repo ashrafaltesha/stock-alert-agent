@@ -22,8 +22,6 @@ state.json, which this script updates and the workflow commits back to
 the repo.
 """
 
-import json
-import os
 import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -38,10 +36,10 @@ from config import (
     PRICE_CHANGE_THRESHOLD_PCT,
     NEWS_LOOKBACK_MINUTES,
     MATERIAL_NEWS_KEYWORDS,
-    STATE_FILE,
 )
 from market_hours import is_market_hours
 from telegram_utils import send_telegram_message
+from state_utils import load_state, save_state
 
 GOOGLE_NEWS_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 
@@ -53,18 +51,6 @@ def is_material(title: str) -> bool:
     in config.py if it's too noisy or too quiet."""
     title_lower = title.lower()
     return any(keyword in title_lower for keyword in MATERIAL_NEWS_KEYWORDS)
-
-
-def load_state() -> dict:
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE, "r") as f:
-            return json.load(f)
-    return {}
-
-
-def save_state(state: dict) -> None:
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f, indent=2, default=str)
 
 
 def today_str() -> str:
