@@ -837,5 +837,6 @@
   },
   "ew_on_demand::2026-08-10": [
     "ASTS"
-  ]
+  ],
+  "ew_on_demand_giveup::ASTS::2026-08-10": true
 }
