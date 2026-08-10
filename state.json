@@ -799,7 +799,7 @@
     "CBMioAFBVV95cUxObTJwQ2paRnBTdnBHb1hJNm14cVpwRlpLdm01WDJWTGZMX2pkaWRhR3NtVFJ4Qk84MnhEcDAtSzdGdmNmekpoSFloLTBrMTctc3BzSk9rdnJXTTExQkRBWlJzdTJGWUpVSFJwZ0tHbmc4UkxpQWhpbDlTZk53Rjh0RHhWQ3k0MXp1bmZ4Vjd5Sl9md29tdWEzdjRLeURhMW9n",
     "CBMiugFBVV95cUxQd1hWRjhqcXpyeVBqYUtjVXNydF9NMXBWVjJkWHVTcmxsVVBfWDdzNEI2b2xDaTRHQktjbC1xYllYem1RazJiamFmc1VNeWwwMHZiUzNWTDd5QTU5aGFSb2NxLTFzbTdlTUlCcFZFMUxtLWVMb0o4QVFlRFdiaXlSS3lZSGtIQi1YUExLUU9FVXY1YVBBQkFDTUhyY003Y05xb1NoUlFadFhuRmJfcWtxY2U3bzAwUmJuV0E"
   ],
-  "tg_update_offset": 785157168,
+  "tg_update_offset": 785157169,
   "price_ref::GENI": {
     "date": "2026-08-10",
     "max_step_up": 0,
@@ -834,5 +834,8 @@
     "date": "2026-08-10",
     "max_step_up": 0,
     "max_step_down": 0
-  }
+  },
+  "ew_on_demand::2026-08-10": [
+    "ASTS"
+  ]
 }
