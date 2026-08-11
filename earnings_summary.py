@@ -3,24 +3,31 @@ loop, used by both earnings_watch.py (your own holdings) and
 market_earnings_watch.py (market-wide top-cap / most-analyst-attention
 reporters). Same detection method and message format either way.
 
-Data-source caveats (worth knowing):
-  - "Beat/missed/met" is based on EPS vs. the analyst EPS estimate (from
-    Yahoo Finance), since a free, reliable analyst *revenue* estimate isn't
-    available. Revenue is still reported as an actual dollar figure with
-    QoQ/YoY change, just without an estimate to compare against.
-  - Revenue QoQ/YoY comes from Yahoo's quarterly income statement, which can
-    lag a few hours to a couple of days behind the initial EPS release --
-    if it hasn't updated yet, the summary says so and still sends the EPS
-    portion immediately rather than waiting.
+Data-source: Finnhub's /calendar/earnings endpoint (requires
+FINNHUB_API_KEY), queried per-symbol across a trailing window so we get both
+the target release and the prior quarters needed for QoQ/YoY comparisons.
+Finnhub populates epsActual/revenueActual as companies actually report, so a
+release is detected as soon as Finnhub has it -- this replaced an earlier
+version that checked Yahoo Finance's earnings-dates table, which could lag
+hours behind the real release (e.g. AST SpaceMobile's 2026-08-10 report was
+still missing from Yahoo's table well past our 3-hour poll window).
+
+"Beat/missed/met" is based on EPS vs. Finnhub's analyst EPS estimate.
+Revenue actual/QoQ/YoY also comes from Finnhub's calendar rows -- if a given
+quarter's row exists but revenueActual isn't populated yet, that comparison
+is just left out rather than blocking the EPS portion of the summary.
 """
 
 import math
 import time
 from datetime import datetime, timedelta
 
-import yfinance as yf
-
-from earnings_utils import now_et, POLL_INTERVAL_SECONDS, POLL_TIMEOUT_MINUTES
+from earnings_utils import (
+    now_et,
+    POLL_INTERVAL_SECONDS,
+    POLL_TIMEOUT_MINUTES,
+    fetch_earnings_history_finnhub,
+)
 from telegram_utils import send_telegram_message
 from state_utils import save_state
 
@@ -35,84 +42,65 @@ def _safe_float(x):
         return None
 
 
-def get_revenue_comparison(ticker: str, target_date) -> dict:
-    try:
-        qtr = yf.Ticker(ticker).quarterly_income_stmt
-    except Exception as e:
-        print(f"[{ticker}] quarterly_income_stmt failed: {e}")
-        return {}
-    if qtr is None or qtr.empty or "Total Revenue" not in qtr.index:
-        return {}
-
-    revenue_row = qtr.loc["Total Revenue"].dropna()
-    if revenue_row.empty:
-        return {}
-
-    cols_sorted = sorted(revenue_row.index, reverse=True)
-    latest_col = cols_sorted[0]
-    latest_col_date = latest_col.date() if hasattr(latest_col, "date") else latest_col
-
-    # If the most recent column in the statement isn't close to (and not
-    # after) the earnings date, the statement likely hasn't refreshed for
-    # this release yet -- flag as pending rather than showing stale data.
-    if latest_col_date > target_date or (target_date - latest_col_date).days > 100:
+def _revenue_comparison(rows: list[dict], match_pos: int) -> dict:
+    """Revenue actual/QoQ/YoY from Finnhub's calendar rows, mirroring the
+    EPS QoQ/YoY logic below (index+1 = prior quarter, index+4 = year ago,
+    since `rows` is one row per quarter sorted newest-first)."""
+    revenue_actual = _safe_float(rows[match_pos].get("revenueActual"))
+    if revenue_actual is None:
         return {"revenue_pending": True}
 
-    latest_revenue = float(revenue_row[latest_col])
-    result = {"revenue_actual": latest_revenue}
-
-    if len(cols_sorted) >= 2:
-        prev_q = float(revenue_row[cols_sorted[1]])
-        if prev_q:
-            result["revenue_qoq_pct"] = (latest_revenue - prev_q) / abs(prev_q) * 100
-    if len(cols_sorted) >= 5:
-        prev_y = float(revenue_row[cols_sorted[4]])
-        if prev_y:
-            result["revenue_yoy_pct"] = (latest_revenue - prev_y) / abs(prev_y) * 100
-
+    result = {"revenue_actual": revenue_actual}
+    if match_pos + 1 < len(rows):
+        prev_rev = _safe_float(rows[match_pos + 1].get("revenueActual"))
+        if prev_rev:
+            result["revenue_qoq_pct"] = (revenue_actual - prev_rev) / abs(prev_rev) * 100
+    if match_pos + 4 < len(rows):
+        prior_year_rev = _safe_float(rows[match_pos + 4].get("revenueActual"))
+        if prior_year_rev:
+            result["revenue_yoy_pct"] = (revenue_actual - prior_year_rev) / abs(prior_year_rev) * 100
     return result
 
 
 def get_earnings_release(ticker: str, target_date_str: str) -> dict | None:
     """Returns a summary dict once the release is detected, else None."""
-    try:
-        dates_df = yf.Ticker(ticker).get_earnings_dates(limit=12)
-    except Exception as e:
-        print(f"[{ticker}] get_earnings_dates failed: {e}")
-        return None
-    if dates_df is None or dates_df.empty:
+    target = datetime.strptime(target_date_str, "%Y-%m-%d").date()
+    from_date = (target - timedelta(days=730)).strftime("%Y-%m-%d")
+    rows = fetch_earnings_history_finnhub(ticker, from_date, target_date_str)
+    if not rows:
         return None
 
-    dates_df = dates_df.sort_index(ascending=False)
-    target = datetime.strptime(target_date_str, "%Y-%m-%d").date()
-    idx_list = list(dates_df.index)
+    # One row per quarter -- sort newest-first so index+1/+4 line up with
+    # "prior quarter" / "year ago" the same way the old yfinance version did.
+    rows = sorted(rows, key=lambda r: r.get("date") or "", reverse=True)
 
     match_pos = None
-    for i, idx in enumerate(idx_list):
-        idx_date = idx.date() if hasattr(idx, "date") else idx
-        if idx_date == target:
+    for i, row in enumerate(rows):
+        if row.get("date") == target_date_str:
             match_pos = i
             break
     if match_pos is None:
         return None
 
-    row = dates_df.iloc[match_pos]
-    reported_eps = _safe_float(row.get("Reported EPS"))
+    row = rows[match_pos]
+    reported_eps = _safe_float(row.get("epsActual"))
     if reported_eps is None:
         return None  # not released yet
 
-    eps_estimate = _safe_float(row.get("EPS Estimate"))
-    eps_surprise_pct = _safe_float(row.get("Surprise(%)"))
+    eps_estimate = _safe_float(row.get("epsEstimate"))
+    eps_surprise_pct = None
+    if eps_estimate:
+        eps_surprise_pct = (reported_eps - eps_estimate) / abs(eps_estimate) * 100
 
     eps_qoq_pct = None
-    if match_pos + 1 < len(idx_list):
-        prev_eps = _safe_float(dates_df.iloc[match_pos + 1].get("Reported EPS"))
+    if match_pos + 1 < len(rows):
+        prev_eps = _safe_float(rows[match_pos + 1].get("epsActual"))
         if prev_eps:
             eps_qoq_pct = (reported_eps - prev_eps) / abs(prev_eps) * 100
 
     eps_yoy_pct = None
-    if match_pos + 4 < len(idx_list):
-        prior_year_eps = _safe_float(dates_df.iloc[match_pos + 4].get("Reported EPS"))
+    if match_pos + 4 < len(rows):
+        prior_year_eps = _safe_float(rows[match_pos + 4].get("epsActual"))
         if prior_year_eps:
             eps_yoy_pct = (reported_eps - prior_year_eps) / abs(prior_year_eps) * 100
 
@@ -132,7 +120,7 @@ def get_earnings_release(ticker: str, target_date_str: str) -> dict | None:
         "eps_qoq_pct": eps_qoq_pct,
         "eps_yoy_pct": eps_yoy_pct,
         "beat_miss": beat_miss,
-        **get_revenue_comparison(ticker, target),
+        **_revenue_comparison(rows, match_pos),
     }
 
 
@@ -175,8 +163,8 @@ def build_summary_message(ticker: str, target_date: str, data: dict) -> str:
         lines.append("Revenue: unavailable")
 
     lines.append(
-        "_Beat/missed is based on EPS vs. estimate — a free revenue-estimate "
-        "source isn't reliably available, so revenue above is actual figures only._"
+        "_Beat/missed is based on EPS vs. estimate — revenue above is actual "
+        "figures only, without a revenue-estimate comparison._"
     )
     return "\n".join(lines)
 
