@@ -13,6 +13,13 @@ Two earnings-calendar sources, used for different jobs:
     given date and WHEN (bmo/amc/unsupplied): classify_holdings_for_date()
     below (used by earnings_watch.py), and telegram_commands.py's
     "earnings for X" not-reporting-today check.
+
+fetch_earnings_history_finnhub -- same Finnhub endpoint, filtered to one
+  symbol across a date range instead of one date across all symbols, which
+  also surfaces epsActual/revenueActual once Finnhub has them. Used by
+  earnings_summary.get_earnings_release() to actually detect a release --
+  switched from Yahoo Finance because Yahoo's earnings-dates table lagged
+  the real release by hours in practice.
 """
 
 import sys
@@ -148,6 +155,32 @@ def after_hours_snapshot(ticker: str, info: dict | None = None) -> str:
     if ah_price and ah_change_pct is not None:
         return f"AH: ${ah_price:.2f} ({ah_change_pct:+.1f}%) vs close ${reg_close:.2f}"
     return "after-hours data unavailable"
+
+
+def fetch_earnings_history_finnhub(ticker: str, from_date: str, to_date: str) -> list[dict]:
+    """Pull one symbol's earnings calendar rows (one per quarter) from
+    Finnhub across a date range, via the same /calendar/earnings endpoint as
+    fetch_earnings_calendar_finnhub but filtered to a single symbol so it
+    also returns actuals -- epsActual/revenueActual -- once Finnhub has
+    them, alongside epsEstimate/revenueEstimate. Used by
+    earnings_summary.get_earnings_release() to detect a release: Finnhub
+    populates these actual fields as companies report, with much less lag
+    than Yahoo Finance's earnings-dates table (which is what this replaced,
+    after Yahoo's data for AST SpaceMobile's 2026-08-10 release still hadn't
+    backfilled hours after the release). Returns [] if FINNHUB_API_KEY isn't
+    set or the request fails."""
+    if not FINNHUB_API_KEY:
+        print("FINNHUB_API_KEY not set; skipping Finnhub earnings history fetch.")
+        return []
+    url = "https://finnhub.io/api/v1/calendar/earnings"
+    params = {"from": from_date, "to": to_date, "symbol": ticker, "token": FINNHUB_API_KEY}
+    try:
+        resp = requests.get(url, params=params, timeout=20)
+        resp.raise_for_status()
+        return resp.json().get("earningsCalendar") or []
+    except Exception as e:
+        print(f"Finnhub earnings history fetch failed for {ticker}: {e}")
+        return []
 
 
 def classify_holdings_for_date(date_str: str, tickers: list[str]) -> dict:
