@@ -44,5 +44,24 @@ jobs:
           git config user.name "stock-agent-bot"
           git config user.email "actions@github.com"
           git add state.json
-          git diff --cached --quiet || git commit -m "Update alert state [skip ci]"
-          git push
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update alert state [skip ci]"
+          # This runs every ~5 min alongside telegram_commands.yml, which also
+          # pushes to main -- without retrying, whichever job loses the race
+          # gets its push rejected and its update is silently dropped. Retry
+          # with a rebase onto the latest main a few times before giving up.
+          for i in 1 2 3 4 5; do
+            if git push; then
+              echo "Push succeeded."
+              exit 0
+            fi
+            echo "Push rejected (attempt $i/5) -- fetching and rebasing before retry."
+            git fetch origin main
+            git rebase origin/main
+            sleep $(( (RANDOM % 5) + 1 ))
+          done
+          echo "Push failed after retries."
+          exit 1
