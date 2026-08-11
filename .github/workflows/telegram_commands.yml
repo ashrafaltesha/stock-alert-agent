@@ -33,10 +33,10 @@ jobs:
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
         run: python telegram_commands.py
 
-      - name: Commit updated tickers/holdings/state
+      - name: Commit updated tickers/holdings/watchlist/state
         run: |
           git config user.name "stock-agent-bot"
           git config user.email "actions@github.com"
-          git add tickers.json holdings.json state.json
-          git diff --cached --quiet || git commit -m "Update tickers/holdings/state via Telegram command [skip ci]"
+          git add tickers.json holdings.json watchlist.json state.json
+          git diff --cached --quiet || git commit -m "Update tickers/holdings/watchlist/state via Telegram command [skip ci]"
           git push
