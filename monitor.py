@@ -1,8 +1,13 @@
 """
 Runs every 5 minutes during market hours, and hourly the rest of the time
-(via two GitHub Actions cron schedules -- see .github/workflows/monitor.yml).
+(via two GitHub Actions cron schedules plus an external cron-job.org trigger
+that calls this workflow's workflow_dispatch every 5 minutes around the
+clock -- see .github/workflows/monitor.yml).
 
-For each ticker you own:
+Monitors the union of TICKERS (tickers.json, your held/watched-via-"my list"
+symbols) and WATCHLIST (watchlist.json, symbols you want price/news alerts
+on without owning them -- see "add TICKER to my watchlist" in
+telegram_commands.py) -- both get identical treatment below. For each:
   1. During market hours only: alerts whenever price is
      PRICE_CHANGE_THRESHOLD_PCT or more away from the PRIOR DAY'S CLOSE
      (not a moving checkpoint). E.g. with a 5% threshold: an alert fires
@@ -34,6 +39,7 @@ import yfinance as yf
 
 from config import (
     TICKERS,
+    WATCHLIST,
     PRICE_CHANGE_THRESHOLD_PCT,
     NEWS_LOOKBACK_MINUTES,
     MATERIAL_NEWS_KEYWORDS,
@@ -244,7 +250,10 @@ def main() -> None:
         print("Outside market hours: checking material news only.")
 
     state = load_state()
-    for ticker in TICKERS:
+    # Dedup in case a symbol is on both lists (e.g. you added it to your
+    # watchlist before buying it) -- avoids fetching/checking it twice.
+    monitored = sorted(set(TICKERS) | set(WATCHLIST))
+    for ticker in monitored:
         if market_open or force:
             check_price_moves(ticker, state)
         # News checks always run -- 5-min cadence during market hours,
