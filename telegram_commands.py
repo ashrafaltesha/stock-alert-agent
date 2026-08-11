@@ -1,17 +1,33 @@
 """Polls Telegram for new messages and processes natural-language commands
-for managing your watchlist (tickers.json), your position tracking
-(holdings.json), and on-demand earnings lookups.
+for managing your holdings list (tickers.json), a separate no-ownership
+watchlist (watchlist.json), your position tracking (holdings.json), and
+on-demand earnings lookups.
 
 Recognized commands (case-insensitive, a leading "$" on a ticker is
 optional):
   add <TICKER> to my list
   remove <TICKER> from my list
+  add <TICKER>[, <TICKER> ...] to my watchlist
+  remove <TICKER>[, <TICKER> ...] from my watchlist
+  watchlist
   added <NUMBER> shares of <TICKER> at <PRICE>
   sold <NUMBER> shares of <TICKER> at <PRICE>
   summary
   earnings today
   earnings for <TICKER>[, <TICKER> ...]
 
+"add ... to my watchlist" (comma/"and"-separated list of tickers accepted)
+adds symbols to watchlist.json -- a separate list from tickers.json/"my
+list", for stocks you want price and news alerts on WITHOUT owning them.
+Each symbol is validated the same way as "add TICKER to my list" (must
+have live market data). "remove ... from my watchlist" removes them.
+"watchlist" sends every symbol on that list with its current price and %
+move vs. yesterday's close. Watchlist symbols get the exact same 5%
+price-move alerting and material-news alerting as your holdings (see
+monitor.py), via the same cron-job.org-triggered polling -- they're just
+excluded from position tracking (holdings.json) and per-holding earnings
+reminders (earnings_watch.py), since those are specifically about things
+you own.
 "added ... at ..." recalculates your weighted-average book price per share
 for that ticker (existing shares/cost blended with the new lot), and adds
 the ticker to your watchlist automatically if it isn't already there.
@@ -80,6 +96,7 @@ from market_earnings_watch import select_top_reporters, format_list_line
 
 TICKERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tickers.json")
 HOLDINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "holdings.json")
+WATCHLIST_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "watchlist.json")
 
 # Portfolio-wide running totals stored as top-level scalar entries in
 # holdings.json, alongside the per-ticker {"shares", "avg_cost"} dicts.
@@ -105,6 +122,9 @@ SOLD_SHARES_RE = re.compile(
 SOLD_SHARES_NO_PRICE_RE = re.compile(
     rf"^\s*sold\s+({_NUM})\s+shares?\s+of\s+{_TICKER}\s*\.?\s*$", re.IGNORECASE
 )
+ADD_WATCHLIST_RE = re.compile(r"^\s*add\s+(.+?)\s+to\s+my\s+watchlist\.?\s*$", re.IGNORECASE)
+REMOVE_WATCHLIST_RE = re.compile(r"^\s*remove\s+(.+?)\s+from\s+my\s+watchlist\.?\s*$", re.IGNORECASE)
+WATCHLIST_RE = re.compile(r"^\s*watchlist\.?\s*$", re.IGNORECASE)
 SUMMARY_RE = re.compile(r"^\s*summary\s*\.?\s*$", re.IGNORECASE)
 EARNINGS_TODAY_RE = re.compile(r"^\s*earnings\s+today\.?\s*$", re.IGNORECASE)
 EARNINGS_FOR_RE = re.compile(r"^\s*earnings\s+for\s+(.+?)\.?\s*$", re.IGNORECASE)
@@ -139,6 +159,20 @@ def load_tickers() -> list[str]:
 def save_tickers(tickers: list[str]) -> None:
     with open(TICKERS_FILE, "w") as f:
         json.dump(tickers, f, indent=2)
+        f.write("\n")
+
+
+def load_watchlist() -> list[str]:
+    try:
+        with open(WATCHLIST_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def save_watchlist(watchlist: list[str]) -> None:
+    with open(WATCHLIST_FILE, "w") as f:
+        json.dump(watchlist, f, indent=2)
         f.write("\n")
 
 
@@ -330,6 +364,33 @@ def handle_earnings_for(raw: str, state: dict) -> None:
     )
 
 
+def handle_watchlist(watchlist: list[str]) -> None:
+    if not watchlist:
+        send_telegram_message(
+            'Your watchlist is empty. Add tickers with "add TICKER, TICKER to my watchlist".'
+        )
+        return
+
+    lines = ["\U0001F440 *Watchlist*"]
+    for ticker in sorted(watchlist):
+        try:
+            info = yf.Ticker(ticker).fast_info
+            price = info["last_price"]
+            prev_close = info["previous_close"]
+        except Exception:
+            price = None
+            prev_close = None
+
+        if price is not None and prev_close:
+            pct = (price - prev_close) / prev_close * 100
+            arrow = "\U0001F7E2" if pct >= 0 else "\U0001F534"
+            lines.append(f"*{ticker}*: {format_usd(price)} ({format_pct_signed(pct)} vs prev close) {arrow}")
+        else:
+            lines.append(f"*{ticker}*: price unavailable")
+
+    send_telegram_message("\n".join(lines))
+
+
 def check_on_demand_earnings(state: dict) -> bool:
     """Called on every run. Once it's on/after MARKET_EARNINGS_POLL_START_ET
     ET, checks any tickers requested today via "earnings for ..." once per
@@ -362,7 +423,7 @@ def check_on_demand_earnings(state: dict) -> bool:
             changed = True
         elif now >= deadline:
             send_telegram_message(
-                f"â ï¸ *{ticker}*: earnings still not detected as released after "
+                f"⚠️ *{ticker}*: earnings still not detected as released after "
                 f"~{EARNINGS_POLL_TIMEOUT_MINUTES} min of checking. It may be delayed -- worth a manual look."
             )
             state[giveup_key] = True
@@ -371,23 +432,29 @@ def check_on_demand_earnings(state: dict) -> bool:
     return changed
 
 
-def process_message(text: str, tickers: list[str], holdings: dict, state: dict) -> tuple[bool, bool]:
-    """Handles one message's text, mutating `tickers` and/or `holdings` in
-    place and sending a Telegram reply. Returns (tickers_changed,
-    holdings_changed)."""
+def process_message(
+    text: str, tickers: list[str], holdings: dict, watchlist: list[str], state: dict
+) -> tuple[bool, bool, bool]:
+    """Handles one message's text, mutating `tickers`, `holdings`, and/or
+    `watchlist` in place and sending a Telegram reply. Returns
+    (tickers_changed, holdings_changed, watchlist_changed)."""
 
     if SUMMARY_RE.match(text):
         send_summary(holdings)
-        return False, False
+        return False, False, False
+
+    if WATCHLIST_RE.match(text):
+        handle_watchlist(watchlist)
+        return False, False, False
 
     if EARNINGS_TODAY_RE.match(text):
         handle_earnings_today()
-        return False, False
+        return False, False, False
 
     earnings_for_match = EARNINGS_FOR_RE.match(text)
     if earnings_for_match:
         handle_earnings_for(earnings_for_match.group(1), state)
-        return False, False
+        return False, False, False
 
     add_shares_match = ADD_SHARES_RE.match(text)
     if add_shares_match:
@@ -397,7 +464,7 @@ def process_message(text: str, tickers: list[str], holdings: dict, state: dict) 
 
         if ticker in RESERVED_HOLDINGS_KEYS:
             send_telegram_message(f"*{ticker}* is a reserved name and can't be used as a ticker symbol.")
-            return False, False
+            return False, False, False
 
         tickers_changed = False
         if ticker not in tickers:
@@ -405,7 +472,7 @@ def process_message(text: str, tickers: list[str], holdings: dict, state: dict) 
                 send_telegram_message(
                     f"Couldn't find market data for *{ticker}* -- double-check the symbol and try again."
                 )
-                return False, False
+                return False, False, False
             tickers.append(ticker)
             tickers_changed = True
 
@@ -419,11 +486,11 @@ def process_message(text: str, tickers: list[str], holdings: dict, state: dict) 
 
         watch_note = " Also added it to your watchlist for price/news/earnings alerts." if tickers_changed else ""
         send_telegram_message(
-            f"â Added {qty:,.0f} shares of *{ticker}* at {format_usd(price)}.\n"
+            f"✅ Added {qty:,.0f} shares of *{ticker}* at {format_usd(price)}.\n"
             f"New position: {new_shares:,.0f} sh @ avg {format_usd(new_avg)} "
             f"(book {format_usd(new_shares * new_avg)}).{watch_note}"
         )
-        return tickers_changed, True
+        return tickers_changed, True, False
 
     sold_match = SOLD_SHARES_RE.match(text)
     if sold_match:
@@ -433,17 +500,17 @@ def process_message(text: str, tickers: list[str], holdings: dict, state: dict) 
 
         if ticker in RESERVED_HOLDINGS_KEYS:
             send_telegram_message(f"*{ticker}* is a reserved name and can't be used as a ticker symbol.")
-            return False, False
+            return False, False, False
 
         pos = holdings.get(ticker)
         if not isinstance(pos, dict) or pos.get("shares", 0) <= 0:
             send_telegram_message(f"You don't have a tracked position in *{ticker}* to sell from.")
-            return False, False
+            return False, False, False
         if qty > pos["shares"] + 1e-9:
             send_telegram_message(
                 f"You only have {pos['shares']:,.0f} shares of *{ticker}* on record -- can't sell {qty:,.0f}."
             )
-            return False, False
+            return False, False, False
 
         # Standard average-cost-basis accounting: selling doesn't change the
         # avg_cost of what's left. Proceeds and realized gain/loss (vs. that
@@ -469,7 +536,7 @@ def process_message(text: str, tickers: list[str], holdings: dict, state: dict) 
             f"Cash balance: {format_usd(holdings[CASH_KEY])}  |  "
             f"Total realized P&L: {format_usd_signed(holdings[REALIZED_PNL_KEY])}"
         )
-        return False, True
+        return False, True, False
 
     sold_no_price_match = SOLD_SHARES_NO_PRICE_RE.match(text)
     if sold_no_price_match:
@@ -477,37 +544,93 @@ def process_message(text: str, tickers: list[str], holdings: dict, state: dict) 
             'To track cash and realized P&L I need the sale price -- try '
             '"sold 100 shares of AAPL at 150".'
         )
-        return False, False
+        return False, False, False
 
     add_match = ADD_RE.match(text)
     if add_match:
         ticker = add_match.group(1).upper()
         if ticker in tickers:
             send_telegram_message(f"*{ticker}* is already on your list.")
-            return False, False
+            return False, False, False
         if not validate_ticker(ticker):
             send_telegram_message(
                 f"Couldn't find market data for *{ticker}* -- double-check the symbol and try again."
             )
-            return False, False
+            return False, False, False
         tickers.append(ticker)
         send_telegram_message(
-            f"â Added *{ticker}* to your holdings. You'll now get price/news "
+            f"✅ Added *{ticker}* to your holdings. You'll now get price/news "
             f"alerts and earnings reminders for it, same as your other tickers."
         )
-        return True, False
+        return True, False, False
 
     remove_match = REMOVE_RE.match(text)
     if remove_match:
         ticker = remove_match.group(1).upper()
         if ticker not in tickers:
             send_telegram_message(f"*{ticker}* isn't on your list.")
-            return False, False
+            return False, False, False
         tickers.remove(ticker)
         send_telegram_message(f"\U0001F5D1 Removed *{ticker}* from your watchlist.")
-        return True, False
+        return True, False, False
 
-    return False, False
+    add_watchlist_match = ADD_WATCHLIST_RE.match(text)
+    if add_watchlist_match:
+        requested = parse_ticker_list(add_watchlist_match.group(1))
+        if not requested:
+            send_telegram_message(
+                'Couldn\'t parse any tickers from that -- try "add AAPL, MSFT to my watchlist".'
+            )
+            return False, False, False
+
+        reserved = [t for t in requested if t in RESERVED_HOLDINGS_KEYS]
+        candidates = [t for t in requested if t not in RESERVED_HOLDINGS_KEYS]
+        already = [t for t in candidates if t in watchlist]
+        new_candidates = [t for t in candidates if t not in watchlist]
+
+        valid = [t for t in new_candidates if validate_ticker(t)]
+        invalid = [t for t in new_candidates if t not in valid]
+
+        for t in valid:
+            watchlist.append(t)
+
+        if reserved:
+            send_telegram_message(f"Reserved, can't be used as ticker symbols: {', '.join(reserved)}.")
+        if invalid:
+            send_telegram_message(
+                f"Couldn't find market data for: {', '.join(invalid)} -- double-check the symbol(s)."
+            )
+        if already:
+            send_telegram_message(f"Already on your watchlist: {', '.join(already)}.")
+        if valid:
+            send_telegram_message(
+                f"\U0001F440 Added {', '.join(valid)} to your watchlist -- you'll get 5% price-move "
+                f"and material-news alerts for {'it' if len(valid) == 1 else 'them'}, same as your holdings."
+            )
+        return False, False, bool(valid)
+
+    remove_watchlist_match = REMOVE_WATCHLIST_RE.match(text)
+    if remove_watchlist_match:
+        requested = parse_ticker_list(remove_watchlist_match.group(1))
+        if not requested:
+            send_telegram_message(
+                'Couldn\'t parse any tickers from that -- try "remove AAPL, MSFT from my watchlist".'
+            )
+            return False, False, False
+
+        present = [t for t in requested if t in watchlist]
+        missing = [t for t in requested if t not in watchlist]
+
+        for t in present:
+            watchlist.remove(t)
+
+        if missing:
+            send_telegram_message(f"Not on your watchlist: {', '.join(missing)}.")
+        if present:
+            send_telegram_message(f"\U0001F5D1 Removed {', '.join(present)} from your watchlist.")
+        return False, False, bool(present)
+
+    return False, False, False
 
 
 def main() -> None:
@@ -519,8 +642,10 @@ def main() -> None:
     offset = state.get("tg_update_offset")
     tickers = load_tickers()
     holdings = load_holdings()
+    watchlist = load_watchlist()
     tickers_changed = False
     holdings_changed = False
+    watchlist_changed = False
 
     updates = get_updates(offset)
     if updates:
@@ -537,9 +662,10 @@ def main() -> None:
                 continue
 
             text = message.get("text", "")
-            t_changed, h_changed = process_message(text, tickers, holdings, state)
+            t_changed, h_changed, w_changed = process_message(text, tickers, holdings, watchlist, state)
             tickers_changed = tickers_changed or t_changed
             holdings_changed = holdings_changed or h_changed
+            watchlist_changed = watchlist_changed or w_changed
     else:
         print("No new Telegram messages.")
 
@@ -553,6 +679,9 @@ def main() -> None:
     if holdings_changed:
         save_holdings(holdings)
         print(f"holdings.json updated: {holdings}")
+    if watchlist_changed:
+        save_watchlist(watchlist)
+        print(f"watchlist.json updated: {watchlist}")
 
     save_state(state)
 
