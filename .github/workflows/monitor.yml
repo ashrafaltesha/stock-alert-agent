@@ -17,6 +17,16 @@ on:
     - cron: "0 * * * *"
   workflow_dispatch: {}   # lets you trigger it manually from the Actions tab
 
+# Shared with telegram_commands.yml's concurrency group (same name there) so
+# GitHub queues one run behind the other instead of letting them race to
+# push to main at the same time. cancel-in-progress stays false so a queued
+# run still executes once the earlier one finishes, rather than being
+# dropped -- runs only take ~20-30s, so a queued run adds at most that much
+# delay.
+concurrency:
+  group: stock-alert-agent-repo-write
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -49,10 +59,9 @@ jobs:
             exit 0
           fi
           git commit -m "Update alert state [skip ci]"
-          # This runs every ~5 min alongside telegram_commands.yml, which also
-          # pushes to main -- without retrying, whichever job loses the race
-          # gets its push rejected and its update is silently dropped. Retry
-          # with a rebase onto the latest main a few times before giving up.
+          # Belt-and-suspenders: the concurrency group above should mean
+          # telegram_commands.yml is never running at the same time, so this
+          # loop should rarely if ever actually retry. Kept as a backstop.
           for i in 1 2 3 4 5; do
             if git push; then
               echo "Push succeeded."
