@@ -23,6 +23,29 @@ def _load_tickers() -> list[str]:
 
 TICKERS = _load_tickers()
 
+
+def _load_watchlist() -> list[str]:
+    """Tickers you want price/news alerts for even though you don't own
+    them -- kept in watchlist.json, separate from tickers.json (which backs
+    "add TICKER to my list" and gets auto-populated by "added ... shares of
+    TICKER at ..."). Text the bot "add TICKER, TICKER to my watchlist" or
+    "remove TICKER from my watchlist" to manage it, or "watchlist" to see
+    it -- see telegram_commands.py. monitor.py polls the union of TICKERS
+    and WATCHLIST for price/news alerts, so watchlist-only tickers get the
+    same 5% price-move alerting as your holdings; they're NOT included in
+    earnings_watch.py's per-holding earnings reminders, since those are
+    specifically about things you own."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "watchlist.json")
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Failed to load watchlist.json: {e}")
+        return []
+
+
+WATCHLIST = _load_watchlist()
+
 # Alert threshold: percent move away from the PRIOR DAY'S CLOSE that
 # triggers a price alert (the anchor never moves during the day). Alerts
 # fire on every threshold step reached in either direction (e.g. at 5%:
@@ -106,11 +129,11 @@ MARKET_EARNINGS_LIST_TIME_ET = "15:55"
 # after-close reporters release at/soon after the 4:00pm close).
 MARKET_EARNINGS_POLL_START_ET = "16:00"
 
-# Telegram credentials â supplied via GitHub Actions secrets, never hardcode here.
+# Telegram credentials — supplied via GitHub Actions secrets, never hardcode here.
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
-# Finnhub API key (free tier, finnhub.io/register) â supplied via GitHub
+# Finnhub API key (free tier, finnhub.io/register) — supplied via GitHub
 # Actions secrets, never hardcode here. Used for per-symbol earnings-date/
 # timing lookups (classify_holdings_for_date, and the "earnings for X"
 # not-reporting-today check), which don't need market cap. The market-wide
