@@ -1,3 +1,13 @@
-yfinance>=0.2.40
-requests>=2.31.0
-lxml>=4.9.0
+# Pinned deliberately. These are the exact versions CI was running on
+# 2026-08-12, verified working. The previous floating floors (yfinance
+# >=0.2.40) let pip pull whatever was newest on every run -- yfinance had
+# already drifted to 1.5.2, a major version past that floor, and its news
+# schema has changed across versions before (see check_yahoo_news in
+# monitor.py). A silent upstream release could break news parsing between
+# one run and the next with no code change on our side.
+#
+# To upgrade: bump one line, run monitor.yml manually, confirm price and
+# news alerts still arrive, then keep it.
+yfinance==1.5.2
+requests==2.34.2
+lxml==6.1.1
