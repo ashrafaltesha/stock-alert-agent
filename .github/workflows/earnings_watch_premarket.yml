@@ -2,18 +2,28 @@ name: Earnings pre-market watch
 
 on:
   schedule:
-    # 10:00 UTC covers just before 6:30am ET in both EST (11:30 UTC) and EDT
-    # (10:30 UTC). The script sleeps until the exact local 06:30 ET before
-    # it starts polling, then polls roughly once a minute until it detects
-    # the release or hits EARNINGS_POLL_TIMEOUT_MINUTES (config.py).
+    # Fires every 5 minutes across the pre-market window rather than once.
+    # The script no longer sleeps on the runner: runs before
+    # EARNINGS_BMO_POLL_START_ET (06:30 ET) exit immediately, and from then
+    # on each run makes a single detection pass, with progress kept in
+    # state.json. 10:00-14:55 UTC spans 06:00-10:55 ET in EDT and
+    # 05:00-09:55 ET in EST, so the 06:30 ET start and the following
+    # EARNINGS_POLL_TIMEOUT_MINUTES window are covered year-round.
     # Weekdays only -- before-market-open earnings don't land on weekends.
-    - cron: "0 10 * * 1-5"
+    - cron: "*/5 10-14 * * 1-5"
   workflow_dispatch:
     inputs:
       test_mode:
-        description: "Run in --test mode (skips sleeping, short poll timeout)"
+        description: "Run in --test mode (skips the window guard, short poll timeout)"
         type: boolean
         default: false
+
+# Shared with monitor.yml and telegram_commands.yml. Safe to join now that
+# this job finishes in seconds instead of sleeping for hours -- while it
+# held a runner it would have blocked the one-minute pollers behind it.
+concurrency:
+  group: stock-alert-agent-repo-write
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -21,10 +31,7 @@ permissions:
 jobs:
   premarket-watch:
     runs-on: ubuntu-latest
-    # Sleep-to-06:30 (~1.5h worst case) + up to EARNINGS_POLL_TIMEOUT_MINUTES
-    # (default 180) of polling + buffer. Stays comfortably under GitHub's
-    # 360-minute hard cap for hosted runners.
-    timeout-minutes: 300
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -52,5 +59,20 @@ jobs:
           git config user.name "stock-agent-bot"
           git config user.email "actions@github.com"
           git add state.json
-          git diff --cached --quiet || git commit -m "Update alert state [skip ci]"
-          git push
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update earnings watch state [skip ci]"
+          for i in 1 2 3 4 5; do
+            if git push; then
+              echo "Push succeeded."
+              exit 0
+            fi
+            echo "Push rejected (attempt $i/5) -- fetching and rebasing before retry."
+            git fetch origin main
+            git rebase origin/main
+            sleep $(( (RANDOM % 5) + 1 ))
+          done
+          echo "Push failed after retries."
+          exit 1
