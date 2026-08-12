@@ -53,7 +53,7 @@ daily 3:55pm send, this is fully on-demand now.
 Finnhub's earnings calendar for today -- any ticker NOT reporting today
 gets an immediate reply saying so instead of being queued (so you don't
 wait hours only to be told "still not detected"). Whatever's left gets
-queued to be polled starting at MARKET_EARNINGS_POLL_START_ET ET that
+queued and watched on SEC EDGAR from that moment on that
 same day (or immediately, if that time has already passed) -- a
 beat/miss summary is sent as soon as each release is detected, using the
 same detection method as earnings_watch.py. Polling continues across
@@ -85,14 +85,14 @@ import yfinance as yf
 from config import (
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CHAT_ID,
-    MARKET_EARNINGS_POLL_START_ET,
-    EARNINGS_POLL_TIMEOUT_MINUTES,
+    ON_DEMAND_GIVEUP_ET,
 )
-from telegram_utils import send_telegram_message
+from telegram_utils import send_telegram_message, escape_markdown
 from state_utils import load_state, save_state
 from earnings_utils import now_et, date_str_et, fetch_earnings_calendar_finnhub
 from earnings_summary import get_earnings_release, build_summary_message
 from market_earnings_watch import select_top_reporters, format_list_line
+from edgar_utils import get_earnings_release_edgar
 
 TICKERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tickers.json")
 HOLDINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "holdings.json")
@@ -358,9 +358,8 @@ def handle_earnings_for(raw: str, state: dict) -> None:
     state[key] = sorted(existing)
 
     send_telegram_message(
-        f"\U0001F514 Got it -- I'll start checking for earnings from {', '.join(to_queue)} "
-        f"starting at {MARKET_EARNINGS_POLL_START_ET} ET today, and text you a summary as soon "
-        f"as each is released."
+        f"\U0001F514 Got it -- I'll watch SEC EDGAR for earnings from {', '.join(to_queue)} "
+        f"and text you a summary as soon as each results filing appears."
     )
 
 
@@ -392,39 +391,54 @@ def handle_watchlist(watchlist: list[str]) -> None:
 
 
 def check_on_demand_earnings(state: dict) -> bool:
-    """Called on every run. Once it's on/after MARKET_EARNINGS_POLL_START_ET
-    ET, checks any tickers requested today via "earnings for ..." once per
-    run -- sending a summary the moment a release is detected, and a
-    one-time give-up notice after EARNINGS_POLL_TIMEOUT_MINUTES past the
-    poll-start time. Returns whether state was mutated."""
-    now = now_et()
-    today = date_str_et(0)
-    hh, mm = (int(p) for p in MARKET_EARNINGS_POLL_START_ET.split(":"))
-    poll_start = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
-    if now < poll_start:
-        return False
+    """Called on every run. Polls SEC EDGAR for any tickers requested today
+    via "earnings for ...", sending a summary the moment the results filing
+    appears. Returns whether state was mutated.
 
+    EDGAR is the only detection source here. Finnhub's calendar is still used
+    up front to confirm a ticker reports today, but its epsActual field is no
+    longer what we wait on -- on 2026-08-12 CBRS filed its 8-K within minutes
+    of the close while Finnhub stayed empty for hours, so no alert went out.
+    An 8-K under Item 2.02 IS the earnings release.
+
+    There is deliberately no poll-start gate. EDGAR only returns the filing
+    once it exists, so checking from the moment of the request costs nothing
+    and also covers before-market-open reporters -- the old 16:00 ET gate
+    meant a BMO name was not looked at until hours after it went public.
+    """
+    today = date_str_et(0)
     key = f"ew_on_demand::{today}"
     requested = state.get(key, [])
     if not requested:
         return False
 
-    deadline = poll_start + timedelta(minutes=EARNINGS_POLL_TIMEOUT_MINUTES)
+    now = now_et()
+    hh, mm = (int(p) for p in ON_DEMAND_GIVEUP_ET.split(":"))
+    giveup_after = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+
     changed = False
     for ticker in requested:
         sent_key = f"ew_summary_sent::{ticker}::{today}"
         giveup_key = f"ew_on_demand_giveup::{ticker}::{today}"
         if state.get(sent_key) or state.get(giveup_key):
             continue
-        data = get_earnings_release(ticker, today)
-        if data:
-            send_telegram_message(build_summary_message(ticker, today, data))
+
+        print(f"[{ticker}] checking EDGAR for a results filing dated {today}...")
+        release = get_earnings_release_edgar(ticker, today, state)
+        if release:
+            send_telegram_message(
+                f"\U0001F4CA *{ticker} earnings are out* "
+                f"(filed {release['form']} with the SEC)\n\n"
+                f"{escape_markdown(release['summary'])}\n\n"
+                f"{release['url']}"
+            )
             state[sent_key] = True
             changed = True
-        elif now >= deadline:
+        elif now >= giveup_after:
             send_telegram_message(
-                f"⚠️ *{ticker}*: earnings still not detected as released after "
-                f"~{EARNINGS_POLL_TIMEOUT_MINUTES} min of checking. It may be delayed -- worth a manual look."
+                f"\u26A0\uFE0F *{ticker}*: no results filing showed up on EDGAR today. "
+                f"It may have been delayed, or the company may not file with the SEC "
+                f"-- worth a manual look."
             )
             state[giveup_key] = True
             changed = True
