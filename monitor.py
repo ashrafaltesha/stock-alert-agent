@@ -29,6 +29,7 @@ the repo.
 """
 
 import difflib
+import hashlib
 import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -46,8 +47,9 @@ from config import (
     MATERIAL_NEWS_KEYWORDS,
 )
 from market_hours import is_market_hours
-from telegram_utils import send_telegram_message
+from telegram_utils import send_telegram_message, escape_markdown
 from state_utils import load_state, save_state
+from http_utils import get_with_retry, call_with_retry
 
 GOOGLE_NEWS_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 
@@ -79,11 +81,13 @@ def check_price_moves(ticker: str, state: dict) -> None:
     today = today_str()
 
     try:
-        info = yf.Ticker(ticker).fast_info
+        info = call_with_retry(
+            lambda: yf.Ticker(ticker).fast_info, label=f"{ticker} price"
+        )
         last_price = info["last_price"]
         prev_close = info["previous_close"]
     except Exception as e:
-        print(f"[{ticker}] price fetch failed: {e}")
+        print(f"[{ticker}] price fetch failed after retries: {e}")
         return
 
     if not prev_close:
@@ -128,6 +132,86 @@ def check_price_moves(ticker: str, state: dict) -> None:
     }
 
 
+_NEWS_ID_SCHEME = "sha1-16"
+
+
+def _article_key(raw) -> str:
+    """Short, stable dedup key for a news article.
+
+    Google News guids run roughly 270 characters each, and with 100 kept
+    per ticker per source they came to dominate state.json (which had
+    grown past 190KB). A truncated hash dedups exactly as well at a small
+    fraction of the size.
+    """
+    return hashlib.sha1(str(raw).encode("utf-8", "replace")).hexdigest()[:16]
+
+
+def _migrate_news_ids(state: dict) -> None:
+    """One-time conversion of previously stored raw article ids to hashes.
+
+    Without this, every already-seen article would look new on the first
+    run after deploy and re-alert. Runs once and records the scheme in
+    state so it never repeats.
+    """
+    if state.get("news_id_scheme") == _NEWS_ID_SCHEME:
+        return
+    converted = 0
+    for key in list(state.keys()):
+        if not (key.startswith("seen_news::") or key.startswith("seen_news_google::")):
+            continue
+        new_ids = []
+        for value in state.get(key) or []:
+            text = str(value)
+            # Entries already in the new form are 16 lowercase hex chars.
+            if len(text) == 16 and all(c in "0123456789abcdef" for c in text):
+                new_ids.append(text)
+            else:
+                new_ids.append(_article_key(text))
+                converted += 1
+        state[key] = new_ids
+    state["news_id_scheme"] = _NEWS_ID_SCHEME
+    print(f"Migrated {converted} stored news ids to {_NEWS_ID_SCHEME} hashes.")
+
+
+def _company_name(ticker: str, state: dict) -> str:
+    """Resolve and cache a ticker's company name.
+
+    Cached in state indefinitely: names change very rarely and the
+    yfinance .info call behind this is slow, so we must not repeat it on
+    every one-minute run. Delete the cached key to force a re-resolve.
+    """
+    key = f"company_name::{ticker}"
+    if key in state:
+        return state[key] or ""
+    name = ""
+    try:
+        info = call_with_retry(lambda: yf.Ticker(ticker).info, label=f"{ticker} info") or {}
+        name = (info.get("shortName") or info.get("longName") or "").strip()
+    except Exception as e:
+        print(f"[{ticker}] company-name lookup failed: {e}")
+    # Cache even an empty result so a persistently failing lookup doesn't
+    # re-run every minute.
+    state[key] = name
+    if name:
+        print(f"[{ticker}] resolved company name: {name}")
+    return name
+
+
+def _news_query(ticker: str, state: dict) -> str:
+    """Build the Google News search query for a ticker.
+
+    Searching "TICKER stock" is badly ambiguous when the ticker is an
+    ordinary English word -- FOUR, WOLF, APP -- and pulled in a lot of
+    unrelated articles. Where the company name resolves we search that as
+    a quoted phrase instead, which is far more precise. Falls back to the
+    old form when the name isn't available.
+    """
+    name = _company_name(ticker, state)
+    if name:
+        return f'"{name}"'
+    return f"{ticker} stock"
+
+
 def _is_duplicate_headline(title: str, recent_titles: list, threshold: float = 0.82) -> bool:
     """True if `title` closely matches something already alerted for this
     ticker from either news source -- Yahoo's own feed and Google News RSS
@@ -153,15 +237,17 @@ def check_yahoo_news(ticker: str, state: dict) -> None:
     now = datetime.now(timezone.utc)
 
     try:
-        articles = yf.Ticker(ticker).news or []
+        articles = call_with_retry(
+            lambda: yf.Ticker(ticker).news, label=f"{ticker} yahoo-news"
+        ) or []
     except Exception as e:
-        print(f"[{ticker}] news fetch failed: {e}")
+        print(f"[{ticker}] news fetch failed after retries: {e}")
         return
 
     new_ids = list(seen_ids)
     for art in articles:
         content = art.get("content", art)  # yfinance news schema has varied over versions
-        article_id = str(content.get("id") or art.get("uuid") or content.get("title"))
+        article_id = _article_key(content.get("id") or art.get("uuid") or content.get("title"))
         if article_id in seen_ids:
             continue
 
@@ -198,9 +284,9 @@ def check_yahoo_news(ticker: str, state: dict) -> None:
             publisher = content.get("provider", {}).get("displayName", "") if isinstance(
                 content.get("provider"), dict
             ) else content.get("publisher", "")
-            msg = f"\U0001F4F0 *{ticker} news*: {title}"
+            msg = f"\U0001F4F0 *{ticker} news*: {escape_markdown(title)}"
             if publisher:
-                msg += f"\n_{publisher}_"
+                msg += f"\n_{escape_markdown(publisher)}_"
             if link:
                 msg += f"\n{link}"
             send_telegram_message(msg)
@@ -218,22 +304,25 @@ def check_google_news(ticker: str, state: dict) -> None:
     seen_ids = set(state.get(key, []))
     now = datetime.now(timezone.utc)
 
-    query = quote(f"{ticker} stock")
+    query = quote(_news_query(ticker, state))
     url = f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
 
+    resp = get_with_retry(url, headers=GOOGLE_NEWS_HEADERS, timeout=15,
+                          label=f"{ticker} google-news")
+    if resp is None:
+        print(f"[{ticker}] Google News unavailable this run -- skipping.")
+        return
     try:
-        resp = requests.get(url, headers=GOOGLE_NEWS_HEADERS, timeout=15)
         resp.raise_for_status()
         root = ET.fromstring(resp.content)
         items = root.findall("./channel/item")
     except Exception as e:
-        print(f"[{ticker}] Google News fetch failed: {e}")
+        print(f"[{ticker}] Google News parse failed: {e}")
         return
-
     new_ids = list(seen_ids)
     for item in items:
         guid = item.findtext("guid") or item.findtext("link") or item.findtext("title")
-        article_id = str(guid)
+        article_id = _article_key(guid)
         if article_id in seen_ids:
             continue
 
@@ -255,9 +344,9 @@ def check_google_news(ticker: str, state: dict) -> None:
             link = item.findtext("link") or ""
             source_el = item.find("source")
             publisher = source_el.text if source_el is not None else "Google News"
-            msg = f"\U0001F4F0 *{ticker} news*: {title}"
+            msg = f"\U0001F4F0 *{ticker} news*: {escape_markdown(title)}"
             if publisher:
-                msg += f"\n_{publisher}_"
+                msg += f"\n_{escape_markdown(publisher)}_"
             if link:
                 msg += f"\n{link}"
             send_telegram_message(msg)
@@ -276,6 +365,7 @@ def main() -> None:
         print("Outside market hours: checking material news only.")
 
     state = load_state()
+    _migrate_news_ids(state)
     # Dedup in case a symbol is on both lists (e.g. you added it to your
     # watchlist before buying it) -- avoids fetching/checking it twice.
     monitored = sorted(set(TICKERS) | set(WATCHLIST))
