@@ -1,15 +1,15 @@
 {
   "seen_news::GENI": [
-    "9d5a30c14a397271",
     "99b9259dd9b5c5b4",
+    "e34a1a325264b9db",
     "2cb4576aaa999299",
     "bd520dea1f68b62a",
+    "1013ef1810a2097f",
     "fd64e574a38329b5",
     "cc0b102212df3527",
-    "1013ef1810a2097f",
+    "9d5a30c14a397271",
     "c991ceeb790b10a2",
-    "f252a64211bb835f",
-    "e34a1a325264b9db"
+    "f252a64211bb835f"
   ],
   "seen_news_google::GENI": [
     "5dde5ee6ae1e6656",
@@ -114,19 +114,19 @@
     "f98a34da106bc06c"
   ],
   "seen_news::EVH": [
+    "4a7033d299139a7c",
     "914042d3ace10a95",
-    "fc41879f3bdd796d",
-    "59bd2e8a24fbe21f",
     "94c71a0088dff591",
+    "81d201235cdba7d7",
     "5c02e02ea5a6dc15",
     "9884e6b564d0703a",
-    "f6832b4b7068f7f8",
     "0bd15bfa6033fdc8",
+    "fc41879f3bdd796d",
+    "59bd2e8a24fbe21f",
     "c7ecf73fdca04db3",
-    "257ccb76f1b008b9",
-    "4a7033d299139a7c",
     "46dcc8cbd79fdf06",
-    "81d201235cdba7d7"
+    "f6832b4b7068f7f8",
+    "257ccb76f1b008b9"
   ],
   "seen_news_google::EVH": [
     "cf76c3cfeec8415f",
@@ -231,18 +231,18 @@
     "f8fa1b657a95cef9"
   ],
   "seen_news::XPEV": [
-    "8ea5c09f481fb8f8",
-    "e6a80133259205dc",
-    "4f29848a1b4ac6eb",
-    "f9b3531ccc871e4c",
-    "a0f279b990ab9675",
-    "7206492152bb81e3",
-    "8676d51bee08e1e3",
-    "e095101946b1a8c6",
     "d0abbc374991c7bc",
     "167115bc63dc7d1a",
+    "8ea5c09f481fb8f8",
+    "e6a80133259205dc",
+    "a0f279b990ab9675",
+    "4f29848a1b4ac6eb",
+    "7206492152bb81e3",
     "fe76ea6b819c3ede",
-    "ffd1a154d4906852"
+    "ffd1a154d4906852",
+    "8676d51bee08e1e3",
+    "e095101946b1a8c6",
+    "f9b3531ccc871e4c"
   ],
   "seen_news_google::XPEV": [
     "c58c4b3aea112b4c",
@@ -347,16 +347,16 @@
     "be301af9cb2039ad"
   ],
   "seen_news::QURE": [
+    "67c4f615a9013903",
+    "5f008d639261f766",
     "59329a4c5d180878",
     "e73ef021c53195e3",
-    "da4f63f9388ed07b",
-    "67c4f615a9013903",
-    "55d5c4e69e65207b",
     "6d127e61cb9eca28",
     "00099ffe5e8d91de",
+    "55d5c4e69e65207b",
     "e01ecc742a0e16d2",
-    "ead073ea88ee1fad",
-    "5f008d639261f766"
+    "da4f63f9388ed07b",
+    "ead073ea88ee1fad"
   ],
   "seen_news_google::QURE": [
     "ac7f1d04dae4790b",
@@ -461,16 +461,16 @@
     "bb0a8154bc75cb00"
   ],
   "seen_news::UAVS": [
-    "59ad33df66b84a40",
-    "43926fb77f4c0d03",
-    "958e628354149276",
-    "3a4dce7013418921",
-    "e48d3267dad1dc5d",
     "0d8b2877fd199365",
-    "011bb0408d9846eb",
+    "958e628354149276",
+    "43926fb77f4c0d03",
     "c95170d9b6feb5e9",
+    "43a6c2279f3b449d",
+    "3a4dce7013418921",
     "60ef3548b9d78bcd",
-    "43a6c2279f3b449d"
+    "011bb0408d9846eb",
+    "59ad33df66b84a40",
+    "e48d3267dad1dc5d"
   ],
   "seen_news_google::UAVS": [
     "f6347ff2c2183daf",
@@ -575,17 +575,17 @@
     "d609ddfbc7d8bd55"
   ],
   "seen_news::WOLF": [
-    "b7619a8bd64d9d1a",
     "8b2cc67804dea228",
-    "d58172086a35513d",
-    "67fb4b5cda0d4eb7",
-    "741af872f959bddd",
     "17c1dbf21bbcdfce",
-    "6668d013b92fa7d0",
     "1fabe377303b48c0",
-    "4c5876add107e613",
     "a73690a6225973c1",
-    "fdae74b856108951"
+    "fdae74b856108951",
+    "b7619a8bd64d9d1a",
+    "d58172086a35513d",
+    "6668d013b92fa7d0",
+    "4c5876add107e613",
+    "67fb4b5cda0d4eb7",
+    "741af872f959bddd"
   ],
   "seen_news_google::WOLF": [
     "c44a3d4c7e988bc8",
@@ -690,20 +690,20 @@
     "4695bf3077a0e736"
   ],
   "seen_news::FOUR": [
-    "a66ba44b0f1d3a1b",
-    "158368a30b3304bc",
-    "365cf9ced170530b",
-    "5b01e34f60a1d9d2",
-    "71c28cb6767caece",
-    "b71bd80931d10cf7",
-    "33bfe79b495beacd",
-    "084fa3ef89c76305",
-    "3931b4372bcab285",
-    "3a885d16c9cfc5e6",
     "150f420b829dff6c",
     "ece87d95cdd4873f",
+    "3a885d16c9cfc5e6",
     "c2fc7d7442f6c103",
-    "72efb19b2192baa1"
+    "71c28cb6767caece",
+    "3931b4372bcab285",
+    "33bfe79b495beacd",
+    "5b01e34f60a1d9d2",
+    "365cf9ced170530b",
+    "b71bd80931d10cf7",
+    "72efb19b2192baa1",
+    "a66ba44b0f1d3a1b",
+    "158368a30b3304bc",
+    "084fa3ef89c76305"
   ],
   "seen_news_google::FOUR": [
     "2ab77cfc4ffc9769",
@@ -848,28 +848,28 @@
   ],
   "ew_on_demand_giveup::ASTS::2026-08-10": true,
   "seen_news::APP": [
-    "e04ed0f93d4d3e24",
-    "ee6f6e6d456b2c65",
-    "eef9877e06577b10",
-    "7371634f26ee98dd",
     "675c538f696b6931",
-    "dec43680ec0c3f37",
-    "7c98140d8d3dfaec",
-    "8dd7fea114d898bd",
-    "9cc712faebf4fec5",
-    "5742f783c5f60b02",
-    "8a947094f1814e9d",
-    "266127944a1596d8",
-    "35dee8593fc9af21",
-    "f5989dc2a74b087b",
-    "e13dca142c8d48da",
+    "ee6f6e6d456b2c65",
     "121f1c360ec2f81a",
     "bdc1dea109c4a8ae",
+    "35dee8593fc9af21",
+    "eef9877e06577b10",
+    "8a947094f1814e9d",
+    "7371634f26ee98dd",
     "ddd15a3aa6179183",
+    "7c98140d8d3dfaec",
+    "f5989dc2a74b087b",
     "7529f88afc1ce6fd",
+    "73d5a74fd6d5b7aa",
+    "8dd7fea114d898bd",
+    "266127944a1596d8",
+    "e04ed0f93d4d3e24",
+    "5742f783c5f60b02",
     "4f51b72372de8039",
-    "42dc8376f3c1654b",
-    "73d5a74fd6d5b7aa"
+    "e13dca142c8d48da",
+    "9cc712faebf4fec5",
+    "dec43680ec0c3f37",
+    "42dc8376f3c1654b"
   ],
   "seen_news_google::APP": [
     "14c1c305547da9b5",
