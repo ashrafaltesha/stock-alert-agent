@@ -1,15 +1,15 @@
 {
   "seen_news::GENI": [
-    "07a7dce1-de14-3b58-aab5-7d6fb4bbe4a1",
+    "9fe2a34b-8c38-39ee-b29f-e961730e9071",
+    "f36e3c04-467f-3fed-878f-1454a67c7a0b",
+    "699b3e64-01a8-3ea8-a448-737060da715b",
     "63f43ec1-f3d1-32ee-929d-98d926cac499",
     "492a5c01-db82-3d30-9904-5ee8673558c8",
     "a2b88b54-6432-315b-8335-7d9670c9d3e3",
-    "f36e3c04-467f-3fed-878f-1454a67c7a0b",
-    "5afcd449-cff6-35f6-a68d-0b88ae649798",
+    "07a7dce1-de14-3b58-aab5-7d6fb4bbe4a1",
     "6544e232-e6e4-373a-8230-c56a69e9db0c",
-    "7818e73c-642c-3cd2-a267-8254c622edd5",
-    "699b3e64-01a8-3ea8-a448-737060da715b",
-    "9fe2a34b-8c38-39ee-b29f-e961730e9071"
+    "5afcd449-cff6-35f6-a68d-0b88ae649798",
+    "7818e73c-642c-3cd2-a267-8254c622edd5"
   ],
   "seen_news_google::GENI": [
     "CBMilwFBVV95cUxPY2RzTlRSOUZQNk5oQ2RSRWlXZHlhVVhvbFpqR1FyMXBiVFZ2RXhrbHZXRlptcWdTVDJaemdVQV9ReE01RWFyTEdhOGhrdlFmQ0FpQVh1OTMtYkJ3MzNLenI3WHBSbi0tSzJ6QjVlemxYeEg4cnlFejRDYWVEUnpaWG5Vc1YwLUtXdEpOd1ZOWUFjSjlfMXZJ",
@@ -114,19 +114,19 @@
     "CBMiogFBVV95cUxPLXc3TW9OWE1HNFJ1bm5fb1pDMTNLQW5Wa2VoZW92R2xzRjVVRmlBNGNZdFRXOWotRDFqcklKYWRMNl9sd1lYellCQXpTSFZlNjJ3RGtFYWxxZkN1dU52LVphRmNFRm55NlRFTmxXbEVISDRQN09iem1yR2c5OTN2Q05EOG1YWEthRHZxZmhiYjRzc1NmY0lOQnNCQ2MtbmlLR0E"
   ],
   "seen_news::EVH": [
-    "24f16baa-2531-3b83-9933-33b4d4e54948",
-    "d8c56653-793c-3f6f-9093-e628d60edbee",
-    "34ebe6b0-669b-352a-af03-9ecc0e5bab20",
-    "27230b69-4885-3836-b66f-43c44aa98de9",
+    "4fab365e-c270-3907-b47d-a9b83a47ba1b",
     "25d1d549-1ac1-3c45-aadd-4cf347ba52c7",
-    "f24756fb-fc43-30db-b0c9-c6b9ba80f4ab",
     "1f7004a9-d811-37b4-8b9c-032376fa465c",
     "779205bc-dd5f-3195-b4aa-47569c110849",
-    "231a50e9-4de5-3022-a123-bf81d3d375f7",
-    "55805d04-cb41-3395-b5e0-ca4a1a111e6c",
+    "e7608876-9fc5-322f-8e09-b49f13da5147",
     "99e3a3b2-2cd7-3126-b94a-9d1f91558b91",
-    "4fab365e-c270-3907-b47d-a9b83a47ba1b",
-    "e7608876-9fc5-322f-8e09-b49f13da5147"
+    "27230b69-4885-3836-b66f-43c44aa98de9",
+    "231a50e9-4de5-3022-a123-bf81d3d375f7",
+    "34ebe6b0-669b-352a-af03-9ecc0e5bab20",
+    "f24756fb-fc43-30db-b0c9-c6b9ba80f4ab",
+    "24f16baa-2531-3b83-9933-33b4d4e54948",
+    "55805d04-cb41-3395-b5e0-ca4a1a111e6c",
+    "d8c56653-793c-3f6f-9093-e628d60edbee"
   ],
   "seen_news_google::EVH": [
     "CBMitwFBVV95cUxOZWkxNjhpNE9ENFN0MXpkdmlJdE5wRUlRcVFabHVmTXJoSTBMdVZBTEdCMC03WFR0RmJSMml3RHpHcU0wVlVmWGZKNWJVOVdWTkNpanptUEI0MWRGVFNJa2JVWEtsakxlS3I0ZHFycWwtZGFWWERaekhLQUQtZV9iNWlRd0xXTS1TMjQ3R3Z6RXFmVzk3Y01LZUhXcUVvUXc3bTFqSElaNkd3b1BsV2VfdXBaVUh4Yjg",
@@ -231,17 +231,17 @@
     "CBMihwJBVV95cUxNYmFJbWpwMkFxZWpGWjhEZWoxRG45SFU2YWgzSFJ0T0toRHgzT1Q2eERYN0JDUG5aN1Jjb2VsSENyZnlFeEk3MmF4UWZlWE02MkduNFpLUTNSMy1XWnJfckk5VXNHNXFNd1d2a3pXR0YwSFJBV1kxN20zZHVQdHF2OEg5SWhtamRxWGpxaGtZLVR1QXNkYU1aaWtYRFhZcGdCekdtd2UxZDVhX0R3NU5WeWFuTF9TYjcyWkFCaDd4cnhZdzF4aUFhZUxjMnN5YjFLYmZ2eEVLU283azRCT2pMcWJGeEY1ckg0cF9oYXZ5bWJjTWJseEo4V0V4ZllxMWhGVXZWc3NTMA"
   ],
   "seen_news::XPEV": [
-    "5063110c-2384-3d45-af20-8240f77abcc8",
-    "7189b267-d9c5-3f18-add9-935b34021deb",
-    "84eec8e6-61a4-3d54-beef-752fd220e95e",
+    "6e9c6711-f5c6-34a0-b0d2-51b463a59d14",
+    "26d4993f-91fa-3b07-a1be-d3e6e71638f7",
+    "5322095c-5de4-3adf-aa8a-7da28bc840d1",
+    "eefd0b89-ef56-3383-84ec-d28dfd87077b",
     "e62231de-b8bc-3e1e-afb7-faf629e403bd",
     "3d1b8ee4-65c7-3bcb-93e0-a65aff2bae5e",
-    "9aa1c048-0c0d-3586-807f-39915e32ae76",
-    "eefd0b89-ef56-3383-84ec-d28dfd87077b",
-    "6e9c6711-f5c6-34a0-b0d2-51b463a59d14",
     "5feaa9e4-8d13-36f5-92bf-d4126405e6b3",
-    "5322095c-5de4-3adf-aa8a-7da28bc840d1",
-    "26d4993f-91fa-3b07-a1be-d3e6e71638f7"
+    "9aa1c048-0c0d-3586-807f-39915e32ae76",
+    "84eec8e6-61a4-3d54-beef-752fd220e95e",
+    "5063110c-2384-3d45-af20-8240f77abcc8",
+    "7189b267-d9c5-3f18-add9-935b34021deb"
   ],
   "seen_news_google::XPEV": [
     "CBMiwwFBVV95cUxPOThzMWRSVjRkaEN6Y2VoZWZRMlhHV1Q2RUtsWTRzdEYzRFNNa2ZuOTJ4aG1ZRHd0aXFIaW5nYi1XODFnYnZLR2UxQ2FuNTR2MHVOdlVnR1VYSlg2UVdSTjhnOXlzUGJQZHNFSGlzaldPdjNJUVJGUThHRTQtVW1IVFdobUpGcjRaRXc0UFFoUGJnWTVPNzB3UlVoeXJkZE92OWRUanYwMVdmYk5YWl9oSE1IX1FJaUVXRmI3X1NpZG50bEnSAcgBQVVfeXFMTV9VNkpueWdwQ0R3VUJDcUdKaWY0YmFYVFJnUURSaHVDNDlMTnhDTzJZSTExc3BtOEpUbHZZTnlla0NwNEpyc3VQSnpzV01pTF9fM1FwUndEcVdmOUhZNC1haU03LS1NbFBtZDNTZE9rMXNCQ29fajNpS0pSSjhkeDc3XzdYOVMxeGZnd2R4b3R6dHpyMEI5Y185RHIwVi1qcW5aYWh4NmVOTXA5ckNFTHhsanZncXVBbU5MaTFZRTBzbEFjSzhncEk",
@@ -347,15 +347,15 @@
   ],
   "seen_news::QURE": [
     "4ba9ff26-297c-3311-9913-9ae63be7c479",
+    "7a2681ed-c416-38bb-a45d-c1f6ca8632a2",
     "ebed464e-1a98-3b62-be22-94ffc1da6735",
     "beeb9603-6ec0-372a-9231-4f3ca6aaf953",
-    "bcba198a-9a8f-31cc-9cfd-8fbb0713ec30",
-    "581d26a5-da5e-3637-8fa5-9a24fe3439e3",
-    "7a2681ed-c416-38bb-a45d-c1f6ca8632a2",
-    "2b06a9f1-56fd-3c32-9452-f6493d638b3b",
     "06237590-5c6c-3b10-99de-f020d14062b0",
-    "49fd1424-e0b3-3b15-b14b-68b25d722f75",
-    "1e309454-d340-3536-9afb-4f7be15e167b"
+    "581d26a5-da5e-3637-8fa5-9a24fe3439e3",
+    "1e309454-d340-3536-9afb-4f7be15e167b",
+    "bcba198a-9a8f-31cc-9cfd-8fbb0713ec30",
+    "2b06a9f1-56fd-3c32-9452-f6493d638b3b",
+    "49fd1424-e0b3-3b15-b14b-68b25d722f75"
   ],
   "seen_news_google::QURE": [
     "CBMicEFVX3lxTE84OW91a2FMR3doby1qVzltR2FWT0N2SW5yeGVTMmpNYVRHOWFOYVZKSGJsVlcyRF9mUHJoZXlrbW0xR2tkamNJOW95emp5eHJPb3BidW5HQV9tSVRyV3ZtVlBIOWg1TGM3OWV3ZktlRko",
@@ -460,16 +460,16 @@
     "CBMingFBVV95cUxNUGZnN05JSzJpYlZHcnh3QlBoNnhjTmN3NHAzZkJfY3laQUpLdE5sMnE0dlNNLS01dWpIREFWbGkwQ3RkNldFRExfNGY5d1c3Ym5uNTRHYUtqdkxiWUxjU2xYVnFZSUFZS0YtcEtzQlNkQnNtTko1Q2FOZUdLT0gxWmZ1cnFsUmU3VzlSbTQzaFA4QWFBS1ZNYnhnY1I3Zw"
   ],
   "seen_news::UAVS": [
-    "b6e20d24-9965-3622-8eda-27cc4e85de85",
-    "06471676-f45d-3e4e-ab35-3f22a0610bb9",
-    "66997f78-5be0-3c5c-9ffc-f7a70e44e1f9",
-    "838c71cc-9640-306a-a725-5929fb4567df",
-    "b3660ffa-d21e-3c9b-ac4e-75e2bb2cb85e",
     "f3a457c2-bef9-3769-950f-1c79a674f12b",
     "2d26fcab-7e40-32ab-badc-2aabd637cd02",
     "46c9633f-88fd-30bb-8147-322e6490ae8e",
+    "b6e20d24-9965-3622-8eda-27cc4e85de85",
+    "b3660ffa-d21e-3c9b-ac4e-75e2bb2cb85e",
     "712908a2-4a3c-3482-a1d2-cbe36adf6deb",
-    "c33b0b2a-8b2e-30a0-8530-005ea0e32102"
+    "06471676-f45d-3e4e-ab35-3f22a0610bb9",
+    "66997f78-5be0-3c5c-9ffc-f7a70e44e1f9",
+    "c33b0b2a-8b2e-30a0-8530-005ea0e32102",
+    "838c71cc-9640-306a-a725-5929fb4567df"
   ],
   "seen_news_google::UAVS": [
     "CBMihAFBVV95cUxQX1BLY1NJZTNvMmU2Q3RjQ1BCNWdfejFKY3lYM2hDd0JQYkNCaEtuRTZucFFDeVNpOGpQaFFsVk9EZ0xSN3daWHN3d1hqc1cyU0VLeTQ1Ul9TWHNkZUgyQTNITDRhQUN2cEpXSER3ZWpNdVdMQ1VCb25tVVI3WTlrTXZHY2E",
@@ -574,15 +574,15 @@
     "CBMisAFBVV95cUxQVmFTVllmMDJZME5vMDFJNWRoOTFlTEJkNzlTbVJLUXBNWHlSc3FuajV0VVVkby03QWRxallPZDdyX2RFeUx1R081blZ1TDJkbjFpa3dIYkRaWXlNMll3VmMzWHd4MGp6RVVOQWNKOGRGUWQ2aG5xUGhtdjNGd2UwTU1GZmxaNmt5X093R2txTUZaOTdMUHlfd1hteG01STIzbTJWMF9wYzJpSFZaRnBtXw"
   ],
   "seen_news::WOLF": [
-    "6d7403b4-ed35-33b2-b053-1887fc4f7670",
-    "f730bf63-deee-399e-8860-9e460eae506b",
     "676ad926-5587-303d-9c41-24433a6df09b",
-    "c9028ea4-48e0-3b55-bec0-68d48ff38286",
-    "60b935d7-5b73-3b07-9307-573d07c976c2",
-    "2156fa05-acd5-3ddb-a5ab-e8ae557222c7",
     "3646ded6-597a-3067-abc6-63d66a354792",
+    "6d7403b4-ed35-33b2-b053-1887fc4f7670",
     "48ea7040-327a-3df5-9e1a-102762c3e040",
+    "c9028ea4-48e0-3b55-bec0-68d48ff38286",
     "e0ebe029-9a70-3ea1-86c8-dfc71cf97ae7",
+    "2156fa05-acd5-3ddb-a5ab-e8ae557222c7",
+    "f730bf63-deee-399e-8860-9e460eae506b",
+    "60b935d7-5b73-3b07-9307-573d07c976c2",
     "ab845bde-2f5e-325f-a3f7-263191f7059b"
   ],
   "seen_news_google::WOLF": [
@@ -689,18 +689,18 @@
   ],
   "seen_news::FOUR": [
     "597f719c-ee2a-3ac9-997f-d153abc9d58b",
-    "30210cf2-b0f6-3955-842b-48d669c2a522",
-    "e7449a80-0ac8-3d53-adae-206a6882c392",
-    "864755da-7cdd-373f-a9a8-7dbc29e6c873",
-    "dc13450d-4f2b-3cc2-b4c5-03526ab02bde",
+    "701fa033-cdff-3897-9356-52eb3eb5836d",
+    "8497afe4-579e-318c-895d-273c5d3d780b",
+    "6241865d-a9f9-3ec0-8306-8d58a3ee7ee6",
+    "0b8d2838-c1b5-37e7-bc17-52a4c87697bb",
     "9cc1707b-698c-3c01-8667-10d823cf5a7a",
     "1f388b8e-4180-310f-9837-1452e05273ab",
-    "b5f15f63-9251-3b0c-9136-02ecf12af336",
     "dcf41008-355e-3fb5-92cc-00df952a3098",
-    "8497afe4-579e-318c-895d-273c5d3d780b",
-    "701fa033-cdff-3897-9356-52eb3eb5836d",
-    "6241865d-a9f9-3ec0-8306-8d58a3ee7ee6",
-    "0b8d2838-c1b5-37e7-bc17-52a4c87697bb"
+    "b5f15f63-9251-3b0c-9136-02ecf12af336",
+    "dc13450d-4f2b-3cc2-b4c5-03526ab02bde",
+    "864755da-7cdd-373f-a9a8-7dbc29e6c873",
+    "e7449a80-0ac8-3d53-adae-206a6882c392",
+    "30210cf2-b0f6-3955-842b-48d669c2a522"
   ],
   "seen_news_google::FOUR": [
     "CBMikwFBVV95cUxPU3dMNDJVRnB6RHhJajVSS0RkSGRYZHY5T2NNeS04LUpOZFhFRVhKU2JEYXZSNEZ5YzU5Tno2aktSY3RFcUFocGxwNmRFak8wMmh2NHZMYkZnYThJNHZWQy04ZkM5RE8tR2pvLWVVMFdhWU9tbEYtSkpnaEgtWWJLTFZJempsRXkzTWl5M1R6djh6TFU",
@@ -845,21 +845,21 @@
   ],
   "ew_on_demand_giveup::ASTS::2026-08-10": true,
   "seen_news::APP": [
-    "14ab8d02-8189-3abb-80d3-cf81e2ba2a2c",
-    "fa2c1199-6bce-3333-9edb-44a6521a9c8c",
-    "0b02580e-dc47-32da-97c8-825e292b768e",
-    "55f6eab8-6087-3cad-821c-c096a2deaad8",
     "dcf15a0e-c943-3797-a2a8-a3505b5ea92a",
-    "caf69aab-0484-3c4e-a084-d2c2140be7d1",
-    "a6cfea0f-be89-3c00-9dfa-09a36a564aae",
-    "94261b05-0288-3d65-a248-d76403e2cb46",
     "f7c9f58f-f770-350f-b149-a730af7b5567",
-    "e551e134-9269-3bf4-b0fa-d571077e7b14",
-    "7e6e11ef-362a-3875-8934-4da104939754",
     "62530c06-9e30-33f2-bc10-a582ad159e2e",
     "6ca3e696-56f1-3f36-849f-5e6bf730db77",
+    "7e6e11ef-362a-3875-8934-4da104939754",
+    "caf69aab-0484-3c4e-a084-d2c2140be7d1",
     "b8032aac-131b-3a59-a6e4-04b554c1923c",
-    "57f517da-3e06-39a6-8f3e-3a8530c422fa"
+    "fa2c1199-6bce-3333-9edb-44a6521a9c8c",
+    "e551e134-9269-3bf4-b0fa-d571077e7b14",
+    "14ab8d02-8189-3abb-80d3-cf81e2ba2a2c",
+    "0b02580e-dc47-32da-97c8-825e292b768e",
+    "94261b05-0288-3d65-a248-d76403e2cb46",
+    "57f517da-3e06-39a6-8f3e-3a8530c422fa",
+    "a6cfea0f-be89-3c00-9dfa-09a36a564aae",
+    "55f6eab8-6087-3cad-821c-c096a2deaad8"
   ],
   "seen_news_google::APP": [
     "CBMivgFBVV95cUxPMmVWNklzWDdFVGdMMHpTZzZYNTFNQmZJQVFQOE1WVXVCN19nejlxVkZOdmVnVDBvXzl0RkEzV2I4Mm02bUFhQlV1WHVqamctNG9SNWZRVTJoWXpGU0kzb3drWk5MWmxYaXlEYWc1SjlFRmpMM3B3MXhWMlg4X1c5TjQ5andBa1IyQ3pWcWxGQk83eHM0ODIxcDRaMVRsdEV2TGl3ajlFd1ZFQ2NxYXZvcXk2SENITjdLZ2pGRVN3",
