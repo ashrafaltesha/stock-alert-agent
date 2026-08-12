@@ -434,6 +434,19 @@ def check_on_demand_earnings(state: dict) -> bool:
             )
             state[sent_key] = True
             changed = True
+            continue
+
+        # Fallback: Finnhub. EDGAR is the better source -- it carries the
+        # release the moment it is filed -- but sec.gov returns HTTP 403 to
+        # GitHub Actions runners (SEC blocks datacenter IP ranges, on both
+        # www.sec.gov and efts.sec.gov, regardless of User-Agent). Until that
+        # is routed around, falling back here keeps detection working rather
+        # than silently never firing.
+        data = get_earnings_release(ticker, today)
+        if data:
+            send_telegram_message(build_summary_message(ticker, today, data))
+            state[sent_key] = True
+            changed = True
         elif now >= giveup_after:
             send_telegram_message(
                 f"\u26A0\uFE0F *{ticker}*: no results filing showed up on EDGAR today. "
