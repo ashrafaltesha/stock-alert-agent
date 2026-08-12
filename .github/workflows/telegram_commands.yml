@@ -28,6 +28,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # holdings.json lives in a separate private repo (stock-alert-agent-data)
+      # so this repo can be public without exposing share counts / cost basis.
+      # Checked out here into data/, alongside a PAT scoped only to that repo.
+      - uses: actions/checkout@v4
+        with:
+          repository: ashrafaltesha/stock-alert-agent-data
+          token: ${{ secrets.DATA_REPO_PAT }}
+          path: data
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -42,19 +51,43 @@ jobs:
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
         run: python telegram_commands.py
 
-      - name: Commit updated tickers/holdings/watchlist/state
+      - name: Commit updated tickers/watchlist/state
         run: |
           git config user.name "stock-agent-bot"
           git config user.email "actions@github.com"
-          git add tickers.json holdings.json watchlist.json state.json
+          git add tickers.json watchlist.json state.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "Update tickers/holdings/watchlist/state via Telegram command [skip ci]"
+          git commit -m "Update tickers/watchlist/state via Telegram command [skip ci]"
           # Belt-and-suspenders: the concurrency group above should mean
           # monitor.yml is never running at the same time, so this loop
           # should rarely if ever actually retry. Kept as a backstop.
+          for i in 1 2 3 4 5; do
+            if git push; then
+              echo "Push succeeded."
+              exit 0
+            fi
+            echo "Push rejected (attempt $i/5) -- fetching and rebasing before retry."
+            git fetch origin main
+            git rebase origin/main
+            sleep $(( (RANDOM % 5) + 1 ))
+          done
+          echo "Push failed after retries."
+          exit 1
+
+      - name: Commit updated holdings (private data repo)
+        working-directory: data
+        run: |
+          git config user.name "stock-agent-bot"
+          git config user.email "actions@github.com"
+          git add holdings.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update holdings via Telegram command [skip ci]"
           for i in 1 2 3 4 5; do
             if git push; then
               echo "Push succeeded."
