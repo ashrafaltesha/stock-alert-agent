@@ -28,6 +28,7 @@ state.json, which this script updates and the workflow commits back to
 the repo.
 """
 
+import difflib
 import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -127,6 +128,25 @@ def check_price_moves(ticker: str, state: dict) -> None:
     }
 
 
+def _is_duplicate_headline(title: str, recent_titles: list, threshold: float = 0.82) -> bool:
+    """True if `title` closely matches something already alerted for this
+    ticker from either news source -- Yahoo's own feed and Google News RSS
+    often carry the same wire story with slightly different wording, so a
+    per-source id dedup alone lets the same story through twice."""
+    t = title.lower().strip()
+    for prev in recent_titles:
+        if difflib.SequenceMatcher(None, t, prev).ratio() >= threshold:
+            return True
+    return False
+
+
+def _record_headline(ticker: str, title: str, state: dict) -> None:
+    key = f"alerted_titles::{ticker}"
+    titles = state.get(key, [])
+    titles.append(title.lower().strip())
+    state[key] = titles[-40:]
+
+
 def check_yahoo_news(ticker: str, state: dict) -> None:
     key = f"seen_news::{ticker}"
     seen_ids = set(state.get(key, []))
@@ -168,6 +188,8 @@ def check_yahoo_news(ticker: str, state: dict) -> None:
         new_ids.append(article_id)
         title = content.get("title") or "New article"
         if age_minutes <= NEWS_LOOKBACK_MINUTES and is_material(title):
+            if _is_duplicate_headline(title, state.get(f"alerted_titles::{ticker}", [])):
+                continue
             link = (
                 content.get("canonicalUrl", {}).get("url")
                 or content.get("clickThroughUrl", {}).get("url")
@@ -182,6 +204,7 @@ def check_yahoo_news(ticker: str, state: dict) -> None:
             if link:
                 msg += f"\n{link}"
             send_telegram_message(msg)
+            _record_headline(ticker, title, state)
 
     # Cap stored ids so state.json doesn't grow forever.
     state[key] = new_ids[-100:]
@@ -227,6 +250,8 @@ def check_google_news(ticker: str, state: dict) -> None:
         new_ids.append(article_id)
         title = item.findtext("title") or "New article"
         if age_minutes <= NEWS_LOOKBACK_MINUTES and is_material(title):
+            if _is_duplicate_headline(title, state.get(f"alerted_titles::{ticker}", [])):
+                continue
             link = item.findtext("link") or ""
             source_el = item.find("source")
             publisher = source_el.text if source_el is not None else "Google News"
@@ -236,6 +261,7 @@ def check_google_news(ticker: str, state: dict) -> None:
             if link:
                 msg += f"\n{link}"
             send_telegram_message(msg)
+            _record_headline(ticker, title, state)
 
     state[key] = new_ids[-100:]
 
