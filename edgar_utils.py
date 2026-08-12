@@ -24,7 +24,7 @@ import re
 from http_utils import get_with_retry
 
 SEC_HEADERS = {
-    "User-Agent": "stock-alert-agent/1.0 (https://github.com/ashrafaltesha/stock-alert-agent)",
+    "User-Agent": "stock-alert-agent ashrafaltesha@users.noreply.github.com",
     "Accept-Encoding": "gzip, deflate",
 }
 
@@ -70,11 +70,19 @@ _BULLET_CHARS = ("\u2022", "\u25cf", "\u00b7", "-", "*")
 
 def _get_json(url):
     resp = get_with_retry(url, headers=SEC_HEADERS, timeout=20, label="edgar")
-    if resp is None or not resp.ok:
+    if resp is None:
+        print(f"EDGAR request failed outright: {url}")
+        return None
+    if not resp.ok:
+        # Log the status explicitly. A silent None here made an SEC 403
+        # (which is what happens when the User-Agent isn't accepted) look
+        # identical to "nothing filed yet", which is very misleading.
+        print(f"EDGAR HTTP {resp.status_code} for {url} -- body: {resp.text[:200]}")
         return None
     try:
         return resp.json()
-    except (ValueError, json.JSONDecodeError):
+    except (ValueError, json.JSONDecodeError) as e:
+        print(f"EDGAR returned non-JSON from {url}: {e}")
         return None
 
 
