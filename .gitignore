@@ -1,0 +1,4 @@
+# holdings.json lives in the private stock-alert-agent-data repo,
+# checked out into data/ by the workflows. Never commit it here.
+data/
+holdings.json
