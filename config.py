@@ -129,6 +129,18 @@ MARKET_EARNINGS_LIST_TIME_ET = "15:55"
 # after-close reporters release at/soon after the 4:00pm close).
 MARKET_EARNINGS_POLL_START_ET = "16:00"
 
+# -- On-demand "earnings for TICKER" (telegram_commands.py) --
+#
+# That flow now detects releases via SEC EDGAR rather than waiting on
+# Finnhub's epsActual, and starts checking the moment you ask rather than at
+# a fixed hour -- EDGAR only returns the filing once it exists, so there is
+# nothing to gain by waiting, and before-market-open reporters are covered.
+#
+# This is just the hour (local ET) after which we stop waiting for a given
+# day and send a one-time "nothing filed" notice. Late enough to cover
+# after-close reporters that file well after the bell.
+ON_DEMAND_GIVEUP_ET = "23:30"
+
 # Telegram credentials — supplied via GitHub Actions secrets, never hardcode here.
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
