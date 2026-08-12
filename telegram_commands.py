@@ -484,7 +484,7 @@ def process_message(
         new_avg = new_cost_total / new_shares if new_shares else 0.0
         holdings[ticker] = {"shares": new_shares, "avg_cost": new_avg}
 
-        watch_note = " Also added it to your watchlist for price/news/earnings alerts." if tickers_changed else ""
+        watch_note = " Also added it to your holdings list for price/news/earnings alerts." if tickers_changed else ""
         send_telegram_message(
             f"✅ Added {qty:,.0f} shares of *{ticker}* at {format_usd(price)}.\n"
             f"New position: {new_shares:,.0f} sh @ avg {format_usd(new_avg)} "
@@ -571,7 +571,7 @@ def process_message(
             send_telegram_message(f"*{ticker}* isn't on your list.")
             return False, False, False
         tickers.remove(ticker)
-        send_telegram_message(f"\U0001F5D1 Removed *{ticker}* from your watchlist.")
+        send_telegram_message(f"\U0001F5D1 Removed *{ticker}* from your holdings list.")
         return True, False, False
 
     add_watchlist_match = ADD_WATCHLIST_RE.match(text)
