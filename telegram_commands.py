@@ -95,7 +95,7 @@ from earnings_summary import get_earnings_release, build_summary_message
 from market_earnings_watch import select_top_reporters, format_list_line
 
 TICKERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tickers.json")
-HOLDINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "holdings.json")
+HOLDINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "holdings.json")
 WATCHLIST_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "watchlist.json")
 
 # Portfolio-wide running totals stored as top-level scalar entries in
