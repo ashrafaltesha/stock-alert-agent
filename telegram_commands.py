@@ -678,7 +678,7 @@ def main() -> None:
         print(f"tickers.json updated: {tickers}")
     if holdings_changed:
         save_holdings(holdings)
-        print(f"holdings.json updated: {holdings}")
+        print("holdings.json updated (values redacted -- this repo is public)")
     if watchlist_changed:
         save_watchlist(watchlist)
         print(f"watchlist.json updated: {watchlist}")
