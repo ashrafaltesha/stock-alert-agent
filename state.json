@@ -806,7 +806,7 @@
     "28be79b302eff663",
     "7096be4aa52f7851"
   ],
-  "tg_update_offset": 785157183,
+  "tg_update_offset": 785157184,
   "price_ref::GENI": {
     "date": "2026-08-12",
     "max_step_up": 0,
@@ -990,5 +990,8 @@
   "company_name::XPEV": "XPeng Inc.",
   "alerted_titles::EVH": [
     "truist financial cuts evolent health (nyse:evh) price target to $6.00 - marketbeat"
+  ],
+  "ew_on_demand::2026-08-12": [
+    "CBRS"
   ]
 }
