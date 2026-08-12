@@ -28,7 +28,7 @@ SEC_HEADERS = {
     "Accept-Encoding": "gzip, deflate",
 }
 
-TICKER_MAP_URL = "https://www.sec.gov/files/company_tickers.json"
+FTS_URL = "https://efts.sec.gov/LATEST/search-index"
 SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik10}.json"
 ARCHIVE_BASE = "https://www.sec.gov/Archives/edgar/data/{cik}/{acc}"
 
@@ -68,8 +68,9 @@ _STOP_MARKERS = (
 _BULLET_CHARS = ("\u2022", "\u25cf", "\u00b7", "-", "*")
 
 
-def _get_json(url):
-    resp = get_with_retry(url, headers=SEC_HEADERS, timeout=20, label="edgar")
+def _get_json(url, params=None):
+    resp = get_with_retry(url, headers=SEC_HEADERS, params=params, timeout=20,
+                          label="edgar")
     if resp is None:
         print(f"EDGAR request failed outright: {url}")
         return None
@@ -86,70 +87,66 @@ def _get_json(url):
         return None
 
 
-def get_cik(ticker: str, state: dict):
-    """Resolve a ticker to its zero-padded 10-digit CIK, cached in state.
+def find_results_filing(ticker: str, target_date: str):
+    """Locate a results filing for `ticker` on `target_date` via EDGAR
+    full-text search.
 
-    The full ticker->CIK map is a single ~1MB file, so we fetch it once and
-    cache each resolved ticker rather than re-downloading per lookup.
+    This deliberately avoids www.sec.gov. That host returns HTTP 403 to
+    GitHub Actions runners -- SEC blocks datacenter IP ranges, so the
+    ticker->CIK map at /files/company_tickers.json is unreachable from CI
+    even with a valid User-Agent. efts.sec.gov is separate infrastructure
+    and, usefully, its response already carries everything we need: the
+    CIK, the accession number, the item codes, and the exhibit filename.
+
+    Returns a dict describing the press-release exhibit, or None.
     """
-    key = f"edgar_cik::{ticker.upper()}"
-    if key in state:
-        return state[key] or None
-
-    data = _get_json(TICKER_MAP_URL)
-    if not data:
-        print(f"[{ticker}] EDGAR: ticker map unavailable.")
-        return None
-
-    found = None
-    for row in data.values():
-        if str(row.get("ticker", "")).upper() == ticker.upper():
-            found = str(row.get("cik_str", "")).zfill(10)
-            break
-
-    # Cache misses too, so an unlisted symbol doesn't refetch the map every run.
-    state[key] = found or ""
-    if found:
-        print(f"[{ticker}] EDGAR CIK resolved: {found}")
-    else:
-        print(f"[{ticker}] EDGAR: no CIK found (not a US-listed filer?).")
-    return found
-
-
-def find_results_filing(cik: str, target_date: str):
-    """Return the most recent 8-K (Item 2.02) or 6-K filed on target_date.
-
-    target_date is 'YYYY-MM-DD'. Returns a dict with accession/primary doc,
-    or None if the company hasn't filed results that day.
-    """
-    data = _get_json(SUBMISSIONS_URL.format(cik10=cik))
+    params = {
+        "q": f'"{ticker}"',
+        "forms": "8-K,6-K",
+        "startdt": target_date,
+        "enddt": target_date,
+    }
+    data = _get_json(FTS_URL, params=params)
     if not data:
         return None
 
-    recent = (data.get("filings") or {}).get("recent") or {}
-    forms = recent.get("form") or []
-    dates = recent.get("filingDate") or []
-    accessions = recent.get("accessionNumber") or []
-    primaries = recent.get("primaryDocument") or []
-    items = recent.get("items") or []
+    hits = ((data.get("hits") or {}).get("hits")) or []
+    best = None
+    for hit in hits:
+        src = hit.get("_source") or {}
+        names = " ".join(src.get("display_names") or []).upper()
+        # Full-text search matches any document mentioning the symbol, so
+        # confirm the filer really is this ticker rather than someone who
+        # merely referenced it.
+        if f"({ticker.upper()})" not in names:
+            continue
 
-    for idx, form in enumerate(forms):
-        if dates[idx : idx + 1] and dates[idx] != target_date:
+        items = src.get("items") or []
+        form = src.get("form") or src.get("root_forms", [""])[0]
+        if form == "8-K" and EARNINGS_ITEM not in items:
             continue
-        item_str = items[idx] if idx < len(items) else ""
-        if form == "8-K":
-            if EARNINGS_ITEM not in (item_str or ""):
-                continue
-        elif form != "6-K":
+
+        doc_id = hit.get("_id") or ""
+        accession, _, filename = doc_id.partition(":")
+        ciks = src.get("ciks") or []
+        if not (accession and filename and ciks):
             continue
-        return {
+
+        candidate = {
             "form": form,
-            "accession": accessions[idx],
-            "primary": primaries[idx] if idx < len(primaries) else "",
-            "items": item_str,
+            "accession": accession,
+            "filename": filename,
+            "cik": ciks[0],
+            "file_type": src.get("file_type") or "",
         }
-    return None
+        # EX-99.1 is the press release itself; the bare 8-K is just the
+        # cover page, so prefer the exhibit when both come back.
+        if candidate["file_type"].upper().startswith("EX-99"):
+            return candidate
+        if best is None:
+            best = candidate
 
+    return best
 
 def _html_to_text(raw: bytes) -> str:
     try:
@@ -162,47 +159,21 @@ def _html_to_text(raw: bytes) -> str:
         return re.sub(r"<[^>]+>", " ", text)
 
 
-def fetch_release_text(cik: str, filing: dict):
-    """Pull the press-release exhibit text for a filing.
-
-    The exhibit isn't reliably named (CBRS filed it as
-    'cbrsannouncesfinancialresu.htm', not 'ex99-1.htm'), so instead of
-    matching filenames we take the non-primary .htm documents largest-first
-    and keep the one that actually reads like a results release.
-    """
+def fetch_release_text(filing: dict):
+    """Download the exhibit FTS identified for this filing."""
     acc_nodash = filing["accession"].replace("-", "")
-    base = ARCHIVE_BASE.format(cik=str(int(cik)), acc=acc_nodash)
-
-    listing = _get_json(f"{base}/index.json")
-    if not listing:
+    url = (
+        ARCHIVE_BASE.format(cik=str(int(filing["cik"])), acc=acc_nodash)
+        + "/" + filing["filename"]
+    )
+    resp = get_with_retry(url, headers=SEC_HEADERS, timeout=20, label="edgar-doc")
+    if resp is None:
+        print(f"EDGAR: could not fetch {url}")
         return None
-
-    entries = ((listing.get("directory") or {}).get("item")) or []
-    candidates = []
-    for entry in entries:
-        name = entry.get("name", "")
-        if not name.lower().endswith((".htm", ".html")):
-            continue
-        if name == filing.get("primary"):
-            continue
-        try:
-            size = int(entry.get("size") or 0)
-        except (TypeError, ValueError):
-            size = 0
-        candidates.append((size, name))
-
-    # Largest first -- the results release is invariably the longest exhibit.
-    for _size, name in sorted(candidates, reverse=True):
-        resp = get_with_retry(f"{base}/{name}", headers=SEC_HEADERS, timeout=20,
-                              label="edgar-doc")
-        if resp is None or not resp.ok:
-            continue
-        text = _html_to_text(resp.content)
-        low = text.lower()
-        if any(h in low for h in _RESULTS_HINTS):
-            return text
-    return None
-
+    if not resp.ok:
+        print(f"EDGAR HTTP {resp.status_code} fetching exhibit {url}")
+        return None
+    return _html_to_text(resp.content)
 
 def summarize_release(text: str, max_bullets: int = 14, max_chars: int = 2800) -> str:
     """Condense a press release into headline + its own highlight bullets.
@@ -251,33 +222,31 @@ def get_earnings_release_edgar(ticker: str, target_date: str, state: dict):
     """Detect and summarize a results filing for ticker on target_date.
 
     Returns {"form", "accession", "url", "summary"} or None if nothing has
-    been filed yet -- None simply means "keep polling".
+    been filed yet -- None simply means "keep polling". `state` is accepted
+    for interface stability (and future caching) but no longer needed for a
+    CIK lookup, since full-text search returns the CIK directly.
     """
-    cik = get_cik(ticker, state)
-    if not cik:
-        return None
-
-    filing = find_results_filing(cik, target_date)
+    filing = find_results_filing(ticker, target_date)
     if not filing:
         return None
 
-    text = fetch_release_text(cik, filing)
+    text = fetch_release_text(filing)
     if not text:
-        print(f"[{ticker}] EDGAR: {filing['form']} found but no readable exhibit yet.")
+        print(f"[{ticker}] EDGAR: {filing['form']} found but exhibit unreadable.")
         return None
 
-    if filing["form"] == "6-K":
-        # 6-Ks cover any material foreign-issuer disclosure, so confirm this
-        # one is actually results before alerting on it.
-        low = text.lower()
-        if not any(h in low for h in _RESULTS_HINTS):
-            return None
+    low = text.lower()
+    if not any(h in low for h in _RESULTS_HINTS):
+        # Guards against a 6-K (no item codes) that is some other
+        # disclosure, and against an 8-K cover page with no figures.
+        return None
 
     acc_nodash = filing["accession"].replace("-", "")
     url = (
-        ARCHIVE_BASE.format(cik=str(int(cik)), acc=acc_nodash)
+        ARCHIVE_BASE.format(cik=str(int(filing["cik"])), acc=acc_nodash)
         + f"/{filing['accession']}-index.htm"
     )
+    print(f"[{ticker}] EDGAR: found {filing['form']} {filing['accession']}")
     return {
         "form": filing["form"],
         "accession": filing["accession"],
