@@ -1,15 +1,15 @@
 {
   "seen_news::GENI": [
-    "07a7dce1-de14-3b58-aab5-7d6fb4bbe4a1",
-    "6544e232-e6e4-373a-8230-c56a69e9db0c",
-    "699b3e64-01a8-3ea8-a448-737060da715b",
-    "f36e3c04-467f-3fed-878f-1454a67c7a0b",
-    "9fe2a34b-8c38-39ee-b29f-e961730e9071",
-    "63f43ec1-f3d1-32ee-929d-98d926cac499",
-    "492a5c01-db82-3d30-9904-5ee8673558c8",
-    "a2b88b54-6432-315b-8335-7d9670c9d3e3",
     "5afcd449-cff6-35f6-a68d-0b88ae649798",
-    "7818e73c-642c-3cd2-a267-8254c622edd5"
+    "63f43ec1-f3d1-32ee-929d-98d926cac499",
+    "9fe2a34b-8c38-39ee-b29f-e961730e9071",
+    "7818e73c-642c-3cd2-a267-8254c622edd5",
+    "f36e3c04-467f-3fed-878f-1454a67c7a0b",
+    "6544e232-e6e4-373a-8230-c56a69e9db0c",
+    "a2b88b54-6432-315b-8335-7d9670c9d3e3",
+    "07a7dce1-de14-3b58-aab5-7d6fb4bbe4a1",
+    "492a5c01-db82-3d30-9904-5ee8673558c8",
+    "699b3e64-01a8-3ea8-a448-737060da715b"
   ],
   "seen_news_google::GENI": [
     "CBMiugFBVV95cUxQTzNiVWR6RTQ3R2xOSV84bFczMVZjNkxEcVBxdVBGVGx3Yjd2eDFkVTdGSFpqalVJRThqaW9JZElMZXRQRWF5WGw5QTM5YVpSc1I5VUtqRnoyMVdvNE9CaU9pR29SblRmOEhTblpqMlVQRlJLZWlhRUhkU2ZrQWVqRTBTakRvaGxkeXltUzdtbEVPYVBybzNsSjAxZWhiYWNuZmhQd1Q0WEZWWFdfLTVnV0JOY0g0QWJpdnc",
@@ -114,19 +114,19 @@
     "CBMiugFBVV95cUxNOUs1TDlSZ3AwZ2FZbXVIYzJmUnlITktiREdTS2VuUzJSRjRtZXBSZW54aHU2VjVsR3hOb3JaOG9Fa1J2Q1JhQUpQaTd2Uk40MV9DWWVLbTQzRVk5TW1iVVBNNExtUktEd0QyVGJzYjRVa3Z4UWhiZ3BFaG45d3NoNVJqWlFtTGJEeXd3Mlc2X0JrMDQwZ3R1aGVPMl9SQXo1cDVuaUpCakdKcnNvclNYYVJZWXVtVDBvMEE"
   ],
   "seen_news::EVH": [
+    "25d1d549-1ac1-3c45-aadd-4cf347ba52c7",
     "f24756fb-fc43-30db-b0c9-c6b9ba80f4ab",
+    "55805d04-cb41-3395-b5e0-ca4a1a111e6c",
     "e7608876-9fc5-322f-8e09-b49f13da5147",
     "4fab365e-c270-3907-b47d-a9b83a47ba1b",
-    "27230b69-4885-3836-b66f-43c44aa98de9",
-    "d8c56653-793c-3f6f-9093-e628d60edbee",
-    "779205bc-dd5f-3195-b4aa-47569c110849",
-    "55805d04-cb41-3395-b5e0-ca4a1a111e6c",
-    "231a50e9-4de5-3022-a123-bf81d3d375f7",
     "24f16baa-2531-3b83-9933-33b4d4e54948",
-    "34ebe6b0-669b-352a-af03-9ecc0e5bab20",
+    "27230b69-4885-3836-b66f-43c44aa98de9",
     "99e3a3b2-2cd7-3126-b94a-9d1f91558b91",
-    "25d1d549-1ac1-3c45-aadd-4cf347ba52c7",
-    "1f7004a9-d811-37b4-8b9c-032376fa465c"
+    "779205bc-dd5f-3195-b4aa-47569c110849",
+    "1f7004a9-d811-37b4-8b9c-032376fa465c",
+    "231a50e9-4de5-3022-a123-bf81d3d375f7",
+    "34ebe6b0-669b-352a-af03-9ecc0e5bab20",
+    "d8c56653-793c-3f6f-9093-e628d60edbee"
   ],
   "seen_news_google::EVH": [
     "CBMijwFBVV95cUxPb0JsQkJlNTZZSnRGQWkzdHdpbGF2cXA1eGdmdlQ3ejFwU0RLM2JjeWI2MDR6N3EtMU92UlV3amNMbkIzbkw2N3BNYk1SVlMyUlVxb0JCOUhISk9DQmlVemhyc3VmOHNQcEo4SlNjRTUxQzQyTGhFTFFsOWdxMEJqQ3ZlLXRzeVBWTk8tUG1Jaw",
@@ -231,17 +231,17 @@
     "CBMipwFBVV95cUxPcGF1aHkzcUY4azQ3VjltcnRqc3VZUE9nVXZlZk16YkRTM09UT2RuMkZQcGkyQXZSTUcxTW54Q0diMkdranduZEtjd002d0RfNktxaURpekxCeGtMbllydnIzckNIQWNFSDZ4RGwzQWhHTHRBVnFjMnBaRGgydFRaRDY3VU1pbkpYNTU5bmY5a3hMdzQ0UmkzZHMzWFh2YUdOVjc2X2dSRQ"
   ],
   "seen_news::XPEV": [
-    "5322095c-5de4-3adf-aa8a-7da28bc840d1",
-    "eefd0b89-ef56-3383-84ec-d28dfd87077b",
-    "5feaa9e4-8d13-36f5-92bf-d4126405e6b3",
-    "5063110c-2384-3d45-af20-8240f77abcc8",
-    "6e9c6711-f5c6-34a0-b0d2-51b463a59d14",
-    "e62231de-b8bc-3e1e-afb7-faf629e403bd",
     "26d4993f-91fa-3b07-a1be-d3e6e71638f7",
-    "84eec8e6-61a4-3d54-beef-752fd220e95e",
+    "5322095c-5de4-3adf-aa8a-7da28bc840d1",
     "9aa1c048-0c0d-3586-807f-39915e32ae76",
+    "eefd0b89-ef56-3383-84ec-d28dfd87077b",
+    "6e9c6711-f5c6-34a0-b0d2-51b463a59d14",
+    "5feaa9e4-8d13-36f5-92bf-d4126405e6b3",
     "7189b267-d9c5-3f18-add9-935b34021deb",
-    "3d1b8ee4-65c7-3bcb-93e0-a65aff2bae5e"
+    "84eec8e6-61a4-3d54-beef-752fd220e95e",
+    "3d1b8ee4-65c7-3bcb-93e0-a65aff2bae5e",
+    "5063110c-2384-3d45-af20-8240f77abcc8",
+    "e62231de-b8bc-3e1e-afb7-faf629e403bd"
   ],
   "seen_news_google::XPEV": [
     "CBMilAFBVV95cUxQTU5JaFdpb0pzWVhpN1g3UmhmT0ZKV1YzQWlKTHVxWXdocENOeUUySFBGSzk3NlZ2T1NsLTVFVHExenVpZzNNTVhxcHdCd012VG01bGZNOWc1eTNfUXl3OUpFUE1tbVZJWURuTFEyU0VBb0tpQmpPbzRTSlF2ZEtIQlhWOHY1Tm5pUm56VU44MEZjVVcw",
@@ -347,15 +347,15 @@
   ],
   "seen_news::QURE": [
     "7a2681ed-c416-38bb-a45d-c1f6ca8632a2",
+    "2b06a9f1-56fd-3c32-9452-f6493d638b3b",
+    "ebed464e-1a98-3b62-be22-94ffc1da6735",
+    "49fd1424-e0b3-3b15-b14b-68b25d722f75",
+    "beeb9603-6ec0-372a-9231-4f3ca6aaf953",
     "1e309454-d340-3536-9afb-4f7be15e167b",
     "bcba198a-9a8f-31cc-9cfd-8fbb0713ec30",
-    "beeb9603-6ec0-372a-9231-4f3ca6aaf953",
-    "ebed464e-1a98-3b62-be22-94ffc1da6735",
-    "2b06a9f1-56fd-3c32-9452-f6493d638b3b",
     "06237590-5c6c-3b10-99de-f020d14062b0",
-    "49fd1424-e0b3-3b15-b14b-68b25d722f75",
-    "581d26a5-da5e-3637-8fa5-9a24fe3439e3",
-    "4ba9ff26-297c-3311-9913-9ae63be7c479"
+    "4ba9ff26-297c-3311-9913-9ae63be7c479",
+    "581d26a5-da5e-3637-8fa5-9a24fe3439e3"
   ],
   "seen_news_google::QURE": [
     "CBMicEFVX3lxTE1rUnZaTjQzMVI4QnlnbVZwazhpUG8zVWg2UHk0WEtoeW5VTGtzLU4wOVVtbGlBTzNkUGVsQmYwclJDa0hVbUJQS09WT0M3ZkZ1cW4xTGtoLVNyWmdlM1hvcnZwRmx5bXZfNUVpYnpyc24",
@@ -460,16 +460,16 @@
     "CBMifEFVX3lxTE5GTlJ4QUxoMjRxbmtBMTZncGFBRnoxdE5ORThBZVRJd0gxNlNFU2ladjBSVW90Z3V3WW5wTUQ1ZzlnRkJhTTFNUGJfSUZtTDVOU2U0OFZGV2YwMkRudWRKdEtHZVJhUGtWUTZoelJmMkFUV3dsSTBLRWl1UGI"
   ],
   "seen_news::UAVS": [
-    "66997f78-5be0-3c5c-9ffc-f7a70e44e1f9",
-    "712908a2-4a3c-3482-a1d2-cbe36adf6deb",
-    "f3a457c2-bef9-3769-950f-1c79a674f12b",
-    "46c9633f-88fd-30bb-8147-322e6490ae8e",
-    "838c71cc-9640-306a-a725-5929fb4567df",
-    "2d26fcab-7e40-32ab-badc-2aabd637cd02",
-    "06471676-f45d-3e4e-ab35-3f22a0610bb9",
-    "b6e20d24-9965-3622-8eda-27cc4e85de85",
     "b3660ffa-d21e-3c9b-ac4e-75e2bb2cb85e",
-    "c33b0b2a-8b2e-30a0-8530-005ea0e32102"
+    "06471676-f45d-3e4e-ab35-3f22a0610bb9",
+    "838c71cc-9640-306a-a725-5929fb4567df",
+    "c33b0b2a-8b2e-30a0-8530-005ea0e32102",
+    "712908a2-4a3c-3482-a1d2-cbe36adf6deb",
+    "b6e20d24-9965-3622-8eda-27cc4e85de85",
+    "f3a457c2-bef9-3769-950f-1c79a674f12b",
+    "2d26fcab-7e40-32ab-badc-2aabd637cd02",
+    "46c9633f-88fd-30bb-8147-322e6490ae8e",
+    "66997f78-5be0-3c5c-9ffc-f7a70e44e1f9"
   ],
   "seen_news_google::UAVS": [
     "CBMie0FVX3lxTE9nRDRiSUdQaVpnRkZ4cV81NU1rWTJJUmluVzlYNkhXc2hVZXlDbmxhNl93OFZLSHhMUFBTaVRMZVFqVWJ0YUE5c3NwMzRJeWI1RlFXQ3cwdmlOenVkWUgwQkZnQkNvNlFqVjQxaFJrb2F2VmNOcFhFM3k3WQ",
@@ -575,15 +575,15 @@
   ],
   "seen_news::WOLF": [
     "e0ebe029-9a70-3ea1-86c8-dfc71cf97ae7",
-    "48ea7040-327a-3df5-9e1a-102762c3e040",
-    "f730bf63-deee-399e-8860-9e460eae506b",
-    "60b935d7-5b73-3b07-9307-573d07c976c2",
     "3646ded6-597a-3067-abc6-63d66a354792",
     "2156fa05-acd5-3ddb-a5ab-e8ae557222c7",
     "676ad926-5587-303d-9c41-24433a6df09b",
+    "6d7403b4-ed35-33b2-b053-1887fc4f7670",
+    "f730bf63-deee-399e-8860-9e460eae506b",
     "ab845bde-2f5e-325f-a3f7-263191f7059b",
+    "60b935d7-5b73-3b07-9307-573d07c976c2",
     "c9028ea4-48e0-3b55-bec0-68d48ff38286",
-    "6d7403b4-ed35-33b2-b053-1887fc4f7670"
+    "48ea7040-327a-3df5-9e1a-102762c3e040"
   ],
   "seen_news_google::WOLF": [
     "CBMingFBVV95cUxPWVRjYjQ2V002cnBRTE5wdGVKaTk5Z1hJX2d2VlBONEdlUUhxdFVvNnJoWEpsaUpuUWpwM0Z4TDBXc01KckZHSkdCdndqLW1Hald1TVFLVlRXVU1QS1dFUUQ4aS1rd3VfWXpSX3Nlb2laaGtyZ21IR00tYWUwQ2FwaktnQkE2RlI5d2ptUUw1LTVpUGZtM0hPdXBUVUVKdw",
@@ -688,19 +688,19 @@
     "CBMidEFVX3lxTE9KamlKSGdIQzliTlA0ZTN3d240dXlBM1M0Qzljc3phMnlVaHMxN2tYVlpyVlJRSmM5RjJRT3IyNGktSFctOWhGUkNhWl9LNDM1SEM3UVJMckx3dUFGblFINE9Jc2J3Nk5xWjhNbUpUNkppTjJW"
   ],
   "seen_news::FOUR": [
-    "1f388b8e-4180-310f-9837-1452e05273ab",
-    "e7449a80-0ac8-3d53-adae-206a6882c392",
-    "8497afe4-579e-318c-895d-273c5d3d780b",
-    "b5f15f63-9251-3b0c-9136-02ecf12af336",
-    "6241865d-a9f9-3ec0-8306-8d58a3ee7ee6",
-    "0b8d2838-c1b5-37e7-bc17-52a4c87697bb",
-    "dcf41008-355e-3fb5-92cc-00df952a3098",
-    "597f719c-ee2a-3ac9-997f-d153abc9d58b",
-    "dc13450d-4f2b-3cc2-b4c5-03526ab02bde",
+    "701fa033-cdff-3897-9356-52eb3eb5836d",
     "864755da-7cdd-373f-a9a8-7dbc29e6c873",
+    "1f388b8e-4180-310f-9837-1452e05273ab",
+    "dcf41008-355e-3fb5-92cc-00df952a3098",
+    "6241865d-a9f9-3ec0-8306-8d58a3ee7ee6",
+    "b5f15f63-9251-3b0c-9136-02ecf12af336",
+    "597f719c-ee2a-3ac9-997f-d153abc9d58b",
+    "8497afe4-579e-318c-895d-273c5d3d780b",
     "30210cf2-b0f6-3955-842b-48d669c2a522",
+    "0b8d2838-c1b5-37e7-bc17-52a4c87697bb",
+    "dc13450d-4f2b-3cc2-b4c5-03526ab02bde",
     "9cc1707b-698c-3c01-8667-10d823cf5a7a",
-    "701fa033-cdff-3897-9356-52eb3eb5836d"
+    "e7449a80-0ac8-3d53-adae-206a6882c392"
   ],
   "seen_news_google::FOUR": [
     "CBMi1wFBVV95cUxOVl9tOV9MQjVaZjZOWDYzT3hXZ3kwX2tUeEpVcDIxSXFoV25IMXduMXBsdGJQdW4wTWplR0U5Qm9NTnQ2VWNESnQyV1pZbGJSSHUwdlNCUW42cmhFMUV6M3UybENIOVhvV3VlUllDTVJzV2dmZ2czSzRXaG4taC1UTXhKeUpVdVFpWFp0LUtaRGc1YWpYNHJXYmlhX21tamhRWVRKVTlpZktwZ0Z3MFliRFJYYm9RM25nRldfMXNSTXFpeVE0VDBxTFRxdnZxLTBWaFE0RUlqaw",
@@ -846,19 +846,19 @@
   "ew_on_demand_giveup::ASTS::2026-08-10": true,
   "seen_news::APP": [
     "f7c9f58f-f770-350f-b149-a730af7b5567",
-    "94261b05-0288-3d65-a248-d76403e2cb46",
-    "14ab8d02-8189-3abb-80d3-cf81e2ba2a2c",
-    "6ca3e696-56f1-3f36-849f-5e6bf730db77",
     "a6cfea0f-be89-3c00-9dfa-09a36a564aae",
-    "57f517da-3e06-39a6-8f3e-3a8530c422fa",
-    "fa2c1199-6bce-3333-9edb-44a6521a9c8c",
-    "e551e134-9269-3bf4-b0fa-d571077e7b14",
-    "0b02580e-dc47-32da-97c8-825e292b768e",
-    "dcf15a0e-c943-3797-a2a8-a3505b5ea92a",
+    "6ca3e696-56f1-3f36-849f-5e6bf730db77",
     "55f6eab8-6087-3cad-821c-c096a2deaad8",
+    "e551e134-9269-3bf4-b0fa-d571077e7b14",
+    "fa2c1199-6bce-3333-9edb-44a6521a9c8c",
+    "dcf15a0e-c943-3797-a2a8-a3505b5ea92a",
     "62530c06-9e30-33f2-bc10-a582ad159e2e",
+    "14ab8d02-8189-3abb-80d3-cf81e2ba2a2c",
+    "0b02580e-dc47-32da-97c8-825e292b768e",
+    "57f517da-3e06-39a6-8f3e-3a8530c422fa",
     "caf69aab-0484-3c4e-a084-d2c2140be7d1",
-    "7e6e11ef-362a-3875-8934-4da104939754"
+    "7e6e11ef-362a-3875-8934-4da104939754",
+    "94261b05-0288-3d65-a248-d76403e2cb46"
   ],
   "seen_news_google::APP": [
     "CBMiZEFVX3lxTE9HdkM0NE5Bc0dXLWtxOTNCR0hreU9UendWVUNhb01JbFo1TVRlSTg1VnFDVUREWnp3djZibExsUGYzYTFnY0FTdUN5YlMzekM4dHQwaHYydzBZM2E1NHEweGQycGQ",
