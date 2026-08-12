@@ -10,21 +10,27 @@ earnings_watch_premarket.yml, and earnings_watch_afterhours.yml):
     heads-up reminder for each.
 
   premarket_watch
-    Runs once daily, sleeps until ~6:30am ET, then checks TODAY's calendar
-    for before-market-open holdings (plus any "time not supplied" holdings,
-    as a safety net) and polls roughly once a minute until it detects the
-    release, sending a beat/miss summary as soon as it does.
+    Scheduled repeatedly across the pre-market window. Runs before
+    EARNINGS_BMO_POLL_START_ET exit immediately; from then on each run
+    checks TODAY's calendar for before-market-open holdings (plus any
+    "time not supplied" holdings, as a safety net) and makes ONE pass
+    looking for the release, sending a beat/miss summary the moment it
+    appears.
 
   afterhours_watch
-    Runs once daily, sleeps until ~3:00pm ET to send a "reports after close
-    today" reminder for any holding with an after-market-close earnings date
-    today, then sleeps until ~4:00pm ET and polls roughly once a minute
-    until it detects the release, same as above.
+    Same shape for the after-close window: runs at or after
+    EARNINGS_AMC_REMINDER_TIME_ET send the "reports after close today"
+    reminder, and runs at or after EARNINGS_AMC_POLL_START_ET make one
+    detection pass each.
 
-On days with none of your holdings reporting, each mode exits almost
-immediately (cheap). On a reporting day, the relevant job stays alive,
-sleeping and polling, until it finds the release or hits
-EARNINGS_POLL_TIMEOUT_MINUTES (config.py).
+Neither mode sleeps on the runner any more. Repetition comes from the
+workflow cron firing across the window, with progress kept in state.json
+so successive short runs continue where the previous one stopped. A run
+on a day with nothing reporting exits almost immediately.
+
+The "still not detected" give-up notice is now based on how long the
+poll window has been open (recorded in state), not elapsed time inside a
+single process -- see EARNINGS_POLL_TIMEOUT_MINUTES (config.py).
 
 See earnings_summary.py for the release-detection method and the data-source
 caveats (why "beat/missed" is EPS-based, why revenue can lag a bit).
@@ -39,8 +45,37 @@ from config import (
     EARNINGS_AMC_REMINDER_TIME_ET,
     EARNINGS_AMC_POLL_START_ET,
 )
-from earnings_utils import date_str_et, classify_holdings_for_date, sleep_until_et, TEST_MODE
-from earnings_summary import poll_for_releases
+from earnings_utils import date_str_et, classify_holdings_for_date, now_et, TEST_MODE
+from earnings_summary import (
+    check_releases_once,
+    mark_poll_window_open,
+    maybe_give_up,
+)
+
+
+def _too_early_for(label: str, target_et: str) -> bool:
+    """True if the given ET time hasn't arrived yet today.
+
+    This replaces sleep_until_et(). Instead of holding a runner idle until
+    the window opens -- which risked losing all progress if the job was
+    evicted, and would stall the shared repo-write concurrency group that
+    the one-minute pollers also use -- the run simply exits early and a
+    later scheduled run picks the work up. The workflow cron must
+    therefore fire repeatedly across the window rather than once at the
+    start of it.
+    """
+    if TEST_MODE:
+        return False
+    now = now_et()
+    hour, minute = (int(part) for part in target_et.split(":"))
+    target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if now < target:
+        print(
+            f"{label}: {target_et} ET hasn't arrived yet (now "
+            f"{now.strftime('%H:%M')} ET). Exiting; a later run handles it."
+        )
+        return True
+    return False
 from telegram_utils import send_telegram_message
 from state_utils import load_state, save_state
 
@@ -59,7 +94,9 @@ def run_bmo_reminder() -> None:
         print("BMO reminder(s) already sent for tomorrow.")
         return
 
-    sleep_until_et(EARNINGS_BMO_REMINDER_TIME_ET)
+    if _too_early_for("BMO reminder", EARNINGS_BMO_REMINDER_TIME_ET):
+        return
+
     for ticker in to_remind:
         send_telegram_message(
             f"\U0001F514 *{ticker}* reports earnings tomorrow *before market open*. "
@@ -104,8 +141,14 @@ def run_premarket_watch() -> None:
         print("Already have summaries for all of today's before-open reporters.")
         return
 
-    sleep_until_et(EARNINGS_BMO_POLL_START_ET)
-    poll_for_releases(watch_list, today, state)
+    if _too_early_for("Pre-market watch", EARNINGS_BMO_POLL_START_ET):
+        return
+
+    mark_poll_window_open("premarket", today, state)
+    pending = check_releases_once(watch_list, today, state)
+    if pending:
+        print(f"Still awaiting release for: {', '.join(pending)}")
+    maybe_give_up(pending, "premarket", today, state)
 
 
 def run_afterhours_watch() -> None:
@@ -122,7 +165,9 @@ def run_afterhours_watch() -> None:
 
     to_remind = [t for t in amc_tickers if not state.get(f"ew_amc_reminder_sent::{t}::{today}")]
     if to_remind:
-        sleep_until_et(EARNINGS_AMC_REMINDER_TIME_ET)
+        if _too_early_for("AMC reminder", EARNINGS_AMC_REMINDER_TIME_ET):
+            return
+
         for ticker in to_remind:
             send_telegram_message(
                 f"\U0001F514 *{ticker}* reports earnings today *after market close* "
@@ -140,8 +185,14 @@ def run_afterhours_watch() -> None:
         print("Already have summaries for all of today's after-close reporters.")
         return
 
-    sleep_until_et(EARNINGS_AMC_POLL_START_ET)
-    poll_for_releases(watch_list, today, state)
+    if _too_early_for("After-hours watch", EARNINGS_AMC_POLL_START_ET):
+        return
+
+    mark_poll_window_open("afterhours", today, state)
+    pending = check_releases_once(watch_list, today, state)
+    if pending:
+        print(f"Still awaiting release for: {', '.join(pending)}")
+    maybe_give_up(pending, "afterhours", today, state)
 
 
 def main() -> None:
