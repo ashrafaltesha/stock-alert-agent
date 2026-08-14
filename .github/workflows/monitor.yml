@@ -17,14 +17,26 @@ on:
     - cron: "0 * * * *"
   workflow_dispatch: {}   # lets you trigger it manually from the Actions tab
 
-# Shared with telegram_commands.yml's concurrency group (same name there) so
-# GitHub queues one run behind the other instead of letting them race to
-# push to main at the same time. cancel-in-progress stays false so a queued
-# run still executes once the earlier one finishes, rather than being
-# dropped -- runs only take ~20-30s, so a queued run adds at most that much
-# delay.
+# This workflow gets its own group, NOT one shared with telegram_commands.yml.
+#
+# They used to share "stock-alert-agent-repo-write" so they'd take turns
+# writing state.json. That worked until both moved to ~1-minute cadences:
+# roughly two runs a minute arriving into a lane that serves one at a time,
+# each taking 30-60s. The queue could never drain, and GitHub started
+# cancelling runs to clear it -- 163 of them, with the message "Canceling
+# since a higher priority waiting request for stock-alert-agent-repo-write
+# exists".
+#
+# That was the source of the duplicate Telegram replies: a cancelled run had
+# already sent its reply but was killed before the commit step recorded the
+# update as handled, so the next run answered the same message again.
+#
+# Separate groups mean the two workflows can now push concurrently and one
+# will lose the race. That is handled in the commit step below by merging
+# state.json by key instead of rebasing (see merge_state.py) -- a rebase can
+# never succeed here, since both sides rewrite every line of the same file.
 concurrency:
-  group: stock-alert-agent-repo-write
+  group: stock-alert-agent-monitor
   cancel-in-progress: false
 
 permissions:
@@ -59,17 +71,31 @@ jobs:
             exit 0
           fi
           git commit -m "Update alert state [skip ci]"
-          # Belt-and-suspenders: the concurrency group above should mean
-          # telegram_commands.yml is never running at the same time, so this
-          # loop should rarely if ever actually retry. Kept as a backstop.
           for i in 1 2 3 4 5; do
             if git push; then
               echo "Push succeeded."
               exit 0
             fi
-            echo "Push rejected (attempt $i/5) -- fetching and rebasing before retry."
+            echo "Push rejected (attempt $i/5) -- merging state by key before retry."
+            # NOT a rebase. telegram_commands.yml rewrites the whole of
+            # state.json too, so replaying this commit conflicts on every
+            # line, every time. Merge the data instead: take what's on
+            # origin/main, then re-apply only what this run changed relative
+            # to the commit it started from.
             git fetch origin main
-            git rebase origin/main
+            BASE=$(git merge-base HEAD origin/main)
+            git show "$BASE":state.json          > /tmp/base.json   2>/dev/null || echo '{}' > /tmp/base.json
+            git show origin/main:state.json      > /tmp/theirs.json 2>/dev/null || echo '{}' > /tmp/theirs.json
+            git show HEAD:state.json             > /tmp/ours.json
+            git reset --hard origin/main
+            python merge_state.py --base /tmp/base.json --ours /tmp/ours.json \
+                                  --theirs /tmp/theirs.json --out state.json
+            git add state.json
+            if git diff --cached --quiet; then
+              echo "Nothing left to commit after merge -- the other run covered it."
+              exit 0
+            fi
+            git commit -m "Update alert state [skip ci]"
             sleep $(( (RANDOM % 5) + 1 ))
           done
           echo "Push failed after retries."
