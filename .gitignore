@@ -2,3 +2,7 @@
 # checked out into data/ by the workflows. Never commit it here.
 data/
 holdings.json
+
+# Python bytecode, created by running tests/checks in a local clone.
+__pycache__/
+*.pyc

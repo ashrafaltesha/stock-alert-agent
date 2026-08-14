@@ -15,6 +15,7 @@ Run locally with:  python -m pytest tests/ -q
 """
 
 import os
+from datetime import datetime
 import sys
 
 import pytest
@@ -26,6 +27,7 @@ os.environ.setdefault("TELEGRAM_BOT_TOKEN", "test-token")
 os.environ.setdefault("TELEGRAM_CHAT_ID", "test-chat")
 os.environ.setdefault("FINNHUB_API_KEY", "test-key")
 
+import ir_feeds  # noqa: E402
 import monitor  # noqa: E402
 import telegram_commands as tc  # noqa: E402
 from telegram_utils import escape_markdown  # noqa: E402
@@ -152,3 +154,80 @@ def test_material_headlines_pass_filter(headline):
 ])
 def test_immaterial_headlines_are_filtered_out(headline):
     assert not monitor.is_material(headline)
+
+
+# --- IR feed results classifier -------------------------------------------
+#
+# This classifier decides whether to declare "earnings are out", so both
+# directions matter: a missed release means no alert, a false positive means
+# a partnership headline masquerading as results. The Cerebras case below is
+# the one that caught a real bug -- the first version required a results word
+# in the title and would have silently missed the very release the module
+# was built for.
+
+@pytest.mark.parametrize("title,body", [
+    ("Cerebras Reports Second Quarter 2026 Financial Results", ""),
+    ("Genius Sports Announces Q2 2026 Results", ""),
+    ("XPeng Reports Fourth Quarter and Full Year 2025 Unaudited Financial Results", ""),
+    # Title carries the period but no results word; body must carry it.
+    ("Fast Inference Cloud Business Nearly Quadruples in Second Quarter 2026",
+     "Revenue of $312 million, GAAP net loss of $41 million, gross margin of 58%."),
+])
+def test_real_results_releases_are_detected(title, body):
+    assert ir_feeds.is_results_entry(title, body)
+
+
+@pytest.mark.parametrize("title,body", [
+    # Scheduling notices -- posted weeks ahead, carry every keyword.
+    ("Cerebras Sets Date of Second Quarter 2026 Financial Results", ""),
+    ("Wolfspeed to Report Fourth Quarter Fiscal 2026 Results on August 20", ""),
+    ("Shift4 Announces Conference Call to Discuss Q2 2026 Results", ""),
+    # Period reference, but not a results release and no financials in body.
+    ("AppLovin Announces Strategic Partnership Expanding Q1 2026 Ad Reach",
+     "The companies will collaborate on new advertising formats."),
+    # No fiscal period marker at all.
+    ("uniQure Announces FDA Clearance of IND Application", ""),
+])
+def test_non_results_entries_are_rejected(title, body):
+    assert not ir_feeds.is_results_entry(title, body)
+
+
+def test_empty_title_is_rejected():
+    assert not ir_feeds.is_results_entry("", "revenue gaap per share")
+
+
+# --- On-demand watch poll windows -----------------------------------------
+#
+# Polling only inside ON_DEMAND_POLL_WINDOWS_ET is what keeps a 24-hour watch
+# from burning ~1,400 runs a day. Getting a boundary wrong silently means
+# either wasted runs or a missed release, neither of which is visible until
+# an earnings day.
+
+def _at(hour, minute=0):
+    return datetime(2026, 8, 12, hour, minute)
+
+
+@pytest.mark.parametrize("moment", [
+    _at(16, 0),    # after-close window opens exactly at the close
+    _at(16, 5),    # when Cerebras actually published
+    _at(17, 59),
+    _at(18, 0),    # inclusive upper bound
+    _at(6, 0),     # pre-market window opens
+    _at(8, 45),
+    _at(9, 0),     # inclusive upper bound
+])
+def test_moments_inside_poll_windows(moment):
+    assert tc._in_poll_window(moment)
+
+
+@pytest.mark.parametrize("moment", [
+    _at(5, 59),    # one minute before the pre-market window
+    _at(9, 1),     # one minute after it closes
+    _at(12, 0),    # midday, between the two windows
+    _at(15, 59),   # one minute before the close window
+    _at(18, 1),    # one minute after it closes
+    _at(23, 30),   # late evening
+    _at(3, 0),     # overnight
+])
+def test_moments_outside_poll_windows(moment):
+    assert not tc._in_poll_window(moment)

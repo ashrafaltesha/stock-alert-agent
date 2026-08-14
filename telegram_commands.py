@@ -49,22 +49,28 @@ P&L from sales (if either is non-zero).
 "earnings today" immediately sends the day's top market-cap and
 most-analyst-attention earnings reporters -- there's no more automatic
 daily 3:55pm send, this is fully on-demand now.
-"earnings for <TICKER, TICKER, ...>" first checks each symbol against
-Finnhub's earnings calendar for today -- any ticker NOT reporting today
-gets an immediate reply saying so instead of being queued (so you don't
-wait hours only to be told "still not detected"). Whatever's left gets
-queued and watched on SEC EDGAR from that moment on that
-same day (or immediately, if that time has already passed) -- a
-beat/miss summary is sent as soon as each release is detected, using the
-same detection method as earnings_watch.py. Polling continues across
-runs of this same 5-minute cron job (see check_on_demand_earnings
-below), so it keeps checking even if you don't text anything else. If
-the Finnhub calendar fetch itself fails or FINNHUB_API_KEY isn't set
-(data source hiccup), we can't confidently rule anything out, so
-everything gets queued as before rather than risk a false "not
-reporting" reply.
+"earnings for <TICKER, TICKER, ...>" arms a 24-hour watch on each symbol's
+investor-relations RSS feed (ir_feeds.py). During that window the feed is
+checked once per run, but only inside the two windows in
+ON_DEMAND_POLL_WINDOWS_ET -- late afternoon for after-close reporters, early
+morning for before-open ones. The moment a results release appears, its
+headline and summary are sent. Finding it ends the watch; so does the
+24-hour expiry, which sends one heads-up that nothing turned up.
 
-Runs on a schedule via .github/workflows/telegram_commands.yml (every ~5
+The 24-hour span is the point of the design. Detection used to be same-day
+only, so a company reporting pre-market at ~6am meant texting the bot
+overnight to catch it. Now the command can be sent the previous afternoon
+and either release time is covered.
+
+Finnhub is consulted for the earnings *calendar* only, and its answer is
+advisory: if it doesn't list a ticker as reporting today you get a note
+saying so, but the watch is armed regardless. A feed can only tell you
+something has happened, never that it is scheduled -- and Finnhub's calendar
+has been wrong often enough that letting it veto a watch would be worse than
+the occasional wasted one. Tickers with no configured IR feed are rejected
+outright, since there is nothing to poll.
+
+Runs on a schedule via .github/workflows/telegram_commands.yml (every ~1
 min). GitHub Actions cron isn't guaranteed to fire exactly on time -- it
 can lag by several minutes, more on busy days -- so there can be a real
 delay between texting the bot and getting a reply. You can also run it
@@ -77,22 +83,23 @@ reply), so normal chatter with the bot doesn't trigger anything.
 import json
 import os
 import re
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import requests
 import yfinance as yf
 
+import ir_feeds
+from ir_feeds import FEED_URLS
 from config import (
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CHAT_ID,
-    ON_DEMAND_GIVEUP_ET,
+    ON_DEMAND_WATCH_HOURS,
+    ON_DEMAND_POLL_WINDOWS_ET,
 )
-from telegram_utils import send_telegram_message, escape_markdown
+from telegram_utils import send_telegram_message
 from state_utils import load_state, save_state
 from earnings_utils import now_et, date_str_et, fetch_earnings_calendar_finnhub
-from earnings_summary import get_earnings_release, build_summary_message
 from market_earnings_watch import select_top_reporters, format_list_line
-from edgar_utils import get_earnings_release_edgar
 
 TICKERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tickers.json")
 HOLDINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "holdings.json")
@@ -326,40 +333,53 @@ def handle_earnings_for(raw: str, state: dict) -> None:
 
     today = date_str_et(0)
 
-    # Check today's Finnhub earnings calendar before queuing anything, so a
-    # ticker that isn't reporting today gets told immediately instead of
-    # sitting in a 3-hour poll that's doomed to end in a "still not
-    # detected" message. If the calendar fetch itself fails/comes back
-    # empty (data-source hiccup, or FINNHUB_API_KEY not set), we can't
-    # confidently rule anything out, so skip this check and queue
-    # everything as before.
+    # Finnhub's calendar is advisory here, never a gate. A watch now runs for
+    # 24 hours, so most commands are deliberately armed the day BEFORE the
+    # report -- a "not reporting today" check would reject exactly the usage
+    # this feature exists for. It also routinely omits recent IPOs and
+    # foreign issuers, so letting it veto would block real reporters.
+    # Detection is the IR feed's job; this line just adds context.
+    calendar_note = ""
     calendar_rows = fetch_earnings_calendar_finnhub(today)
     if calendar_rows:
         reporting_today = {row.get("symbol") for row in calendar_rows if row.get("symbol")}
-        not_reporting = [t for t in valid if t not in reporting_today]
-        to_queue = [t for t in valid if t in reporting_today]
-    else:
-        not_reporting = []
-        to_queue = valid
+        not_listed = [t for t in valid if t not in reporting_today]
+        if not_listed:
+            verb = "isn't" if len(not_listed) == 1 else "aren't"
+            calendar_note = (
+                f"\n\nHeads-up: per Finnhub's calendar {', '.join(not_listed)} {verb} "
+                f"listed as reporting today ({today}). Watching anyway."
+            )
 
-    if not_reporting:
-        verb = "isn't" if len(not_reporting) == 1 else "aren't"
+    unsupported = [t for t in valid if t.upper() not in FEED_URLS]
+    to_queue = [t for t in valid if t.upper() in FEED_URLS]
+
+    if unsupported:
+        # Better to say so plainly than to accept the command and silently
+        # never detect anything.
         send_telegram_message(
-            f"Per Finnhub's calendar, {', '.join(not_reporting)} {verb} reporting earnings "
-            f"today ({today}), so I won't poll for {'it' if len(not_reporting) == 1 else 'them'}."
+            f"No investor-relations feed is configured for "
+            f"{', '.join(unsupported)}, so I can't detect their earnings. "
+            f"Ask me to add {'it' if len(unsupported) == 1 else 'them'}."
         )
 
     if not to_queue:
         return
 
-    key = f"ew_on_demand::{today}"
-    existing = set(state.get(key, []))
-    existing.update(to_queue)
-    state[key] = sorted(existing)
+    now = now_et()
+    expires = now + timedelta(hours=ON_DEMAND_WATCH_HOURS)
+    for ticker in to_queue:
+        state[f"ew_watch::{ticker}"] = {
+            "armed": now.isoformat(),
+            "expires": expires.isoformat(),
+        }
 
+    windows = ", ".join(f"{a}-{b}" for a, b in ON_DEMAND_POLL_WINDOWS_ET)
     send_telegram_message(
-        f"\U0001F514 Got it -- I'll watch SEC EDGAR for earnings from {', '.join(to_queue)} "
-        f"and text you a summary as soon as each results filing appears."
+        f"\U0001F514 Watching {', '.join(to_queue)} for the next "
+        f"{ON_DEMAND_WATCH_HOURS}h. I'll check each company's investor-relations "
+        f"feed every minute during {windows} ET and send a summary as soon as "
+        f"results appear." + calendar_note
     )
 
 
@@ -390,71 +410,88 @@ def handle_watchlist(watchlist: list[str]) -> None:
     send_telegram_message("\n".join(lines))
 
 
-def check_on_demand_earnings(state: dict) -> bool:
-    """Called on every run. Polls SEC EDGAR for any tickers requested today
-    via "earnings for ...", sending a summary the moment the results filing
-    appears. Returns whether state was mutated.
+def _in_poll_window(now) -> bool:
+    """True if `now` (ET) falls inside one of ON_DEMAND_POLL_WINDOWS_ET.
 
-    EDGAR is the only detection source here. Finnhub's calendar is still used
-    up front to confirm a ticker reports today, but its epsActual field is no
-    longer what we wait on -- on 2026-08-12 CBRS filed its 8-K within minutes
-    of the close while Finnhub stayed empty for hours, so no alert went out.
-    An 8-K under Item 2.02 IS the earnings release.
-
-    There is deliberately no poll-start gate. EDGAR only returns the filing
-    once it exists, so checking from the moment of the request costs nothing
-    and also covers before-market-open reporters -- the old 16:00 ET gate
-    meant a BMO name was not looked at until hours after it went public.
+    Releases land either just after the 4pm close or before the 9:30 open, so
+    polling the other ~19 hours a day would burn runs for nothing. Note the
+    windows are compared on wall-clock time only -- a window never spans
+    midnight, so no wraparound handling is needed. Keep it that way; if a
+    window like 22:00-02:00 is ever wanted, this needs to change.
     """
-    today = date_str_et(0)
-    key = f"ew_on_demand::{today}"
-    requested = state.get(key, [])
-    if not requested:
+    minutes = now.hour * 60 + now.minute
+    for start, end in ON_DEMAND_POLL_WINDOWS_ET:
+        sh, sm = (int(p) for p in start.split(":"))
+        eh, em = (int(p) for p in end.split(":"))
+        if sh * 60 + sm <= minutes <= eh * 60 + em:
+            return True
+    return False
+
+
+def check_on_demand_earnings(state: dict) -> bool:
+    """Called on every run. Checks each armed watch's IR feed for a results
+    release and sends a summary the moment one appears. Returns whether state
+    was mutated.
+
+    Detection is the company's own investor-relations RSS feed, nothing else.
+    Finnhub's epsActual lags the release by hours (on 2026-08-12 Cerebras
+    published within minutes of the close while Finnhub stayed empty all
+    evening), and SEC EDGAR returns HTTP 403 to GitHub Actions runners.
+
+    A watch is armed by "earnings for TICKER" and lives for
+    ON_DEMAND_WATCH_HOURS. That span is deliberately longer than a day:
+    a company reporting pre-market at ~6am would otherwise require sending
+    the command overnight. Arming the previous afternoon now covers it either
+    way, since the two poll windows straddle both the close and the open.
+
+    A watch ends when the release is found, or when it expires -- and expiry
+    is checked against a stored timestamp rather than in-process elapsed time,
+    because each run is a separate short-lived process.
+    """
+    now = now_et()
+    watches = {k: v for k, v in state.items() if k.startswith("ew_watch::")}
+    if not watches:
         return False
 
-    now = now_et()
-    hh, mm = (int(p) for p in ON_DEMAND_GIVEUP_ET.split(":"))
-    giveup_after = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
-
     changed = False
-    for ticker in requested:
-        sent_key = f"ew_summary_sent::{ticker}::{today}"
-        giveup_key = f"ew_on_demand_giveup::{ticker}::{today}"
-        if state.get(sent_key) or state.get(giveup_key):
-            continue
+    in_window = _in_poll_window(now)
 
-        print(f"[{ticker}] checking EDGAR for a results filing dated {today}...")
-        release = get_earnings_release_edgar(ticker, today, state)
-        if release:
-            send_telegram_message(
-                f"\U0001F4CA *{ticker} earnings are out* "
-                f"(filed {release['form']} with the SEC)\n\n"
-                f"{escape_markdown(release['summary'])}\n\n"
-                f"{release['url']}"
-            )
-            state[sent_key] = True
+    for key, watch in watches.items():
+        ticker = key.split("::", 1)[1]
+
+        # Expiry is checked even outside a poll window, so a dead watch is
+        # cleaned up promptly instead of lingering until the next window.
+        try:
+            expires = datetime.fromisoformat(watch["expires"])
+            armed = datetime.fromisoformat(watch["armed"])
+        except (KeyError, TypeError, ValueError):
+            print(f"[{ticker}] malformed watch record, dropping: {watch!r}")
+            del state[key]
             changed = True
             continue
 
-        # Fallback: Finnhub. EDGAR is the better source -- it carries the
-        # release the moment it is filed -- but sec.gov returns HTTP 403 to
-        # GitHub Actions runners (SEC blocks datacenter IP ranges, on both
-        # www.sec.gov and efts.sec.gov, regardless of User-Agent). Until that
-        # is routed around, falling back here keeps detection working rather
-        # than silently never firing.
-        data = get_earnings_release(ticker, today)
-        if data:
-            send_telegram_message(build_summary_message(ticker, today, data))
-            state[sent_key] = True
-            changed = True
-        elif now >= giveup_after:
+        if now >= expires:
             send_telegram_message(
-                f"\u26A0\uFE0F *{ticker}*: no results filing showed up on EDGAR today. "
-                f"It may have been delayed, or the company may not file with the SEC "
-                f"-- worth a manual look."
+                f"\u26A0\uFE0F *{ticker}*: no earnings release showed up on their "
+                f"investor-relations feed in the last {ON_DEMAND_WATCH_HOURS}h. "
+                f"They may have pushed the date, or the release may not have hit "
+                f"the feed -- worth a manual look."
             )
-            state[giveup_key] = True
+            del state[key]
             changed = True
+            continue
+
+        if not in_window:
+            continue
+
+        print(f"[{ticker}] checking IR feed for a results release since {armed}...")
+        release = ir_feeds.find_release(ticker, armed)
+        if not release:
+            continue
+
+        send_telegram_message(ir_feeds.build_message(release))
+        del state[key]
+        changed = True
 
     return changed
 

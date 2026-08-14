@@ -131,15 +131,31 @@ MARKET_EARNINGS_POLL_START_ET = "16:00"
 
 # -- On-demand "earnings for TICKER" (telegram_commands.py) --
 #
-# That flow now detects releases via SEC EDGAR rather than waiting on
-# Finnhub's epsActual, and starts checking the moment you ask rather than at
-# a fixed hour -- EDGAR only returns the filing once it exists, so there is
-# nothing to gain by waiting, and before-market-open reporters are covered.
+# Detection is the company's own investor-relations RSS feed (ir_feeds.py).
+# Not Finnhub, whose epsActual can lag the release by hours, and not SEC
+# EDGAR, which returns HTTP 403 to GitHub Actions runners. Finnhub is still
+# used for the earnings *calendar* -- knowing a report is scheduled -- which
+# a feed can never tell you, since a feed only says something has happened.
 #
-# This is just the hour (local ET) after which we stop waiting for a given
-# day and send a one-time "nothing filed" notice. Late enough to cover
-# after-close reporters that file well after the bell.
-ON_DEMAND_GIVEUP_ET = "23:30"
+# One command arms a watch lasting ON_DEMAND_WATCH_HOURS. Within that window
+# the feed is checked once per run, but only during the two windows below.
+# Polling around the clock would gain nothing: releases land either just
+# after the close or before the open.
+#
+# The 24-hour span is what makes the command usable. Detection used to be
+# same-day only, which meant a company reporting pre-market at ~6am required
+# sending the command overnight. Now it can be armed the previous afternoon.
+ON_DEMAND_WATCH_HOURS = 24
+
+# Local ET windows to poll in, as (start, end) 24h "HH:MM" pairs.
+#   16:00-18:00  after-close releases (Cerebras filed ~16:05)
+#   06:00-09:00  before-open releases
+# Anything reporting midday or late evening falls outside these; widen if
+# that ever bites. Foreign issuers are the likeliest to report off-schedule.
+ON_DEMAND_POLL_WINDOWS_ET = [
+    ("16:00", "18:00"),
+    ("06:00", "09:00"),
+]
 
 # Telegram credentials — supplied via GitHub Actions secrets, never hardcode here.
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
