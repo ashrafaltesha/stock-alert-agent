@@ -28,6 +28,7 @@ os.environ.setdefault("TELEGRAM_CHAT_ID", "test-chat")
 os.environ.setdefault("FINNHUB_API_KEY", "test-key")
 
 import ir_feeds  # noqa: E402
+import merge_state  # noqa: E402
 import monitor  # noqa: E402
 import telegram_commands as tc  # noqa: E402
 from telegram_utils import escape_markdown  # noqa: E402
@@ -292,3 +293,77 @@ def test_hyphenated_headline_survives_suffix_stripping():
     assert "Full-year" in ir_feeds._strip_source(
         "Wolfspeed Full-year Results Beat - CNBC"
     )
+
+
+# --- state.json three-way merge -------------------------------------------
+#
+# monitor.py and telegram_commands.py now run in separate concurrency groups,
+# so they can push at the same time and one loses the race. The loser merges
+# by key instead of rebasing -- a rebase can never succeed, since both sides
+# rewrite every line of the same JSON file.
+#
+# The deletion case is the one that matters most: check_on_demand_earnings
+# removes an ew_watch:: key once it has sent the release. If a merge revived
+# it, the watch would resume and send the same earnings alert again.
+
+def test_merge_keeps_both_sides_work():
+    base = {"tg_update_offset": 100, "seen_news::CBRS": ["a"]}
+    ours = {"tg_update_offset": 101, "seen_news::CBRS": ["a"]}
+    theirs = {"tg_update_offset": 100, "seen_news::CBRS": ["a", "b"]}
+    merged, _ = merge_state.merge(base, ours, theirs)
+    assert merged["tg_update_offset"] == 101      # our command was handled
+    assert merged["seen_news::CBRS"] == ["a", "b"]  # their dedup ids kept
+
+
+def test_merge_is_symmetric():
+    base = {"tg_update_offset": 100, "seen_news::CBRS": ["a"]}
+    a = {"tg_update_offset": 101, "seen_news::CBRS": ["a"]}
+    b = {"tg_update_offset": 100, "seen_news::CBRS": ["a", "b"]}
+    assert merge_state.merge(base, a, b)[0] == merge_state.merge(base, b, a)[0]
+
+
+def test_resolved_watch_stays_deleted():
+    base = {"ew_watch::CBRS": {"armed": "t"}, "seen_news::GENI": ["p"]}
+    ours = {"seen_news::GENI": ["p"]}
+    theirs = {"ew_watch::CBRS": {"armed": "t"}, "seen_news::GENI": ["p", "q"]}
+    merged, _ = merge_state.merge(base, ours, theirs)
+    assert "ew_watch::CBRS" not in merged
+    assert merged["seen_news::GENI"] == ["p", "q"]
+
+
+def test_contested_deletion_defers_to_them():
+    # They changed the value we were deleting, so they know something we
+    # don't. Reviving the watch is the safer error than dropping it.
+    base = {"ew_watch::CBRS": {"armed": "t"}}
+    ours = {}
+    theirs = {"ew_watch::CBRS": {"armed": "LATER"}}
+    merged, _ = merge_state.merge(base, ours, theirs)
+    assert merged["ew_watch::CBRS"] == {"armed": "LATER"}
+
+
+def test_keys_we_did_not_touch_defer_to_them():
+    merged, _ = merge_state.merge({"a": 1}, {"a": 1}, {"a": 9})
+    assert merged["a"] == 9
+
+
+def test_new_keys_from_both_sides_survive():
+    merged, _ = merge_state.merge(
+        {}, {"ew_watch::NVDA": {"armed": "t"}}, {"company_name::NVDA": "NVIDIA"}
+    )
+    assert merged == {"ew_watch::NVDA": {"armed": "t"},
+                      "company_name::NVDA": "NVIDIA"}
+
+
+def test_conflict_resolves_to_ours_and_is_counted():
+    merged, report = merge_state.merge({}, {"k": 1}, {"k": 2})
+    assert merged["k"] == 1
+    assert report["conflicts"] == 1
+
+
+@pytest.mark.parametrize("base,ours,theirs,expected", [
+    ({}, {}, {}, {}),
+    ({}, {"x": 1}, {}, {"x": 1}),   # nothing on the remote yet
+    ({}, {}, {"y": 2}, {"y": 2}),   # this run changed nothing
+])
+def test_merge_handles_degenerate_inputs(base, ours, theirs, expected):
+    assert merge_state.merge(base, ours, theirs)[0] == expected
