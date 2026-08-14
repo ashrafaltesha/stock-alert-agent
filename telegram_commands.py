@@ -49,26 +49,41 @@ P&L from sales (if either is non-zero).
 "earnings today" immediately sends the day's top market-cap and
 most-analyst-attention earnings reporters -- there's no more automatic
 daily 3:55pm send, this is fully on-demand now.
-"earnings for <TICKER, TICKER, ...>" arms a 24-hour watch on each symbol's
-investor-relations RSS feed (ir_feeds.py). During that window the feed is
-checked once per run, but only inside the two windows in
-ON_DEMAND_POLL_WINDOWS_ET -- late afternoon for after-close reporters, early
-morning for before-open ones. The moment a results release appears, its
-headline and summary are sent. Finding it ends the watch; so does the
-24-hour expiry, which sends one heads-up that nothing turned up.
+"earnings for <TICKER, TICKER, ...>" arms a 24-hour watch on each symbol and
+sends you EVERYTHING that company publishes on its reporting day, with a link
+to each item. Any ticker works, held or not.
 
-The 24-hour span is the point of the design. Detection used to be same-day
-only, so a company reporting pre-market at ~6am meant texting the bot
-overnight to catch it. Now the command can be sent the previous afternoon
-and either release time is covered.
+The rule is the date, not keywords. On the day a company reports, the release
+is essentially the only thing it posts, so "dated today" is far more reliable
+than judging whether a headline sounds like earnings -- the classifier this
+replaced nearly missed the real Cerebras release, whose headline contained no
+results word at all.
+
+Because everything from that day counts, the watch does NOT close on the
+first article: a routine morning announcement would otherwise end it and the
+actual results, hours later, would never arrive. It runs the full 24 hours
+and remembers what it has sent, so nothing repeats on the next poll.
+
+Where it looks, in order (ir_page.articles_for): the company's RSS feed if it
+has one, otherwise its investor-relations page's HTML, otherwise news
+headlines. The IR page is discovered from the ticker -- website via yfinance,
+then the "investor relations" link on it -- and cached in state, since that
+chain is far too slow to repeat once a minute. Only the news fallback still
+uses keyword matching, because dozens of articles mention a ticker every day
+and a date rule would be meaningless there.
+
+Polling happens only inside ON_DEMAND_POLL_WINDOWS_ET -- late afternoon for
+after-close reporters, early morning for before-open ones. The 24-hour span
+is the point: detection used to be same-day only, so a company reporting
+pre-market at ~6am meant texting the bot overnight. Now the command can be
+sent the previous afternoon and either release time is covered.
 
 Finnhub is consulted for the earnings *calendar* only, and its answer is
 advisory: if it doesn't list a ticker as reporting today you get a note
 saying so, but the watch is armed regardless. A feed can only tell you
 something has happened, never that it is scheduled -- and Finnhub's calendar
 has been wrong often enough that letting it veto a watch would be worse than
-the occasional wasted one. Tickers with no configured IR feed are rejected
-outright, since there is nothing to poll.
+the occasional wasted one.
 
 Runs on a schedule via .github/workflows/telegram_commands.yml (every ~1
 min). GitHub Actions cron isn't guaranteed to fire exactly on time -- it
@@ -89,14 +104,14 @@ import requests
 import yfinance as yf
 
 import ir_feeds
-from ir_feeds import FEED_URLS
+import ir_page
 from config import (
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CHAT_ID,
     ON_DEMAND_WATCH_HOURS,
     ON_DEMAND_POLL_WINDOWS_ET,
 )
-from telegram_utils import send_telegram_message
+from telegram_utils import send_telegram_message, escape_markdown
 from state_utils import load_state, save_state
 from earnings_utils import now_et, date_str_et, fetch_earnings_calendar_finnhub
 from market_earnings_watch import select_top_reporters, format_list_line
@@ -363,21 +378,15 @@ def handle_earnings_for(raw: str, state: dict) -> None:
             "expires": expires.isoformat(),
         }
 
-    thin = [t for t in valid if t.upper() not in FEED_URLS]
-    detail_note = ""
-    if thin:
-        detail_note = (
-            f"\n\n{', '.join(thin)}: no investor-relations feed, so detection "
-            f"is via news headlines -- expect the headline rather than the full "
-            f"figures."
-        )
-
+    # No per-ticker prediction of which source will be used: that's resolved
+    # at poll time by ir_page.articles_for, and guessing here would sometimes
+    # be wrong in a message you'd reasonably trust.
     windows = ", ".join(f"{a}-{b}" for a, b in ON_DEMAND_POLL_WINDOWS_ET)
     send_telegram_message(
         f"\U0001F514 Watching {', '.join(valid)} for the next "
         f"{ON_DEMAND_WATCH_HOURS}h. I'll check every minute during {windows} ET "
-        f"and send a summary as soon as results appear."
-        + detail_note + calendar_note
+        f"and send you anything they publish that day, with a link."
+        + calendar_note
     )
 
 
@@ -427,23 +436,32 @@ def _in_poll_window(now) -> bool:
 
 
 def check_on_demand_earnings(state: dict) -> bool:
-    """Called on every run. Checks each armed watch's IR feed for a results
-    release and sends a summary the moment one appears. Returns whether state
-    was mutated.
+    """Called on every run. Sends anything a watched company publishes on its
+    reporting day. Returns whether state was mutated.
 
-    Detection is the company's own investor-relations RSS feed, nothing else.
-    Finnhub's epsActual lags the release by hours (on 2026-08-12 Cerebras
-    published within minutes of the close while Finnhub stayed empty all
-    evening), and SEC EDGAR returns HTTP 403 to GitHub Actions runners.
+    The rule is the date, not keywords. On the day a company reports, the
+    release is essentially the only thing it posts, so "dated today" beats
+    "this headline sounds like earnings" -- the classifier this replaces
+    nearly missed the real Cerebras release, whose headline contained no
+    results word at all.
+
+    Sources, in order of preference (see ir_page.articles_for): the company's
+    RSS feed if it has one, otherwise its IR page's HTML, otherwise news
+    headlines. Not Finnhub, whose epsActual lagged the Cerebras release by a
+    whole evening, and not SEC EDGAR, which 403s GitHub Actions runners.
 
     A watch is armed by "earnings for TICKER" and lives for
-    ON_DEMAND_WATCH_HOURS. That span is deliberately longer than a day:
-    a company reporting pre-market at ~6am would otherwise require sending
-    the command overnight. Arming the previous afternoon now covers it either
-    way, since the two poll windows straddle both the close and the open.
+    ON_DEMAND_WATCH_HOURS -- deliberately longer than a day, so a company
+    reporting pre-market at ~6am doesn't require sending the command
+    overnight. The two poll windows straddle both the close and the open.
 
-    A watch ends when the release is found, or when it expires -- and expiry
-    is checked against a stored timestamp rather than in-process elapsed time,
+    IMPORTANT: a watch does NOT close on the first article. Everything the
+    company says that day is wanted, so closing on a routine morning
+    announcement would mean the actual results, hours later, never arrive.
+    It runs until it expires, and remembers what it has already sent so
+    nothing repeats on the next poll a minute later.
+
+    Expiry is checked against a stored timestamp rather than elapsed time,
     because each run is a separate short-lived process.
     """
     now = now_et()
@@ -468,13 +486,19 @@ def check_on_demand_earnings(state: dict) -> bool:
             changed = True
             continue
 
+        sent = set(watch.get("sent", []))
+
         if now >= expires:
-            send_telegram_message(
-                f"\u26A0\uFE0F *{ticker}*: no earnings release showed up on their "
-                f"investor-relations feed in the last {ON_DEMAND_WATCH_HOURS}h. "
-                f"They may have pushed the date, or the release may not have hit "
-                f"the feed -- worth a manual look."
-            )
+            # Only worth flagging if the watch produced nothing at all. If it
+            # already sent you the day's announcements, a "nothing found"
+            # message would be plainly wrong.
+            if not sent:
+                send_telegram_message(
+                    f"\u26A0\uFE0F *{ticker}*: nothing was published on their "
+                    f"investor-relations page in the last {ON_DEMAND_WATCH_HOURS}h. "
+                    f"They may have pushed the date, or their site may not be "
+                    f"readable automatically -- worth a manual look."
+                )
             del state[key]
             changed = True
             continue
@@ -482,16 +506,56 @@ def check_on_demand_earnings(state: dict) -> bool:
         if not in_window:
             continue
 
-        print(f"[{ticker}] checking for a results release since {armed}...")
-        release = ir_feeds.find_release(ticker, armed, state)
-        if not release:
+        today = now.date()
+        articles, source = ir_page.articles_for(ticker, state)
+
+        if source is None:
+            # No feed and no readable IR page -- Genius Sports and AppLovin
+            # serve nothing to an automated reader even in a real browser.
+            # News headlines are the only route left, and the date rule can't
+            # be used there: dozens of articles mention a ticker every day, so
+            # this path keeps the keyword classifier.
+            release = ir_feeds.find_release_google(ticker, armed, state)
+            if release and release["link"] not in sent:
+                send_telegram_message(ir_feeds.build_message(release))
+                sent.add(release["link"])
+                watch["sent"] = sorted(sent)
+                state[key] = watch
+                changed = True
             continue
 
-        send_telegram_message(ir_feeds.build_message(release))
-        del state[key]
+        fresh = ir_page.todays_articles(articles, sent, today)
+        if not fresh:
+            continue
+
+        print(f"[{ticker}] {len(fresh)} new article(s) dated {today} via {source}.")
+        for article in fresh:
+            send_telegram_message(_build_ir_message(ticker, article, source))
+            sent.add(article["url"])
+
+        # Persist immediately rather than at the end of the loop: this is what
+        # stops the same article being re-sent on the next poll a minute later.
+        watch["sent"] = sorted(sent)
+        state[key] = watch
         changed = True
 
     return changed
+
+
+def _build_ir_message(ticker: str, article: dict, source: str) -> str:
+    """One article, as posted by the company on its reporting day.
+
+    No beat/miss analysis: the figures live behind the link, and the runner
+    can't reliably fetch article bodies. The value here is speed and the URL.
+    """
+    label = ("investor-relations page" if source == "page"
+             else "investor-relations feed")
+    return (
+        f"\U0001F4CA *{ticker} posted today*\n\n"
+        f"{escape_markdown(article['title'])}\n\n"
+        f"{article['url']}\n\n"
+        f"_(from their {label})_"
+    )
 
 
 def process_message(

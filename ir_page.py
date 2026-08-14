@@ -194,6 +194,130 @@ def fetch_articles(ir_url: str, label: str = "ir-page"):
     return articles
 
 
+# -- Discovery: ticker -> investor-relations page ---------------------------
+
+# Anchors that lead to an IR section, most specific first so a spelled-out
+# "Investor Relations" beats a bare "Investors" nav item.
+_IR_HINTS = ("investor relations", "investor-relations", "investors",
+             "/investor", "shareholder")
+
+_ANCHOR_HREF = re.compile(r"""href=["']([^"']+)["']""", re.IGNORECASE)
+
+
+def _find_ir_link(html, base_url):
+    """Pick the most promising investor-relations link on a homepage.
+
+    Matches each anchor's OWN text, bounded by its closing tag. Reading a
+    fixed number of characters after the opening tag instead runs past the
+    end of the link into the next ones, so "About us" scores a hit because
+    "Investor Relations" appears further down the footer -- which would send
+    every ticker to whatever link came first on the page.
+    """
+    best, best_rank = None, len(_IR_HINTS) + 1
+    for m in ANCHOR.finditer(html):
+        href_m = _ANCHOR_HREF.search(m.group(1))
+        if not href_m:
+            continue
+        href = href_m.group(1)
+        # Strip nested markup then COLLAPSE whitespace: "<span>Investor</span>
+        # <b>Relations</b>" otherwise becomes "Investor  Relations" with a
+        # double space and never matches -- and wrapping link text in spans
+        # and icons is the norm on corporate sites.
+        label = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", m.group(2))).strip()
+        blob = f"{href} {label}".lower()
+
+        rank = next((i for i, h in enumerate(_IR_HINTS) if h in blob), None)
+        if rank is None:
+            # Sites commonly abbreviate to a bare "IR". Matched on exact path
+            # SEGMENTS so "/hiring" and "/directory" can't trigger it.
+            segs = [s for s in urlparse(href).path.lower().split("/") if s]
+            if "ir" in segs or label.lower() == "ir":
+                rank = len(_IR_HINTS)
+        if rank is not None and rank < best_rank:
+            best, best_rank = urljoin(base_url, href), rank
+    return best
+
+
+def discover_ir_page(ticker: str, state: dict):
+    """Resolve a ticker to its investor-relations page URL, cached in state.
+
+    Cached indefinitely and deliberately: the chain below costs a slow
+    yfinance .info call plus a homepage fetch, and the polling loop runs once
+    a minute. Resolving it every time would dominate the run.
+
+    An empty result is cached too, so a company with no findable IR page
+    doesn't re-trigger the whole chain every minute forever. Delete the
+    ir_page::TICKER key to force a fresh lookup.
+    """
+    key = f"ir_page::{ticker.upper()}"
+    if key in state:
+        return state[key] or None
+
+    url = ""
+    try:
+        import yfinance as yf
+        info = yf.Ticker(ticker).info or {}
+        site = (info.get("website") or "").strip()
+    except Exception as e:
+        print(f"[{ticker}] website lookup failed: {type(e).__name__}: {e}")
+        site = ""
+
+    if site:
+        resp = get_with_retry(site, headers=PAGE_HEADERS, timeout=20,
+                              label=f"{ticker} homepage")
+        if resp is not None and resp.ok:
+            url = _find_ir_link(resp.text, site) or ""
+        else:
+            # A 429 here means rate-limited, not absent -- don't poison the
+            # cache with a miss that a later attempt would resolve.
+            code = resp.status_code if resp is not None else "unreachable"
+            print(f"[{ticker}] homepage {code}; not caching a miss.")
+            return None
+
+    state[key] = url
+    print(f"[{ticker}] IR page resolved to: {url or '(none found)'}")
+    return url or None
+
+
+def articles_for(ticker: str, state: dict):
+    """Best available source of dated articles for a ticker.
+
+    A preference ladder, not a category test -- a site can be both feed-backed
+    and HTML-readable, and the more structured source wins:
+
+        1. RSS feed, where one exists (cleanest dates, explicit timestamps)
+        2. The IR page's HTML (works for most; no feed required)
+
+    Returns (articles, source). An empty list means neither worked, and the
+    caller falls back to news headlines. That is the honest outcome for sites
+    like AppLovin and Genius Sports, which serve nothing to an automated
+    reader even in a real browser.
+    """
+    from ir_feeds import FEED_URLS, FEED_HEADERS, parse_entries
+
+    feed_url = FEED_URLS.get(ticker.upper())
+    if feed_url:
+        resp = get_with_retry(feed_url, headers=FEED_HEADERS, timeout=20,
+                              label=f"{ticker} ir-feed")
+        if resp is not None and resp.ok:
+            out = []
+            for e in parse_entries(resp.content):
+                published = e.get("published")
+                if e.get("title") and e.get("link") and published:
+                    out.append({"title": e["title"], "url": e["link"],
+                                "date": published.date()})
+            if out:
+                return out, "feed"
+
+    ir_url = discover_ir_page(ticker, state)
+    if ir_url:
+        articles = fetch_articles(ir_url, label=ticker)
+        if articles:
+            return articles, "page"
+
+    return [], None
+
+
 def todays_articles(articles, already_sent_urls, today: date):
     """The detection rule: anything dated today that hasn't been sent yet.
 
