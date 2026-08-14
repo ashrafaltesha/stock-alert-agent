@@ -119,12 +119,27 @@ def _date_in_url(url):
     return _parse_iso(m) if m else None
 
 
-def _nearest_date(pos, dates):
+def _nearest_date(start, end, dates):
+    """Closest date OUTSIDE the link's own text.
+
+    Excluding the interior is the whole point. Applied Materials publishes a
+    scheduling notice headlined "Applied Materials to Report Fiscal Third
+    Quarter 2026 Results on Aug. 13, 2026". Counting dates inside the
+    headline dates that notice to the 13th, so on the day Applied Materials
+    actually reported, the bot sent the weeks-old announcement of the date
+    instead of the results. With the interior excluded it correctly returns
+    "Applied Materials Announces Third Quarter 2026 Results".
+
+    A publication date is always rendered beside a headline, never inside it,
+    so nothing legitimate is lost.
+    """
     if not dates:
         return None
     best, best_gap = None, None
     for at, d in dates:
-        gap = abs(at - pos)
+        if start <= at <= end:
+            continue
+        gap = min(abs(at - start), abs(at - end))
         if best_gap is None or gap < best_gap:
             best, best_gap = d, gap
     return best if best_gap is not None and best_gap <= PROXIMITY else None
@@ -160,7 +175,7 @@ def extract_articles(html: str, base_url: str):
             # Navigation ("News", "Read more") rather than a headline.
             continue
 
-        when = _date_in_url(url) or _nearest_date(m.start(), dates)
+        when = _date_in_url(url) or _nearest_date(m.start(), m.end(), dates)
         if not when:
             continue
 
@@ -170,27 +185,62 @@ def extract_articles(html: str, base_url: str):
     return out
 
 
+# An IR landing page is an overview -- latest stock price, a promo panel,
+# maybe one headline. The press releases live on a news subpage. Applied
+# Materials' landing page yielded 4 links and none of them the results;
+# /news-releases yielded 10 including it. Applied Industrial, QXO and Madison
+# Square Garden Sports all returned nothing at all from their landing pages.
+NEWS_SUBPAGES = ("/news-releases", "/news", "/press-releases",
+                 "/news-events/news-releases", "/news-events/press-releases")
+
+
+def _fetch_one(url, label):
+    resp = get_with_retry(url, headers=PAGE_HEADERS, timeout=20, label=label)
+    if resp is None or not resp.ok:
+        code = resp.status_code if resp is not None else "unreachable"
+        print(f"[{label}] {url} -> {code}")
+        return None
+    return resp
+
+
 def fetch_articles(ir_url: str, label: str = "ir-page"):
-    """Fetch the IR page and extract its dated article links.
+    """Fetch the IR page -- and its news subpage -- and extract dated links.
+
+    Tries the news subpages first and only falls back to the landing page,
+    because that ordering is what the live test demanded: four of the ten
+    companies checked had a landing page with no press releases on it.
 
     Returns [] on any failure -- unreachable, blocked, or a JavaScript shell
-    with nothing in it. The caller treats an empty list as "nothing to see",
-    which is also the right answer when a page is bot-protected.
+    with nothing in it. An empty list means "nothing to see", which is also
+    the right answer for a bot-protected site.
     """
-    resp = get_with_retry(ir_url, headers=PAGE_HEADERS, timeout=20, label=label)
-    if resp is None:
-        print(f"[{label}] IR page unreachable this run.")
-        return []
-    if not resp.ok:
-        print(f"[{label}] IR page HTTP {resp.status_code}")
-        return []
+    root = f"{urlparse(ir_url).scheme}://{urlparse(ir_url).netloc}"
+    tried = []
 
+    for path in NEWS_SUBPAGES:
+        candidate = root + path
+        if candidate in tried:
+            continue
+        tried.append(candidate)
+        resp = _fetch_one(candidate, label)
+        if resp is None:
+            continue
+        articles = extract_articles(resp.text, candidate)
+        if articles:
+            print(f"[{label}] {len(articles)} dated articles from {candidate}")
+            return articles
+
+    resp = _fetch_one(ir_url, label)
+    if resp is None:
+        return []
     articles = extract_articles(resp.text, ir_url)
-    if not articles:
+    if articles:
+        print(f"[{label}] {len(articles)} dated articles from {ir_url}")
+    else:
         # Distinguishing a shell from an empty page matters when reading logs:
         # a big body with no articles means JavaScript-rendered or blocked.
-        print(f"[{label}] no dated articles found in {len(resp.text)} bytes "
-              f"(likely JavaScript-rendered or bot-protected).")
+        print(f"[{label}] no dated articles in {len(resp.text)} bytes at "
+              f"{ir_url} (likely JavaScript-rendered or bot-protected).")
     return articles
 
 
@@ -233,8 +283,21 @@ def _find_ir_link(html, base_url):
             segs = [s for s in urlparse(href).path.lower().split("/") if s]
             if "ir" in segs or label.lower() == "ir":
                 rank = len(_IR_HINTS)
-        if rank is not None and rank < best_rank:
-            best, best_rank = urljoin(base_url, href), rank
+        if rank is None:
+            continue
+
+        # A dedicated IR HOST beats a marketing page every time. Brookfield's
+        # homepage links "Investors" to /invest-with-us/private-wealth, a
+        # sales page with no press releases -- while investors.brookfield.com
+        # is the real thing. Hostname is the stronger signal, so it wins even
+        # against a better-worded link.
+        absolute = urljoin(base_url, href)
+        host = urlparse(absolute).netloc.lower()
+        if host.startswith(("ir.", "investor.", "investors.")):
+            rank -= 100
+
+        if rank < best_rank:
+            best, best_rank = absolute, rank
     return best
 
 
