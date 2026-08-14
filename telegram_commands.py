@@ -351,35 +351,33 @@ def handle_earnings_for(raw: str, state: dict) -> None:
                 f"listed as reporting today ({today}). Watching anyway."
             )
 
-    unsupported = [t for t in valid if t.upper() not in FEED_URLS]
-    to_queue = [t for t in valid if t.upper() in FEED_URLS]
-
-    if unsupported:
-        # Better to say so plainly than to accept the command and silently
-        # never detect anything.
-        send_telegram_message(
-            f"No investor-relations feed is configured for "
-            f"{', '.join(unsupported)}, so I can't detect their earnings. "
-            f"Ask me to add {'it' if len(unsupported) == 1 else 'them'}."
-        )
-
-    if not to_queue:
-        return
-
+    # Every ticker is watchable now. Detection falls back to Google News where
+    # there's no IR feed, so there's no longer a supported/unsupported split --
+    # only a difference in how detailed the resulting summary will be, which
+    # the confirmation message below is honest about.
     now = now_et()
     expires = now + timedelta(hours=ON_DEMAND_WATCH_HOURS)
-    for ticker in to_queue:
+    for ticker in valid:
         state[f"ew_watch::{ticker}"] = {
             "armed": now.isoformat(),
             "expires": expires.isoformat(),
         }
 
+    thin = [t for t in valid if t.upper() not in FEED_URLS]
+    detail_note = ""
+    if thin:
+        detail_note = (
+            f"\n\n{', '.join(thin)}: no investor-relations feed, so detection "
+            f"is via news headlines -- expect the headline rather than the full "
+            f"figures."
+        )
+
     windows = ", ".join(f"{a}-{b}" for a, b in ON_DEMAND_POLL_WINDOWS_ET)
     send_telegram_message(
-        f"\U0001F514 Watching {', '.join(to_queue)} for the next "
-        f"{ON_DEMAND_WATCH_HOURS}h. I'll check each company's investor-relations "
-        f"feed every minute during {windows} ET and send a summary as soon as "
-        f"results appear." + calendar_note
+        f"\U0001F514 Watching {', '.join(valid)} for the next "
+        f"{ON_DEMAND_WATCH_HOURS}h. I'll check every minute during {windows} ET "
+        f"and send a summary as soon as results appear."
+        + detail_note + calendar_note
     )
 
 
@@ -484,8 +482,8 @@ def check_on_demand_earnings(state: dict) -> bool:
         if not in_window:
             continue
 
-        print(f"[{ticker}] checking IR feed for a results release since {armed}...")
-        release = ir_feeds.find_release(ticker, armed)
+        print(f"[{ticker}] checking for a results release since {armed}...")
+        release = ir_feeds.find_release(ticker, armed, state)
         if not release:
             continue
 

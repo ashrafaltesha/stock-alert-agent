@@ -131,11 +131,13 @@ MARKET_EARNINGS_POLL_START_ET = "16:00"
 
 # -- On-demand "earnings for TICKER" (telegram_commands.py) --
 #
-# Detection is the company's own investor-relations RSS feed (ir_feeds.py).
-# Not Finnhub, whose epsActual can lag the release by hours, and not SEC
-# EDGAR, which returns HTTP 403 to GitHub Actions runners. Finnhub is still
-# used for the earnings *calendar* -- knowing a report is scheduled -- which
-# a feed can never tell you, since a feed only says something has happened.
+# Detection is the company's investor-relations RSS feed where one exists,
+# falling back to Google News headlines otherwise (ir_feeds.py). Not Finnhub,
+# whose epsActual can lag the release by hours; not SEC EDGAR, which returns
+# HTTP 403 to GitHub Actions runners; not FMP, whose press-release feed is
+# paid-only and whose 8-K feed refreshes just hourly. Finnhub is still used
+# for the earnings *calendar* -- knowing a report is scheduled -- which a feed
+# can never tell you, since a feed only says something has happened.
 #
 # One command arms a watch lasting ON_DEMAND_WATCH_HOURS. Within that window
 # the feed is checked once per run, but only during the two windows below.

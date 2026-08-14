@@ -231,3 +231,64 @@ def test_moments_inside_poll_windows(moment):
 ])
 def test_moments_outside_poll_windows(moment):
     assert not tc._in_poll_window(moment)
+
+
+# --- Google News headline classifier --------------------------------------
+#
+# Detection falls back to news headlines for the 7 tickers with no IR feed,
+# and newsrooms word things differently from company press releases. The
+# false-positive direction is the dangerous one here: pre-earnings coverage
+# mentions the same quarter and uses the same verbs, but is published days
+# EARLY. A hit on one of those ends the watch, so nothing gets sent when the
+# results actually land -- a silent failure, the worst kind.
+
+@pytest.mark.parametrize("headline", [
+    "Cerebras Reports Second Quarter 2026 Financial Results",
+    "Cerebras Q2 revenue tops estimates",
+    "XPeng posts Q4 2025 net loss as deliveries climb",
+    "Genius Sports beats Q2 earnings estimates",
+    "Wolfspeed misses on fourth-quarter revenue",
+    "Shift4 Payments Q1 2026 earnings: EPS $1.02",
+    "AppLovin reported second quarter 2026 results after the bell",
+])
+def test_results_coverage_is_detected(headline):
+    assert ir_feeds.is_media_results_headline(headline)
+
+
+@pytest.mark.parametrize("headline", [
+    # Forward-looking: published before the release.
+    "Analysts expect Cerebras to beat Q2 estimates",
+    "Cerebras Q2 earnings preview: what to expect",
+    "What to expect from XPeng's fourth quarter results",
+    "Wolfspeed stock rises ahead of Q4 earnings",
+    "Cerebras could beat Q2 revenue forecasts, analyst says",
+    "Options traders brace for AppLovin Q2 earnings move",
+    "Upcoming Q2 earnings: 5 stocks to watch",
+    # Scheduling notices.
+    "Genius Sports will report Q2 results on August 20",
+    "Shift4 to announce first quarter 2026 results",
+    "AppLovin sets date for second quarter 2026 earnings call",
+    "Cerebras announces conference call to discuss Q2 2026 results",
+    # Ordinary news with no fiscal period at all.
+    "Cerebras announces partnership with major cloud provider",
+    "XPeng launches new EV model in Europe",
+])
+def test_non_results_coverage_is_rejected(headline):
+    assert not ir_feeds.is_media_results_headline(headline)
+
+
+@pytest.mark.parametrize("raw,expected", [
+    ("Cerebras Reports Q2 2026 Results - Reuters",
+     "Cerebras Reports Q2 2026 Results"),
+    ("XPeng posts Q4 loss - Business Wire", "XPeng posts Q4 loss"),
+    ("No suffix here", "No suffix here"),
+])
+def test_google_news_outlet_suffix_is_stripped(raw, expected):
+    assert ir_feeds._strip_source(raw) == expected
+
+
+def test_hyphenated_headline_survives_suffix_stripping():
+    # Naive splitting on "-" would mangle this; only a trailing outlet goes.
+    assert "Full-year" in ir_feeds._strip_source(
+        "Wolfspeed Full-year Results Beat - CNBC"
+    )
