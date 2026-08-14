@@ -20,4 +20,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Probe sources
+        env:
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
         run: python probe_sources.py
