@@ -23,15 +23,20 @@ or the date embedded in the URL itself.
 
 The detection rule
 ------------------
-Not keyword matching. On the day a company reports, the earnings release is
-essentially the only thing it posts, so "a NEW article appeared today" is a
-far more reliable signal than "this headline sounds like earnings" -- and it
-needs no tuning. The earlier keyword classifier nearly missed the real
+Not keyword matching: anything the company posts dated today. On the day a
+company reports, the release is essentially the only thing it publishes, so
+the date is a far more reliable signal than whether a headline sounds like
+earnings -- the keyword classifier this replaces nearly missed the real
 Cerebras release, whose headline contained no results word at all.
 
-"New" is measured against a snapshot taken when the watch was armed. A date
-match alone is not enough: a watch armed at 4pm would otherwise fire on a
-routine press release the company put out at 9am the same morning.
+Everything from that day counts, including items posted before the command
+was sent, because the goal is awareness of everything the company says on its
+reporting day rather than just the results document.
+
+That makes the watch a running feed rather than a one-shot trigger, and the
+caller must not close it on the first match -- otherwise a routine morning
+announcement would end the watch and the actual results, hours later, would
+never arrive. Sent URLs are remembered so nothing repeats.
 """
 
 import re
@@ -189,19 +194,27 @@ def fetch_articles(ir_url: str, label: str = "ir-page"):
     return articles
 
 
-def todays_new_articles(articles, baseline_urls, today: date):
-    """The detection rule: NEW since the watch was armed, AND dated today.
+def todays_articles(articles, already_sent_urls, today: date):
+    """The detection rule: anything dated today that hasn't been sent yet.
 
-    Both halves are needed.
+    Deliberately not keyword-matched. On the day a company reports, the
+    release is essentially the only thing it posts, so the date is a far more
+    reliable signal than whether a headline sounds like earnings -- the
+    keyword classifier this replaces nearly missed the real Cerebras release,
+    whose headline contained no results word at all.
 
-    Date alone fires on whatever the company happened to post earlier the
-    same day -- a watch armed at 4pm would match a routine 9am release.
+    Deliberately not restricted to items published after the watch was armed,
+    either. The point is awareness of everything the company says on its
+    reporting day, including anything posted that morning before the command
+    was sent.
 
-    Novelty alone fires on any new post at all, including the "we will report
-    on the 20th" notices companies publish weeks ahead.
+    Two consequences the caller has to honour:
 
-    Together they are precise without any keyword matching, because on the
-    day a company reports, the release is essentially the only thing it posts.
+    1. The watch must NOT end on the first match. A routine morning
+       announcement would otherwise close the watch and the actual results,
+       hours later, would never be sent.
+    2. `already_sent_urls` must persist across runs, or the same article is
+       re-sent every polling cycle -- roughly once a minute.
     """
     return [a for a in articles
-            if a["url"] not in baseline_urls and a["date"] == today]
+            if a["url"] not in already_sent_urls and a["date"] == today]
