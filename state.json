@@ -37,48 +37,48 @@
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-18",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::BAK": {
     "date": "2026-08-18",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::EVH": {
     "date": "2026-08-18",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::FOUR": {
     "date": "2026-08-18",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::GENI": {
     "date": "2026-08-18",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::QURE": {
     "date": "2026-08-18",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::UAVS": {
     "date": "2026-08-18",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::WOLF": {
     "date": "2026-08-18",
-    "max_step_up": 0,
-    "max_step_down": 2
+    "max_step_down": 2,
+    "max_step_up": 0
   },
   "price_ref::XPEV": {
     "date": "2026-08-18",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "seen_news::APP": [
     "dfb7fc28c2604dd3",
@@ -1164,5 +1164,5 @@
     "ea6f4e46b709c5b9",
     "bc95d24f7aea86a3"
   ],
-  "tg_update_offset": 785157195
+  "tg_update_offset": 785157196
 }
