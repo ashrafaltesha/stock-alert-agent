@@ -40,56 +40,57 @@
     "armed": "2026-08-19T15:26:31.902721-04:00",
     "expires": "2026-08-20T15:26:31.902721-04:00"
   },
+  "ir_page::WOLF": "https://investor.wolfspeed.com/",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-19",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::BAK": {
     "date": "2026-08-19",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::CENX": {
     "date": "2026-08-19",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::EVH": {
     "date": "2026-08-19",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::FOUR": {
     "date": "2026-08-19",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::GENI": {
     "date": "2026-08-19",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::QURE": {
     "date": "2026-08-19",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::UAVS": {
     "date": "2026-08-19",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::WOLF": {
     "date": "2026-08-19",
-    "max_step_up": 0,
-    "max_step_down": 2
+    "max_step_down": 2,
+    "max_step_up": 0
   },
   "price_ref::XPEV": {
     "date": "2026-08-19",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "seen_news::APP": [
     "ddd15a3aa6179183",
