@@ -1299,5 +1299,7 @@
     "19215311490a49e7",
     "4e157188131e3265"
   ],
-  "tg_update_offset": 785157200
+  "tg_update_offset": 785157200,
+  "ew_poll_started::afterhours::2026-08-19": "2026-08-19T16:58:31.117630-04:00",
+  "ew_summary_sent::WOLF::2026-08-19": true
 }
