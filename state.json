@@ -39,14 +39,6 @@
   "ew_poll_started::afterhours::2026-08-19": "2026-08-19T16:58:31.117630-04:00",
   "ew_summary_sent::CBRS::2026-08-12": true,
   "ew_summary_sent::WOLF::2026-08-19": true,
-  "ew_watch::WOLF": {
-    "armed": "2026-08-19T15:26:31.902721-04:00",
-    "expires": "2026-08-20T15:26:31.902721-04:00",
-    "sent": [
-      "https://news.google.com/rss/articles/CBMingFBVV95cUxPU1JNeHU2Ti1fSFl1OWQ2TGhQc0QwZnpYdEo0TjAzdHBnbGVyd0xZY3pDLWJ6cTdPcllCejhtR25lMVNnNy1KUE90anJxc01jT2RlT0dDMEZKUHVpcVJTSHgtMEJpS0tScjBTZnRXWHhpV28weWRoaU9HaVQtRUsxSkI4cDlwM0twTXFVTVNaZ0FnY3NEdXlZWTJ6ZWZkUQ?oc=5",
-      "https://news.google.com/rss/articles/CBMiygFBVV95cUxOektEbHRsaVhZZkNOS01WTWFPZmt0SzVMbjNnZE92bnhCc3EyUm84bmJBY1F0cWY1WkxHcUZoMElYYzllbWRsY2R3Yk51Q21mTzFoUGZwQjNTYkNwU1BiSnBtektHZjZuWXZ4YkE5QkhfVXdfVDFRclpCeTk3RVB5RzZJZjZIaFJUYk5fYUl3aEIwS1hHa1g4ZFZLbTgxSVBZVVd3WEN6X0FYbHJGVjBoakNwVlhBYjcwV2ozS25WRXVxQ3NYbkhFNmVn?oc=5"
-    ]
-  },
   "ir_page::WOLF": "https://investor.wolfspeed.com/",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
