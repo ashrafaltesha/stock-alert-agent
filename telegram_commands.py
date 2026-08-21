@@ -12,6 +12,10 @@ optional):
   watchlist
   added <NUMBER> shares of <TICKER> at <PRICE>
   sold <NUMBER> shares of <TICKER> at <PRICE>
+  set cash to <AMOUNT>
+  set deposits to <AMOUNT>   (aka "set money in to ...")
+  deposited <AMOUNT>
+  withdrew <AMOUNT>
   summary
   earnings today
   earnings for <TICKER>[, <TICKER> ...]
@@ -34,12 +38,22 @@ the ticker to your watchlist automatically if it isn't already there.
 "sold ... at ..." reduces your share count -- the average cost per
 remaining share is left unchanged, which is standard average-cost-basis
 accounting (selling doesn't change what you paid for what's left) -- and
-requires the sale price so it can track two running totals stored directly
-in holdings.json: CASH (total proceeds from all sales, i.e. qty * sale
-price, added up across every "sold" command) and REALIZED_PNL (total
-realized gain/loss across all sales, i.e. sum of qty * (sale price - avg
-cost at the time of each sale)). Both are portfolio-wide running totals,
-not per-ticker. The old "sold <NUMBER> shares of <TICKER>" form (no price)
+requires the sale price so it can track the portfolio-wide running totals
+stored directly in holdings.json: CASH (money on hand), REALIZED_PNL (total
+gain/loss across all sales) and DEPOSITS (net money you have put in).
+
+CASH is a real balance, not just sale proceeds: buying deducts, selling
+credits, and "deposited"/"withdrew" adjust it directly. If a purchase costs
+more than the cash on hand, the shortfall is assumed to have been deposited
+rather than letting the balance go negative -- the money had to come from
+somewhere for the trade to have happened -- and that implied amount is added
+to DEPOSITS so the balance still reconciles.
+
+DEPOSITS exists so returns mean something. Book value ignores money added
+along the way, so "am I up?" can only be answered against what you actually
+put in. The first "set cash to X" seeds it with X plus the cost of whatever
+you already hold, since those shares were paid for before the bot existed;
+"set deposits to X" corrects it. The old "sold <NUMBER> shares of <TICKER>" form (no price)
 is no longer enough to record a sale -- you'll get a reminder to include
 the price instead.
 "summary" sends your current holdings: shares, avg book price, total book
@@ -125,7 +139,13 @@ WATCHLIST_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "watch
 # Reserved -- can't be used as ticker symbols in add/sold commands.
 CASH_KEY = "CASH"
 REALIZED_PNL_KEY = "REALIZED_PNL"
-RESERVED_HOLDINGS_KEYS = {CASH_KEY, REALIZED_PNL_KEY}
+# Running total of money added to the account, including the amounts implied
+# when a purchase costs more than the cash on hand. Without this the balance
+# can't be reconciled -- money would appear from nowhere every time a buy was
+# larger than the balance, and there'd be no way to tell afterwards how much
+# of the portfolio was funded rather than earned.
+DEPOSITS_KEY = "DEPOSITS"
+RESERVED_HOLDINGS_KEYS = {CASH_KEY, REALIZED_PNL_KEY, DEPOSITS_KEY}
 
 _NUM = r"[\d,]+(?:\.\d+)?"
 _TICKER = r"\$?([A-Za-z.\-]{1,10})"
@@ -148,6 +168,16 @@ ADD_WATCHLIST_RE = re.compile(r"^\s*add\s+(.+?)\s+to\s+my\s+watchlist\.?\s*$", r
 REMOVE_WATCHLIST_RE = re.compile(r"^\s*remove\s+(.+?)\s+from\s+my\s+watchlist\.?\s*$", re.IGNORECASE)
 WATCHLIST_RE = re.compile(r"^\s*watchlist\.?\s*$", re.IGNORECASE)
 SUMMARY_RE = re.compile(r"^\s*summary\s*\.?\s*$", re.IGNORECASE)
+# Cash management. "set cash to X" is the manual correction used to bootstrap
+# the balance; "deposited X" is the ongoing one, and unlike a correction it
+# also credits DEPOSITS so the funding total stays honest.
+SET_CASH_RE = re.compile(rf"^\s*set\s+cash\s+(?:to\s+)?\$?({_NUM})\s*\.?\s*$", re.IGNORECASE)
+SET_DEPOSITS_RE = re.compile(
+    rf"^\s*set\s+(?:deposits|money\s+in)\s+(?:to\s+)?\$?({_NUM})\s*\.?\s*$", re.IGNORECASE)
+DEPOSIT_RE = re.compile(
+    rf"^\s*(?:deposit(?:ed)?|added\s+cash(?:\s+of)?)\s+\$?({_NUM})\s*\.?\s*$", re.IGNORECASE)
+WITHDRAW_RE = re.compile(
+    rf"^\s*(?:withdrew|withdraw|withdrawn)\s+\$?({_NUM})\s*\.?\s*$", re.IGNORECASE)
 EARNINGS_TODAY_RE = re.compile(r"^\s*earnings\s+today\.?\s*$", re.IGNORECASE)
 EARNINGS_FOR_RE = re.compile(r"^\s*earnings\s+for\s+(.+?)\.?\s*$", re.IGNORECASE)
 
@@ -256,12 +286,13 @@ def get_updates(offset: int | None) -> list[dict]:
 def send_summary(holdings: dict) -> None:
     cash = holdings.get(CASH_KEY, 0.0)
     realized_pnl = holdings.get(REALIZED_PNL_KEY, 0.0)
+    deposits = holdings.get(DEPOSITS_KEY, 0.0)
     tickers_held = sorted(
         t
         for t, pos in holdings.items()
         if t not in RESERVED_HOLDINGS_KEYS and isinstance(pos, dict) and pos.get("shares", 0) > 0
     )
-    if not tickers_held and not cash and not realized_pnl:
+    if not tickers_held and not cash and not realized_pnl and not deposits:
         send_telegram_message("You don't have any tracked positions yet.")
         return
 
@@ -304,13 +335,27 @@ def send_summary(holdings: dict) -> None:
     else:
         lines.append(f"*Total book value*: {format_usd(total_book)}")
 
+    # "Cash from sales" was accurate when nothing ever decreased it. Purchases
+    # now deduct, so it's a real balance and the old label would mislead.
     if cash:
-        lines.append(f"*Cash from sales*: {format_usd(cash)}")
+        lines.append(f"*Cash on hand*: {format_usd(cash)}")
+    if deposits:
+        lines.append(f"*Net deposited*: {format_usd(deposits)}")
     if realized_pnl:
         arrow = "\U0001F7E2" if realized_pnl >= 0 else "\U0001F534"
         lines.append(f"*Realized P&L (sales)*: {format_usd_signed(realized_pnl)} {arrow}")
-    if cash and have_market_total:
-        lines.append(f"*Portfolio value (stocks + cash)*: {format_usd(total_market + cash)}")
+    if have_market_total:
+        total_value = total_market + cash
+        lines.append(f"*Portfolio value (stocks + cash)*: {format_usd(total_value)}")
+        # The only figure that answers "am I actually up?". Book value ignores
+        # money added along the way; against net deposits, a gain is a gain.
+        if deposits:
+            net = total_value - deposits
+            arrow = "\U0001F7E2" if net >= 0 else "\U0001F534"
+            lines.append(
+                f"*Vs. money in*: {format_usd_signed(net)} "
+                f"({format_pct_signed(net / deposits * 100)}) {arrow}"
+            )
 
     send_telegram_message("\n".join(lines))
 
@@ -577,6 +622,78 @@ def process_message(
         handle_earnings_today()
         return False, False, False
 
+    # Cash commands are checked BEFORE the share commands. "added cash 5000"
+    # would otherwise be caught by nothing at all, and a future loosening of
+    # the share regex could swallow it silently.
+    set_cash_match = SET_CASH_RE.match(text)
+    if set_cash_match:
+        amount = parse_num(set_cash_match.group(1))
+        previous = holdings.get(CASH_KEY, 0.0)
+        holdings[CASH_KEY] = amount
+
+        seeded_note = ""
+        if DEPOSITS_KEY not in holdings:
+            # First time only: seed the funding total with this cash PLUS the
+            # cost of everything already held. Those shares were paid for with
+            # money that predates the bot, and leaving it out would make every
+            # return figure look enormous -- comparing today's portfolio
+            # against nothing but later top-ups.
+            book = sum(
+                pos.get("shares", 0.0) * pos.get("avg_cost", 0.0)
+                for t, pos in holdings.items()
+                if t not in RESERVED_HOLDINGS_KEYS and isinstance(pos, dict)
+            )
+            holdings[DEPOSITS_KEY] = amount + book
+            seeded_note = (
+                f"\n\nStarting money-in set to {format_usd(amount + book)} "
+                f"— this cash plus the {format_usd(book)} cost of what you "
+                f"already hold. Correct it with \"set deposits to X\" if that's off."
+            )
+
+        send_telegram_message(
+            f"✅ Cash on hand set to {format_usd(amount)} "
+            f"(was {format_usd(previous)}).{seeded_note}"
+        )
+        return False, True, False
+
+    set_deposits_match = SET_DEPOSITS_RE.match(text)
+    if set_deposits_match:
+        amount = parse_num(set_deposits_match.group(1))
+        previous = holdings.get(DEPOSITS_KEY, 0.0)
+        holdings[DEPOSITS_KEY] = amount
+        send_telegram_message(
+            f"✅ Total money in set to {format_usd(amount)} "
+            f"(was {format_usd(previous)}). Cash on hand is unchanged at "
+            f"{format_usd(holdings.get(CASH_KEY, 0.0))}."
+        )
+        return False, True, False
+
+    deposit_match = DEPOSIT_RE.match(text)
+    if deposit_match:
+        amount = parse_num(deposit_match.group(1))
+        holdings[CASH_KEY] = holdings.get(CASH_KEY, 0.0) + amount
+        holdings[DEPOSITS_KEY] = holdings.get(DEPOSITS_KEY, 0.0) + amount
+        send_telegram_message(
+            f"✅ Deposited {format_usd(amount)}.\n"
+            f"Cash on hand: {format_usd(holdings[CASH_KEY])}  |  "
+            f"Total deposited: {format_usd(holdings[DEPOSITS_KEY])}"
+        )
+        return False, True, False
+
+    withdraw_match = WITHDRAW_RE.match(text)
+    if withdraw_match:
+        amount = parse_num(withdraw_match.group(1))
+        holdings[CASH_KEY] = holdings.get(CASH_KEY, 0.0) - amount
+        # Withdrawals reduce net deposits, so "total deposited" stays a
+        # meaningful measure of what you've actually put in.
+        holdings[DEPOSITS_KEY] = holdings.get(DEPOSITS_KEY, 0.0) - amount
+        send_telegram_message(
+            f"✅ Withdrew {format_usd(amount)}.\n"
+            f"Cash on hand: {format_usd(holdings[CASH_KEY])}  |  "
+            f"Net deposited: {format_usd(holdings[DEPOSITS_KEY])}"
+        )
+        return False, True, False
+
     earnings_for_match = EARNINGS_FOR_RE.match(text)
     if earnings_for_match:
         handle_earnings_for(earnings_for_match.group(1), state)
@@ -610,11 +727,31 @@ def process_message(
         new_avg = new_cost_total / new_shares if new_shares else 0.0
         holdings[ticker] = {"shares": new_shares, "avg_cost": new_avg}
 
+        # Pay for the shares out of cash. If the purchase costs more than is
+        # on hand, assume the shortfall was deposited rather than letting the
+        # balance go negative -- money had to come from somewhere for the
+        # trade to have happened. The implied amount is added to DEPOSITS so
+        # the balance still reconciles and you can see how much was funded.
+        cost = qty * price
+        cash = holdings.get(CASH_KEY, 0.0)
+        shortfall = max(0.0, cost - cash)
+        if shortfall > 0:
+            holdings[DEPOSITS_KEY] = holdings.get(DEPOSITS_KEY, 0.0) + shortfall
+            cash += shortfall
+        holdings[CASH_KEY] = cash - cost
+
+        funding_note = ""
+        if shortfall > 0:
+            funding_note = (
+                f"\nThat cost {format_usd(cost)}, more than your cash on hand, "
+                f"so I assumed a deposit of {format_usd(shortfall)}."
+            )
         watch_note = " Also added it to your holdings list for price/news/earnings alerts." if tickers_changed else ""
         send_telegram_message(
             f"✅ Added {qty:,.0f} shares of *{ticker}* at {format_usd(price)}.\n"
             f"New position: {new_shares:,.0f} sh @ avg {format_usd(new_avg)} "
-            f"(book {format_usd(new_shares * new_avg)}).{watch_note}"
+            f"(book {format_usd(new_shares * new_avg)}).{funding_note}\n"
+            f"Cash on hand: {format_usd(holdings[CASH_KEY])}.{watch_note}"
         )
         return tickers_changed, True, False
 
