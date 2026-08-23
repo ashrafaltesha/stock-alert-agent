@@ -58,8 +58,17 @@ from telegram_utils import escape_markdown, send_telegram_message
 # turns out to be 45 seconds, nothing below a minute matters anyway.
 POLL_SECONDS = 15
 
-# Leave headroom before the hourly restart so a cycle is never cut mid-send.
-LOOP_MINUTES = 55
+# LONGER than the hourly restart interval, deliberately. At 55 minutes each
+# watcher ended at :00 while the next began at :05, leaving a five-minute
+# hole at the top of every hour -- and TSMC and Honda both file at 06:02 ET,
+# squarely inside it. A filing in the gap was still found by the next run
+# (the baseline lives in state, not in the process), but up to five minutes
+# late, which defeats the point of polling every fifteen seconds.
+#
+# Running past the hour means the incoming watcher overlaps the outgoing one.
+# concurrency: cancel-in-progress is true, so the new run cancels the old on
+# creation and the only remaining gap is runner provisioning, ~30 seconds.
+LOOP_MINUTES = 62
 
 _FIGURE_PATTERNS = (
     ("Revenue", r"revenues?\s+(?:of\s+)?(?:was\s+)?\$?([\d.,]+\s*(?:billion|million)?)"),

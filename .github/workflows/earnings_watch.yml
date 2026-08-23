@@ -31,8 +31,9 @@ on:
     # filing would swallow it.
     - cron: "0 9 * * 1-5"
     - cron: "0 19 * * 1-5"
-    # A fresh watcher every hour, each running ~55 minutes, so cover is
-    # continuous and a dead job is replaced within the hour.
+    # A fresh watcher every hour. Each loops for 62 minutes -- LONGER than
+    # the interval -- so the incoming run overlaps the outgoing one instead
+    # of leaving a gap at the top of the hour.
     #
     # 09:00-23:00 UTC = 05:00-19:00 ET in summer, 04:00-18:00 in winter.
     # It starts an hour before the earliest filing measured (SAP 06:00 ET,
@@ -104,9 +105,9 @@ jobs:
     # started on demand by the arm job or the Telegram command.
     if: github.event.schedule != '0 9 * * 1-5' && github.event.schedule != '0 19 * * 1-5'
     runs-on: ubuntu-latest
-    # 55-minute loop plus headroom. Not 360 (the maximum): a shorter ceiling
+    # 62-minute loop plus headroom. Not 360 (the maximum): a shorter ceiling
     # means a wedged job is cleared sooner.
-    timeout-minutes: 65
+    timeout-minutes: 70
     steps:
       - uses: actions/checkout@v4
 
