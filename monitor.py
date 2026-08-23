@@ -15,13 +15,17 @@ telegram_commands.py) -- both get identical treatment below. For each:
      if it goes on to reach 10%+, 15%+, etc. away from that SAME close --
      each threshold-from-close is a one-time alert per day, in each
      direction (resets each morning to the new previous close).
-  2. Anytime (market hours or not): alerts on new, *material* news --
-     analyst upgrades/downgrades, M&A/partnership/collaboration
-     announcements, delivery/production numbers, and similar catalysts
-     (see MATERIAL_NEWS_KEYWORDS in config.py) -- pulled from both Yahoo
-     Finance's news feed and Google News (which aggregates Reuters, CNBC,
-     Bloomberg, MarketWatch, Benzinga, Seeking Alpha, etc.). Routine/non-
-     material headlines are tracked for dedup but not sent.
+  2. Anytime (market hours or not): alerts on new, *material* news, pulled
+     from both Yahoo Finance's news feed and Google News (which aggregates
+     Reuters, CNBC, Bloomberg, MarketWatch and many others).
+
+     What counts as material is decided in news_filter.py, not here. Headlines
+     from every ticker and both sources are collected across the whole run and
+     screened together at the end -- see process_news_candidates() -- rather
+     than judged one at a time as they arrive. That ordering is what allows
+     the same wire story appearing on both sources to be collapsed into one
+     alert, and lets the run spend a single model call instead of one per
+     headline. Anything filtered out is logged and dropped silently.
 
 State (reference price per ticker, already-seen news ids) is kept in
 state.json, which this script updates and the workflow commits back to
@@ -44,23 +48,73 @@ from config import (
     WATCHLIST,
     PRICE_CHANGE_THRESHOLD_PCT,
     NEWS_LOOKBACK_MINUTES,
-    MATERIAL_NEWS_KEYWORDS,
 )
 from market_hours import is_market_hours
 from telegram_utils import send_telegram_message, escape_markdown
+import news_filter
 from state_utils import load_state, save_state
 from http_utils import get_with_retry, call_with_retry
 
 GOOGLE_NEWS_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 
 
-def is_material(title: str) -> bool:
-    """Keyword-based material-news filter. Simple substring matching --
-    not true NLP classification, so it can occasionally miss unusually
-    worded stories or match a loosely related one. Tune the keyword list
-    in config.py if it's too noisy or too quiet."""
-    title_lower = title.lower()
-    return any(keyword in title_lower for keyword in MATERIAL_NEWS_KEYWORDS)
+def process_news_candidates(candidates, state):
+    """Screen a run's worth of articles and send what survives.
+
+    Three stages, cheapest first, because each is more expensive than the
+    last and each removes work from the next:
+
+      1. SOURCE     drop aggregators and listicle headlines. No network.
+      2. DEDUPE     drop stories already alerted, across both sources.
+      3. CLASSIFY   one model call for everything that remains.
+
+    Deduplicating BEFORE classifying matters: Yahoo and Google routinely
+    carry the same wire story with slightly different wording, and paying to
+    classify the same event twice would be waste as well as a double alert.
+    """
+    if not candidates:
+        return
+
+    kept = []
+    for article in candidates:
+        if not news_filter.source_allowed(article.get("source"), article["title"]):
+            print(f"  [{article['ticker']}] source/shape filtered: "
+                  f"{article['title'][:70]}")
+            continue
+        seen = state.get(f"alerted_titles::{article['ticker']}", [])
+        if _is_duplicate_headline(article["title"], seen):
+            continue
+        # Also dedupe within this batch -- the two sources very often supply
+        # the same story in the same run.
+        if any(_is_duplicate_headline(article["title"], [k["title"]])
+               and k["ticker"] == article["ticker"] for k in kept):
+            continue
+        kept.append(article)
+
+    if not kept:
+        return
+
+    verdicts = news_filter.classify(kept)
+
+    for article, verdict in zip(kept, verdicts):
+        send, label = news_filter.should_alert(verdict, article["title"])
+        if not send:
+            reason = (f"{verdict['impact']}/{verdict['event']}"
+                      if verdict else "keyword filter")
+            print(f"  [{article['ticker']}] dropped ({reason}): "
+                  f"{article['title'][:70]}")
+            continue
+
+        msg = f"\U0001F4F0 *{article['ticker']}*"
+        if label:
+            msg += f" — {escape_markdown(label)}"
+        msg += f"\n{escape_markdown(article['title'])}"
+        if article.get("source"):
+            msg += f"\n_{escape_markdown(article['source'])}_"
+        if article.get("link"):
+            msg += f"\n{article['link']}"
+        send_telegram_message(msg)
+        _record_headline(article["ticker"], article["title"], state)
 
 
 def today_str() -> str:
@@ -231,7 +285,7 @@ def _record_headline(ticker: str, title: str, state: dict) -> None:
     state[key] = titles[-40:]
 
 
-def check_yahoo_news(ticker: str, state: dict) -> None:
+def check_yahoo_news(ticker: str, state: dict, candidates: list) -> None:
     key = f"seen_news::{ticker}"
     seen_ids = set(state.get(key, []))
     now = datetime.now(timezone.utc)
@@ -273,9 +327,7 @@ def check_yahoo_news(ticker: str, state: dict) -> None:
         # only alert if it's fresh AND passes the material-news filter.
         new_ids.append(article_id)
         title = content.get("title") or "New article"
-        if age_minutes <= NEWS_LOOKBACK_MINUTES and is_material(title):
-            if _is_duplicate_headline(title, state.get(f"alerted_titles::{ticker}", [])):
-                continue
+        if age_minutes <= NEWS_LOOKBACK_MINUTES:
             link = (
                 content.get("canonicalUrl", {}).get("url")
                 or content.get("clickThroughUrl", {}).get("url")
@@ -284,19 +336,14 @@ def check_yahoo_news(ticker: str, state: dict) -> None:
             publisher = content.get("provider", {}).get("displayName", "") if isinstance(
                 content.get("provider"), dict
             ) else content.get("publisher", "")
-            msg = f"\U0001F4F0 *{ticker} news*: {escape_markdown(title)}"
-            if publisher:
-                msg += f"\n_{escape_markdown(publisher)}_"
-            if link:
-                msg += f"\n{link}"
-            send_telegram_message(msg)
-            _record_headline(ticker, title, state)
+            candidates.append({"ticker": ticker, "title": title,
+                               "source": publisher, "link": link})
 
     # Cap stored ids so state.json doesn't grow forever.
     state[key] = new_ids[-100:]
 
 
-def check_google_news(ticker: str, state: dict) -> None:
+def check_google_news(ticker: str, state: dict, candidates: list) -> None:
     """Pull recent headlines from Google News RSS, which aggregates across
     outlets (Reuters, CNBC, Bloomberg, MarketWatch, Benzinga, Seeking Alpha,
     Motley Fool, etc.) rather than relying on Yahoo Finance alone."""
@@ -338,19 +385,12 @@ def check_google_news(ticker: str, state: dict) -> None:
 
         new_ids.append(article_id)
         title = item.findtext("title") or "New article"
-        if age_minutes <= NEWS_LOOKBACK_MINUTES and is_material(title):
-            if _is_duplicate_headline(title, state.get(f"alerted_titles::{ticker}", [])):
-                continue
+        if age_minutes <= NEWS_LOOKBACK_MINUTES:
             link = item.findtext("link") or ""
             source_el = item.find("source")
             publisher = source_el.text if source_el is not None else "Google News"
-            msg = f"\U0001F4F0 *{ticker} news*: {escape_markdown(title)}"
-            if publisher:
-                msg += f"\n_{escape_markdown(publisher)}_"
-            if link:
-                msg += f"\n{link}"
-            send_telegram_message(msg)
-            _record_headline(ticker, title, state)
+            candidates.append({"ticker": ticker, "title": title,
+                               "source": publisher, "link": link})
 
     state[key] = new_ids[-100:]
 
@@ -369,13 +409,23 @@ def main() -> None:
     # Dedup in case a symbol is on both lists (e.g. you added it to your
     # watchlist before buying it) -- avoids fetching/checking it twice.
     monitored = sorted(set(TICKERS) | set(WATCHLIST))
+
+    # Collected across every ticker and BOTH sources, then screened in one
+    # batch. Sending from inside the fetch loop -- as this used to -- meant
+    # the same wire story could be alerted twice, once per source, and made
+    # per-article classification the only option.
+    candidates = []
+
     for ticker in monitored:
         if market_open or force:
             check_price_moves(ticker, state)
         # News checks always run -- 5-min cadence during market hours,
         # hourly the rest of the time, per the two cron schedules.
-        check_yahoo_news(ticker, state)
-        check_google_news(ticker, state)
+        check_yahoo_news(ticker, state, candidates)
+        check_google_news(ticker, state, candidates)
+
+    print(f"{len(candidates)} candidate article(s) this run.")
+    process_news_candidates(candidates, state)
     save_state(state)
 
 

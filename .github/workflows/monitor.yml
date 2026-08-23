@@ -59,6 +59,12 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # News screening. One batched call per run -- a handful a day, well
+          # inside either free tier. With NEITHER key set the run still works:
+          # news_filter falls back to the old keyword match, which is noisier
+          # but is the previous behaviour rather than a regression.
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python monitor.py
 
       - name: Commit updated state
