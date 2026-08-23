@@ -2,12 +2,16 @@ name: Telegram ticker commands
 
 on:
   schedule:
-    # Every 5 minutes as a floor. The real cadence comes from an external
-    # cron (cron-job.org) hitting workflow_dispatch -- keep that at 2
-    # MINUTES OR SLOWER. See the concurrency note below: a run takes 40-63s,
-    # and dispatching faster than a run completes is what caused the
-    # duplicate-reply bug.
-    - cron: "*/5 * * * *"
+    # A fresh listener every hour. Each holds an open long-poll connection to
+    # Telegram for 62 minutes -- LONGER than the interval -- so the incoming
+    # run overlaps the outgoing one instead of leaving a gap on the hour.
+    #
+    # This replaces the old */5 cron plus an external cron-job.org trigger
+    # every 2 minutes. THAT EXTERNAL TRIGGER MUST BE TURNED OFF: with
+    # cancel-in-progress below, every dispatch kills the running listener and
+    # starts a new one, so a 2-minute trigger would mean a ~30s blind spot
+    # every 2 minutes -- worse than what it replaced.
+    - cron: "0 * * * *"
   workflow_dispatch: {}
 
 # This workflow gets its own group, NOT one shared with monitor.yml.
@@ -25,13 +29,21 @@ on:
 # these show as "cancelled", not "failed" -- filtering the run list by
 # failures hides them completely.
 #
-# A separate group stops monitor.yml interrupting this one. It does NOT
-# remove the need to dispatch slower than a run takes: this workflow still
-# shares a lane with ITSELF, so firing every 50s while runs take up to 63s
-# reproduces the same cancellation, just self-inflicted.
+# A separate group stops monitor.yml interrupting this one.
+#
+# cancel-in-progress is now TRUE, the opposite of before, and for a reason
+# that only applies to the listener design: Telegram permits exactly ONE open
+# getUpdates connection per bot. A second poller gets a 409 and the two start
+# stealing each other's messages. Queueing runs would guarantee that overlap;
+# cancelling means the newest listener always wins, which also makes a wedged
+# job self-healing.
+#
+# The old duplicate-reply risk that made cancellation dangerous is gone:
+# messages are now acknowledged to Telegram immediately after the reply is
+# sent, not recorded by a git push twenty seconds later.
 concurrency:
   group: stock-alert-agent-telegram
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -43,7 +55,9 @@ permissions:
 jobs:
   process-commands:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 62-minute loop plus headroom. Not 360 (the maximum): a shorter ceiling
+    # means a wedged job is cleared sooner.
+    timeout-minutes: 70
     steps:
       - uses: actions/checkout@v4
 
@@ -63,13 +77,16 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Process Telegram ticker commands
+      - name: Listen for Telegram commands
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python telegram_commands.py
+        # "listen" loops on a long-poll connection. Without the argument
+        # this still runs the old one-shot path, which is what a manual
+        # `python telegram_commands.py` does locally.
+        run: python telegram_commands.py listen
 
       - name: Commit updated tickers/watchlist/state
         run: |

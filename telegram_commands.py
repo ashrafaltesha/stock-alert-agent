@@ -1,7 +1,14 @@
-"""Polls Telegram for new messages and processes natural-language commands
+"""Listens for Telegram messages and processes natural-language commands
 for managing your holdings list (tickers.json), a separate no-ownership
 watchlist (watchlist.json), your position tracking (holdings.json), and
 on-demand earnings lookups.
+
+Two modes:
+  `python telegram_commands.py listen`  the loop the workflow runs. Holds an
+      open long-poll connection to Telegram for 62 minutes and replies within
+      a second or two of a message arriving.
+  `python telegram_commands.py`         one-shot: drain whatever is waiting,
+      then exit. Kept for manual runs and as a fallback.
 
 Recognized commands (case-insensitive, a leading "$" on a ticker is
 optional):
@@ -88,10 +95,23 @@ reply), so normal chatter with the bot doesn't trigger anything.
 import json
 import os
 import re
+import sys
+import time
 from datetime import datetime, timedelta
 
 import requests
 import yfinance as yf
+
+# Telegram holds the connection open this long when there is nothing to
+# report. 25s is comfortably inside Telegram's own limit and keeps an idle
+# hour to ~144 requests.
+POLL_TIMEOUT_SECONDS = 25
+
+# LONGER than the 60-minute restart, deliberately: the incoming listener
+# overlaps the outgoing one instead of leaving a gap at the top of the hour.
+# Telegram allows one poller, so the overlap shows up as a brief 409 that the
+# new listener waits out -- see TelegramConflict.
+LOOP_MINUTES = 62
 
 from config import (
     TELEGRAM_BOT_TOKEN,
@@ -251,14 +271,58 @@ def format_usd_signed(x: float) -> str:
     return f"{sign}${abs(x):,.2f}"
 
 
-def get_updates(offset: int | None) -> list[dict]:
+class TelegramConflict(Exception):
+    """Another getUpdates connection is open for this bot.
+
+    Telegram permits exactly one. This happens for a few seconds when a new
+    listener replaces an outgoing one (concurrency cancel-in-progress), and
+    resolves itself once the old connection drops.
+    """
+
+
+def get_updates(offset: int | None, timeout: int = 0) -> list[dict]:
+    """Fetch updates. `timeout` > 0 makes this a LONG POLL.
+
+    With timeout=0 Telegram answers immediately, which is why the old
+    per-run design could only ever be as fast as its cron. With timeout=25
+    the connection is held open and Telegram pushes the moment a message
+    arrives -- so a reply goes out about a second after you send it, and an
+    idle hour costs ~144 requests instead of one every 15 seconds.
+
+    The HTTP read timeout must exceed the long-poll timeout, or the client
+    hangs up on a perfectly healthy idle connection every single time.
+    """
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates"
-    params = {"timeout": 0}
+    params = {"timeout": timeout}
     if offset is not None:
         params["offset"] = offset
-    resp = requests.get(url, params=params, timeout=20)
+    resp = requests.get(url, params=params, timeout=timeout + 15)
+    if resp.status_code == 409:
+        raise TelegramConflict(resp.text[:200])
     resp.raise_for_status()
     return resp.json().get("result", [])
+
+
+def acknowledge(offset: int) -> None:
+    """Tell Telegram everything below `offset` is handled, and mean it.
+
+    Telegram deletes an update server-side once you request the next one. That
+    makes the acknowledgement authoritative in a way a git commit never was:
+    the old design recorded progress by pushing state.json, so a run that
+    replied at 40s but was cancelled before committing at 60s left the message
+    looking unhandled -- and the next run answered it a second time. That is
+    the duplicate-reply bug, and it is why the poll interval had a two-minute
+    floor.
+
+    Calling this immediately after each reply shrinks that window from about
+    twenty seconds to the length of one HTTP round trip.
+    """
+    try:
+        get_updates(offset, timeout=0)
+    except Exception as e:
+        # Non-fatal: the offset is still held in memory and written to
+        # state.json, so at worst we fall back to the old behaviour.
+        print(f"ack failed (non-fatal): {type(e).__name__}: {e}")
 
 
 def send_summary(holdings: dict) -> None:
@@ -402,12 +466,16 @@ def handle_earnings_for(raw: str, state: dict) -> None:
         if arm_earnings_watch(state, ticker, ON_DEMAND_WATCH_HOURS):
             armed_any = True
 
-    # The watcher exits when nothing is armed, so starting one here is what
-    # keeps an on-demand command fast. Without it you'd wait for the next
-    # hourly run -- up to ~55 minutes.
+    # The watcher exits when nothing is armed, so starting one is what keeps
+    # an on-demand command fast -- without it you'd wait for the next hourly
+    # run, up to ~55 minutes.
+    #
+    # Registered rather than fired, because the watcher reads state.json from
+    # a fresh checkout of main. Dispatching before the push is a race the
+    # watcher can lose: it starts, sees no armed watch, and exits. It fires in
+    # _Session.flush(), immediately after the push lands.
     if armed_any:
-        from workflow_trigger import start_earnings_watcher
-        start_earnings_watcher()
+        request_watcher_start()
 
     send_telegram_message(
         f"\U0001F514 Watching {', '.join(valid)} for the next "
@@ -737,58 +805,188 @@ def process_message(
     return False, False, False
 
 
+# --- Deferred watcher dispatch ------------------------------------------
+#
+# Arming an earnings watch has to start the watcher, because the watcher
+# exits when nothing is armed. But the watcher reads state.json from a FRESH
+# CHECKOUT of main, so dispatching before state.json is pushed is a race: the
+# watcher can start, see no armed watch, and exit -- leaving the report
+# uncovered until the next hourly run, or until tomorrow outside watch hours.
+#
+# So handlers register the intent here, and it is fired only after the push.
+_watcher_wanted = False
+
+
+def request_watcher_start() -> None:
+    global _watcher_wanted
+    _watcher_wanted = True
+
+
+def _start_watcher_if_requested() -> None:
+    global _watcher_wanted
+    if not _watcher_wanted:
+        return
+    _watcher_wanted = False
+    try:
+        from workflow_trigger import start_earnings_watcher
+        start_earnings_watcher()
+    except Exception as e:
+        print(f"Could not start earnings watcher: {type(e).__name__}: {e}")
+
+
+class _Session:
+    """Everything a run mutates, so the loop can hold it across iterations."""
+
+    def __init__(self):
+        self.state = load_state()
+        self.tickers = load_tickers()
+        self.holdings = load_holdings()
+        self.watchlist = load_watchlist()
+        self.offset = self.state.get("tg_update_offset")
+        self.tickers_changed = False
+        self.holdings_changed = False
+        self.watchlist_changed = False
+        self.state_changed = False
+
+    @property
+    def dirty(self) -> bool:
+        return (self.tickers_changed or self.holdings_changed
+                or self.watchlist_changed or self.state_changed)
+
+    def flush(self) -> None:
+        """Write changed files, push them, THEN dispatch any watcher."""
+        if self.tickers_changed:
+            save_tickers(self.tickers)
+            print(f"tickers.json updated: {self.tickers}")
+        if self.holdings_changed:
+            save_holdings(self.holdings)
+            print("holdings.json updated (values redacted -- this repo is public)")
+        if self.watchlist_changed:
+            save_watchlist(self.watchlist)
+            print(f"watchlist.json updated: {self.watchlist}")
+
+        self.state["tg_update_offset"] = self.offset
+        save_state(self.state)
+
+        import repo_commit
+        repo_commit.commit_and_push(
+            ["tickers.json", "watchlist.json", "state.json"],
+            "Update tickers/watchlist/state via Telegram command [skip ci]")
+
+        self.tickers_changed = self.holdings_changed = False
+        self.watchlist_changed = self.state_changed = False
+
+        _start_watcher_if_requested()
+
+
+def handle_updates(updates: list[dict], session: _Session) -> None:
+    """Process a batch, acknowledging each message as soon as it is answered."""
+    for update in updates:
+        session.offset = update["update_id"] + 1
+        session.state_changed = True
+
+        message = update.get("message") or update.get("edited_message")
+        if not message:
+            acknowledge(session.offset)
+            continue
+
+        chat_id = str(message.get("chat", {}).get("id", ""))
+        if str(TELEGRAM_CHAT_ID) != chat_id:
+            print(f"Ignoring message from unexpected chat_id={chat_id}")
+            acknowledge(session.offset)
+            continue
+
+        text = message.get("text", "")
+        try:
+            t_changed, h_changed, w_changed = process_message(
+                text, session.tickers, session.holdings,
+                session.watchlist, session.state)
+        except Exception as e:
+            # One bad command must not kill an hour-long listener, and must
+            # not leave the message unacknowledged to be retried forever.
+            print(f"Command failed: {type(e).__name__}: {e}")
+            t_changed = h_changed = w_changed = False
+
+        session.tickers_changed |= t_changed
+        session.holdings_changed |= h_changed
+        session.watchlist_changed |= w_changed
+
+        # Acknowledged only AFTER the reply has been sent.
+        acknowledge(session.offset)
+
+
+def listen() -> None:
+    """Hold an open connection to Telegram and answer as messages arrive.
+
+    Replaces a cron firing every couple of minutes. The per-run design spent
+    40-63 seconds provisioning a runner, checking out two repos and installing
+    packages in order to do about four seconds of work -- so polling faster
+    just repeated the overhead, and firing faster than a run completes queued
+    runs into a lane that cancelled them.
+
+    Paying that startup once an hour instead takes the reply from up to two
+    minutes down to a second or two. This mirrors earnings_watch.py, which
+    made the same move for the same reason.
+    """
+    deadline = time.monotonic() + LOOP_MINUTES * 60
+    session = _Session()
+    print(f"Listening for {LOOP_MINUTES} minutes "
+          f"(long poll {POLL_TIMEOUT_SECONDS}s), offset={session.offset}.")
+
+    idle_backoff = 0
+
+    while time.monotonic() < deadline:
+        try:
+            updates = get_updates(session.offset, timeout=POLL_TIMEOUT_SECONDS)
+            idle_backoff = 0
+        except TelegramConflict:
+            # The outgoing listener has not dropped its connection yet.
+            # Expected at handover; back off rather than fight it.
+            print("Another listener is still connected; waiting.")
+            time.sleep(5)
+            continue
+        except Exception as e:
+            idle_backoff = min(idle_backoff * 2 + 2, 60)
+            print(f"getUpdates failed: {type(e).__name__}: {e} "
+                  f"-- retrying in {idle_backoff}s")
+            time.sleep(idle_backoff)
+            continue
+
+        if not updates:
+            continue
+
+        print(f"{len(updates)} update(s).")
+        handle_updates(updates, session)
+        if session.dirty:
+            session.flush()
+
+    # The offset advances even on a quiet hour only if something arrived;
+    # flush anyway so a clean exit records where we got to.
+    if session.dirty:
+        session.flush()
+    print("Listener finished its window; the workflow will start a fresh one.")
+
+
 def main() -> None:
+    """One-shot mode, kept for manual dispatch and as a fallback."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set; skipping.")
         return
 
-    state = load_state()
-    offset = state.get("tg_update_offset")
-    tickers = load_tickers()
-    holdings = load_holdings()
-    watchlist = load_watchlist()
-    tickers_changed = False
-    holdings_changed = False
-    watchlist_changed = False
-
-    updates = get_updates(offset)
-    if updates:
-        for update in updates:
-            state["tg_update_offset"] = update["update_id"] + 1
-
-            message = update.get("message") or update.get("edited_message")
-            if not message:
-                continue
-
-            chat_id = str(message.get("chat", {}).get("id", ""))
-            if str(TELEGRAM_CHAT_ID) != chat_id:
-                print(f"Ignoring message from unexpected chat_id={chat_id}")
-                continue
-
-            text = message.get("text", "")
-            t_changed, h_changed, w_changed = process_message(text, tickers, holdings, watchlist, state)
-            tickers_changed = tickers_changed or t_changed
-            holdings_changed = holdings_changed or h_changed
-            watchlist_changed = watchlist_changed or w_changed
-    else:
+    session = _Session()
+    updates = get_updates(session.offset)
+    if not updates:
         print("No new Telegram messages.")
+        return
 
-    # Detection is NOT done here any more. earnings_watch.py polls SEC
-    # filings every 15 seconds in a long-running job; this workflow only
-    # arms watches and answers commands, so it stays fast.
-
-    if tickers_changed:
-        save_tickers(tickers)
-        print(f"tickers.json updated: {tickers}")
-    if holdings_changed:
-        save_holdings(holdings)
-        print("holdings.json updated (values redacted -- this repo is public)")
-    if watchlist_changed:
-        save_watchlist(watchlist)
-        print(f"watchlist.json updated: {watchlist}")
-
-    save_state(state)
+    handle_updates(updates, session)
+    session.flush()
 
 
 if __name__ == "__main__":
-    main()
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set; skipping.")
+    elif len(sys.argv) > 1 and sys.argv[1] == "listen":
+        listen()
+    else:
+        main()
