@@ -1,253 +1,195 @@
-"""TEMPORARY probe: can an IR press-release feed be DISCOVERED from a ticker?
+"""TEMPORARY probe: does data.sec.gov answer a GitHub Actions runner?
 
-The problem this replaces
-------------------------
-FEED_URLS in ir_feeds.py is hand-maintained and only covers 2 of 9 tickers.
-It got that way because earlier rounds GUESSED feed URLs -- assuming every
-company used the same IR platform layout as Cerebras
-(investors.<company>.com/rss/news-releases.xml). They don't, so seven guesses
-failed and the map stalled.
+This is the only open question left about a source that would otherwise solve
+earnings detection outright.
 
-Guessing is the bug. This probe looks things up instead:
+Why this matters
+----------------
+Every earnings approach so far has failed for the same underlying reason: the
+runner's IP is a datacenter address and the site declines to serve it. That
+was true of www.sec.gov (403), efts.sec.gov (403), GlobeNewswire and Business
+Wire (timeout), and it is why Genius Sports and AppLovin return nothing --
+they serve a reCAPTCHA or an empty shell to anything automated.
 
-    ticker  --yfinance-->  official website
-            --scrape---->  the "investor relations" link
-            --scrape---->  <link rel="alternate" type="application/rss+xml">
-            --fetch----->  does that feed actually answer, with real entries?
+But two SEC hosts were tested and a THIRD was never tried. data.sec.gov is
+the SEC's structured JSON API, separate infrastructure from the website, and
+explicitly built for programmatic access rather than browsing.
 
-If the hit rate is decent, this chain runs once per ticker inside the bot and
-the result is cached in state like company names are -- which would make
-"earnings for <any ticker>" work with the company's own words rather than a
-third-party headline.
+Verified from a browser, it returns for every ticker checked:
 
-Reading round 2 properly
-------------------------
-Round 2's output looked like total failure but wasn't. The 404s carried real
-page bodies:
+    AMAT  8-K  accepted 2026-08-13T20:03:36Z  items 2.02,9.01
+    GENI  6-K  accepted 2026-08-06T11:00:05Z
+    XPEV  6-K  accepted 2026-08-04T12:50:55Z
 
-    GENI  investors.geniussports.com/rss/news-releases.xml  404   1286b
-    FOUR  investors.shift4.com/rss/news-releases.xml        404  31682b
+Three things make that better than anything built so far:
 
-A 404 with a body means the SERVER ANSWERED. Those IR hosts are reachable
-from the runner; only the path was wrong. Just two (QURE, UAVS) failed DNS,
-and those hostnames were invented rather than looked up.
+1. Item 2.02 is "Results of Operations and Financial Condition". The SEC
+   labels the earnings release itself. No keyword matching, no date-proximity
+   parsing, no judging whether a headline sounds like earnings -- all of
+   which this project has already got wrong at least once each.
+2. acceptanceDateTime is precise to the second. Applied Materials filed 3
+   minutes 36 seconds after the closing bell.
+3. Coverage is universal, because filing is a legal obligation. It works for
+   Genius Sports and AppLovin, which block scrapers but still file.
 
-What counts as success
-----------------------
-Not "a feed URL was found" -- that is how the last map got filled with
-non-working URLs. Success is: the feed returns HTTP 200, parses as RSS or
-Atom, and yields entries with titles and dates, fetched FROM THE RUNNER. The
-last column of the summary is the only one that matters.
+What this probe answers
+-----------------------
+1. Does data.sec.gov return 200 from the runner, or 403 like its siblings?
+2. Does the SEC's declared-User-Agent requirement change the answer?
+3. Are the ticker->CIK mapping files reachable, or must the map be cached in
+   the repo?
+4. For each holding: what does its filing history actually look like, and is
+   "new 8-K with item 2.02" (or "new 6-K" for foreign issuers) a clean signal?
 
-Sends nothing, writes nothing. Delete with its workflow once the answer is in.
+Sends nothing, writes nothing. Delete once the answer is recorded.
 """
 
-import re
+import json
 import sys
-from urllib.parse import urljoin, urlparse
+import time
 
 import requests
-import yfinance as yf
 
-import ir_feeds
+# The SEC asks automated clients to identify themselves with a contact
+# address. This is their documented format. It did NOT stop www.sec.gov
+# returning 403, but that may have been IP-based rather than UA-based, so it
+# is tested here both ways to tell the two apart.
+DECLARED_UA = "ashrafaltesha personal-stock-alerts altesha@outlook.com"
+GENERIC_UA = "Mozilla/5.0 (compatible; stock-alert-agent/1.0)"
 
-UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                    "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
-TIMEOUT = 15
+SUBMISSIONS = "https://data.sec.gov/submissions/CIK{cik}.json"
 
-# Your nine, plus arbitrary names you don't hold -- the command accepts any
-# ticker, so the probe has to answer for any ticker too.
-TICKERS = ["CBRS", "GENI", "EVH", "XPEV", "QURE", "UAVS", "WOLF", "FOUR", "APP",
-           "NVDA", "PLTR"]
+# Resolved from www.sec.gov/files/company_tickers.json in a browser. Cached
+# here because that file lives on the host that 403s the runner -- if the
+# probe shows it stays blocked, this map ships with the repo permanently.
+CIKS = {
+    "CBRS": "0002021728",
+    "GENI": "0001834489",
+    "EVH":  "0001628908",
+    "XPEV": "0001810997",
+    "QURE": "0001590560",
+    "UAVS": "0000008504",
+    "WOLF": "0000895419",
+    "FOUR": "0001794669",
+    "APP":  "0001751008",
+    # Two that reported on 2026-08-13, as a freshness check.
+    "AMAT": "0000006951",
+    "TPR":  "0001116132",
+}
 
-FEED_LINK_TAG = re.compile(
-    r"""<link[^>]+type=["']application/(?:rss|atom)\+xml["'][^>]*>""",
-    re.IGNORECASE)
-HREF = re.compile(r"""href=["']([^"']+)["']""", re.IGNORECASE)
-
-# Anchors that lead to an investor-relations section. Ordered by how specific
-# they are, so "investor relations" beats a bare "investors" in a nav bar.
-IR_HINTS = ("investor relations", "investor-relations", "investors", "/investor",
-            "ir.", "shareholder")
-
-# Once on an IR site, these subpages are the ones that carry a feed tag when
-# the landing page doesn't.
-IR_SUBPAGES = ("", "/news-releases", "/news", "/press-releases",
-               "/news-events/press-releases", "/overview")
+# Forms that carry results. 8-K is domestic; 6-K is the foreign-issuer
+# equivalent and carries NO item codes, so it needs a different rule.
+EARNINGS_ITEM = "2.02"
 
 
-def get(url, label):
+def get(url, ua, label, timeout=20):
     try:
-        r = requests.get(url, headers=UA, timeout=TIMEOUT, allow_redirects=True)
+        r = requests.get(url, headers={"User-Agent": ua,
+                                       "Accept": "application/json"},
+                         timeout=timeout)
         return r
     except Exception as e:
-        print(f"      {label}: {type(e).__name__}")
+        print(f"    {label}: ERR {type(e).__name__}: {e}")
         return None
 
 
-def website_for(ticker):
-    """yfinance already backs the company-name cache, so this adds no new
-    dependency -- just a different field off the same call."""
-    try:
-        info = yf.Ticker(ticker).info or {}
-    except Exception as e:
-        print(f"      .info failed: {type(e).__name__}: {e}")
-        return None, None
-    return (info.get("website") or "").strip(), (info.get("shortName") or "").strip()
-
-
-ANCHOR = re.compile(r"<a\b([^>]*)>(.*?)</a>", re.IGNORECASE | re.DOTALL)
-
-
-def find_ir_link(html, base_url):
-    """Pick the most promising investor-relations link on a page.
-
-    Matches each anchor's OWN text, bounded by its closing tag. An earlier
-    version read a fixed number of characters after the opening tag, which
-    ran past the end of the link and into the next ones -- so "About us"
-    scored a hit because "Investor Relations" happened to appear 80
-    characters later in the footer. Every ticker would have resolved to
-    whatever link came first on the page.
-    """
-    best = None
-    best_rank = len(IR_HINTS) + 1
-    for attrs, text in ANCHOR.findall(html):
-        href_m = HREF.search(attrs)
-        if not href_m:
-            continue
-        href = href_m.group(1)
-        # Strip nested markup, then COLLAPSE whitespace. Without the collapse,
-        # "<span>Investor</span> <b>Relations</b>" becomes "Investor
-        # Relations" with a double space and never matches the hint -- and
-        # wrapping link text in spans and icons is the norm on IR sites.
-        label = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", text)).strip()
-        blob = f"{href} {label}".lower()
-
-        rank = None
-        for i, hint in enumerate(IR_HINTS):
-            if hint in blob:
-                rank = i
-                break
-
-        # Sites commonly abbreviate to a bare "IR" link. Matched on exact path
-        # SEGMENTS rather than substring, so "/hiring" and "/directory" can't
-        # trigger it. Ranked last, so a spelled-out "Investor Relations"
-        # elsewhere on the page still wins.
-        if rank is None:
-            segments = [s for s in urlparse(href).path.lower().split("/") if s]
-            if "ir" in segments or label.lower() in ("ir", "ir »", "ir >"):
-                rank = len(IR_HINTS)
-
-        if rank is not None and rank < best_rank:
-            best, best_rank = urljoin(base_url, href), rank
-    return best
-
-
-def discover_feeds(ir_url):
-    """Read the RSS autodiscovery tag rather than guessing a path."""
-    feeds = []
-    root = f"{urlparse(ir_url).scheme}://{urlparse(ir_url).netloc}"
-    for sub in IR_SUBPAGES:
-        page = ir_url if sub == "" else urljoin(root + "/", sub.lstrip("/"))
-        r = get(page, f"page {page}")
-        if r is None or r.status_code != 200:
-            if r is not None:
-                print(f"      {page} -> {r.status_code}")
-            continue
-        print(f"      {page} -> 200 ({len(r.text)}b)")
-        for tag in FEED_LINK_TAG.findall(r.text):
-            hm = HREF.search(tag)
-            if hm:
-                url = urljoin(page, hm.group(1))
-                if url not in feeds:
-                    feeds.append(url)
-        if feeds:
-            break
-    return feeds
-
-
-def validate(feed_url):
-    """The only column that matters: does it answer AND parse AND have entries?
-
-    A URL that merely exists is what filled the last map with dead links.
-    """
-    r = get(feed_url, f"feed {feed_url}")
-    if r is None:
-        return False, "unreachable", 0
-    if r.status_code != 200:
-        return False, f"HTTP {r.status_code}", 0
-    entries = ir_feeds.parse_entries(r.content)
-    if not entries:
-        return False, "parsed 0 entries", 0
-    titled = [e for e in entries if e.get("title")]
-    return bool(titled), f"{len(titled)} entries", len(titled)
-
-
 def main():
-    results = []
-    for ticker in TICKERS:
-        print("=" * 72)
-        print(f"{ticker}")
-        print("=" * 72)
+    print("=" * 72)
+    print("1. REACHABILITY -- the question this probe exists to answer")
+    print("=" * 72)
 
-        site, name = website_for(ticker)
-        print(f"  website: {site or '(none from yfinance)'}   name: {name or '?'}")
-        if not site:
-            results.append((ticker, "-", "-", "no website", False))
-            continue
+    url = SUBMISSIONS.format(cik=CIKS["AMAT"])
+    results = {}
+    for name, ua in (("declared UA", DECLARED_UA), ("generic UA", GENERIC_UA)):
+        r = get(url, ua, name)
+        code = r.status_code if r is not None else "ERR"
+        results[name] = code
+        print(f"  {name:12} -> {code}")
+        if r is not None and r.status_code != 200:
+            print(f"    body: {r.text[:200]!r}")
 
-        home = get(site, "homepage")
-        if home is None or home.status_code != 200:
-            code = home.status_code if home is not None else "ERR"
-            print(f"  homepage -> {code}")
-            results.append((ticker, site, "-", f"homepage {code}", False))
-            continue
-
-        ir_url = find_ir_link(home.text, site)
-        print(f"  IR link: {ir_url or '(none found on homepage)'}")
-        if not ir_url:
-            results.append((ticker, site, "-", "no IR link", False))
-            continue
-
-        feeds = discover_feeds(ir_url)
-        print(f"  autodiscovered feeds: {feeds or '(none)'}")
-        if not feeds:
-            results.append((ticker, site, ir_url, "no feed tag", False))
-            continue
-
-        for feed in feeds:
-            ok, note, _ = validate(feed)
-            print(f"    {feed} -> {note} {'OK' if ok else 'REJECT'}")
-            if ok:
-                results.append((ticker, site, feed, note, True))
-                break
-        else:
-            results.append((ticker, site, ir_url, "feeds all failed", False))
+    if 200 not in results.values():
         print()
+        print("  >>> data.sec.gov is blocked from this runner too.")
+        print("  >>> The source is right but the location is wrong. Next step")
+        print("  >>> is moving the poller off GitHub's IP range -- Cloudflare")
+        print("  >>> Workers (free, cron triggers) or a machine at home.")
+        return 0
+
+    ua = DECLARED_UA if results.get("declared UA") == 200 else GENERIC_UA
+    print(f"\n  >>> REACHABLE. Using: {ua.split()[0]}...")
 
     print()
     print("=" * 72)
-    print("SUMMARY -- 'usable' means it answered, parsed, and had titled entries")
+    print("2. TICKER -> CIK MAPPING -- can it be fetched, or must it be cached?")
     print("=" * 72)
-    hits = 0
-    for ticker, site, feed, note, ok in results:
-        hits += 1 if ok else 0
-        print(f"  {ticker:5} {'USABLE ' if ok else '       '} {note:20} {feed[:70]}")
-    print()
-    print(f"  {hits} of {len(results)} tickers yielded a working IR feed.")
-    print()
-    print("  Paste this back. If the count is high enough to be worth it, the")
-    print("  same chain goes into the bot and caches per ticker; if not, we keep")
-    print("  the Google News path and stop spending time on IR feeds.")
+    for host in ("https://www.sec.gov/files/company_tickers.json",
+                 "https://data.sec.gov/files/company_tickers.json"):
+        r = get(host, ua, host)
+        code = r.status_code if r is not None else "ERR"
+        print(f"  {host} -> {code}")
+        if r is not None and r.status_code == 200:
+            print(f"    {len(r.content)} bytes -- mapping can be refreshed at runtime.")
+    print("  (If both fail, the CIK map above ships with the repo. It changes")
+    print("   slowly, so a stale entry is a minor problem, not a broken one.)")
 
-    # Ready-to-paste map for whatever did work.
-    usable = [(t, f) for t, _, f, _, ok in results if ok]
-    if usable:
-        print()
-        print("  FEED_URLS = {")
-        for t, f in usable:
-            print(f'      "{t}": "{f}",')
-        print("  }")
+    print()
+    print("=" * 72)
+    print("3. PER-TICKER FILING HISTORY -- is the signal clean?")
+    print("=" * 72)
+
+    for ticker, cik in CIKS.items():
+        # The SEC asks for no more than 10 requests/second. This is nowhere
+        # near that, but being a well-behaved client is how access stays.
+        time.sleep(0.2)
+        r = get(SUBMISSIONS.format(cik=cik), ua, ticker)
+        if r is None or r.status_code != 200:
+            print(f"\n  {ticker}: HTTP {r.status_code if r else 'ERR'}")
+            continue
+
+        try:
+            data = r.json()
+        except ValueError:
+            print(f"\n  {ticker}: non-JSON response")
+            continue
+
+        recent = data.get("filings", {}).get("recent", {})
+        forms = recent.get("form", [])
+        dates = recent.get("filingDate", [])
+        accepted = recent.get("acceptanceDateTime", [])
+        items = recent.get("items", [])
+
+        print(f"\n  {ticker} -- {data.get('name','?')}")
+
+        # How often does the earnings-bearing form appear? A form that shows
+        # up constantly is a noisy trigger; one that appears quarterly is a
+        # clean one.
+        eightk = [i for i, f in enumerate(forms) if f == "8-K"]
+        sixk = [i for i, f in enumerate(forms) if f == "6-K"]
+        results_8k = [i for i in eightk
+                      if EARNINGS_ITEM in (items[i] if i < len(items) else "")]
+
+        print(f"    last 1000 filings: {len(eightk)} 8-K, {len(sixk)} 6-K, "
+              f"{len(results_8k)} of the 8-Ks carry item {EARNINGS_ITEM}")
+
+        for i in (results_8k or sixk)[:3]:
+            label = "8-K item 2.02" if i in results_8k else "6-K"
+            print(f"      {label:14} filed {dates[i]}  accepted {accepted[i]}")
+
+        if not results_8k and not sixk:
+            print("      >>> neither form present -- needs a look")
+        elif not results_8k:
+            print("      >>> foreign issuer: 6-K has no item codes, so the")
+            print("      >>> rule is 'a new 6-K appeared', which is noisier.")
+
+    print()
+    print("=" * 72)
+    print("VERDICT")
+    print("=" * 72)
+    print("  If section 1 says REACHABLE, this replaces the IR-page scraping")
+    print("  entirely: universal coverage, second-precision timestamps, and an")
+    print("  official earnings marker instead of guessing from headlines.")
+    return 0
 
 
 if __name__ == "__main__":
