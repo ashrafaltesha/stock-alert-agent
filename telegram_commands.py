@@ -127,7 +127,12 @@ from config import (
 )
 from telegram_utils import send_telegram_message, escape_markdown
 from state_utils import load_state, save_state
-from earnings_utils import now_et, date_str_et, fetch_earnings_calendar_finnhub
+from earnings_utils import (
+    now_et,
+    date_str_et,
+    fetch_earnings_calendar_finnhub,
+    arm_earnings_watch,
+)
 from market_earnings_watch import select_top_reporters, format_list_line
 
 TICKERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tickers.json")
@@ -415,13 +420,12 @@ def handle_earnings_for(raw: str, state: dict) -> None:
     # there's no IR feed, so there's no longer a supported/unsupported split --
     # only a difference in how detailed the resulting summary will be, which
     # the confirmation message below is honest about.
-    now = now_et()
-    expires = now + timedelta(hours=ON_DEMAND_WATCH_HOURS)
+    # Same helper the automatic holdings jobs use, so a watch armed by hand
+    # and one armed by the calendar are identical records handled by one code
+    # path. An already-active watch is left alone rather than reset, which
+    # would wipe the record of what it has already sent you.
     for ticker in valid:
-        state[f"ew_watch::{ticker}"] = {
-            "armed": now.isoformat(),
-            "expires": expires.isoformat(),
-        }
+        arm_earnings_watch(state, ticker, ON_DEMAND_WATCH_HOURS)
 
     # No per-ticker prediction of which source will be used: that's resolved
     # at poll time by ir_page.articles_for, and guessing here would sometimes

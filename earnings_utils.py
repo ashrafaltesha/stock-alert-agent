@@ -203,3 +203,32 @@ def classify_holdings_for_date(date_str: str, tickers: list[str]) -> dict:
         else:
             result[ticker] = "unsupplied"
     return result
+
+
+def arm_earnings_watch(state: dict, ticker: str, hours: int) -> bool:
+    """Create the watch record that check_on_demand_earnings() acts on.
+
+    This is the single point where a watch is armed, whether it came from you
+    texting "earnings for X" or from a holding turning up on the calendar.
+    Detection then runs through one code path -- the company's own IR feed or
+    page, falling back to news headlines -- rather than the holdings path
+    quietly using a weaker source.
+
+    That split was a real bug rather than a tidiness issue. The automatic
+    watch used to poll Finnhub's epsActual, which stayed empty all evening on
+    2026-08-12 while Cerebras published its results minutes after the close.
+    The stocks you actually own were on the least reliable detector.
+
+    Returns True if a NEW watch was created. An existing watch is left alone
+    rather than refreshed, because its record carries the list of articles
+    already sent -- resetting that would re-send everything.
+    """
+    key = f"ew_watch::{ticker.upper()}"
+    if key in state:
+        return False
+    now = now_et()
+    state[key] = {
+        "armed": now.isoformat(),
+        "expires": (now + timedelta(hours=hours)).isoformat(),
+    }
+    return True
