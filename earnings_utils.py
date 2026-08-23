@@ -255,3 +255,28 @@ def arm_earnings_watch(state: dict, ticker: str, hours: int) -> bool:
         "expires": (now + timedelta(hours=hours)).isoformat(),
     }
     return True
+
+
+def fetch_consensus(ticker: str, date_str: str) -> dict:
+    """Analyst EPS estimate for a ticker's report on a given date.
+
+    Fetched when the watch is ARMED, not when the filing lands. That ordering
+    is the point: Finnhub's epsActual lags badly -- it stayed empty all
+    evening while Cerebras published minutes after the close, which is what
+    started the move to SEC filings. But epsEstimate is set BEFORE the company
+    reports and does not lag at all, so it is safe to rely on.
+
+    Storing it up front also means the beat/miss line costs nothing at alert
+    time, when latency actually matters.
+
+    Returns {} when unavailable; the caller simply omits the comparison.
+    """
+    rows = fetch_earnings_history_finnhub(ticker, date_str, date_str)
+    for row in rows or []:
+        if str(row.get("symbol", "")).upper() != ticker.upper():
+            continue
+        estimate = row.get("epsEstimate")
+        if estimate is None:
+            continue
+        return {"eps_estimate": estimate, "date": date_str}
+    return {}

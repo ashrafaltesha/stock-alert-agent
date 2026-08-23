@@ -120,6 +120,11 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # Either key enables structured extraction of the release. With
+          # neither, the alert still goes out -- it just quotes the company's
+          # own highlights instead of listing parsed metrics.
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python3 earnings_watch.py poll
 
       # State is committed once, after the loop. Committing on every

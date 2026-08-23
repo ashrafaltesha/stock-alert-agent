@@ -40,12 +40,14 @@ import sys
 import time
 from datetime import datetime, timedelta, timezone
 
+import llm_extract
 import sec_edgar
 from config import ON_DEMAND_WATCH_HOURS, TICKERS
 from earnings_utils import (
     arm_earnings_watch,
     classify_holdings_for_date,
     date_str_et,
+    fetch_consensus,
     now_et,
 )
 from state_utils import load_state, save_state
@@ -69,14 +71,6 @@ POLL_SECONDS = 15
 # concurrency: cancel-in-progress is true, so the new run cancels the old on
 # creation and the only remaining gap is runner provisioning, ~30 seconds.
 LOOP_MINUTES = 62
-
-_FIGURE_PATTERNS = (
-    ("Revenue", r"revenues?\s+(?:of\s+)?(?:was\s+)?\$?([\d.,]+\s*(?:billion|million)?)"),
-    ("Net income", r"net income\s+(?:of\s+)?\$?([\d.,]+\s*(?:billion|million)?)"),
-    ("Net loss", r"net loss\s+(?:of\s+)?\$?([\d.,]+\s*(?:billion|million)?)"),
-    ("EPS", r"(?:diluted\s+)?(?:earnings|loss)\s+per\s+share\s+(?:of\s+)?\$?([\d.,()]+)"),
-)
-
 
 def _watches(state):
     return {k: v for k, v in state.items() if k.startswith("ew_watch::")}
@@ -111,6 +105,7 @@ def arm() -> None:
             if arm_earnings_watch(state, ticker, ON_DEMAND_WATCH_HOURS):
                 changed = True
                 _set_baseline_now(state, ticker)
+                _store_consensus(state, ticker, day)
                 print(f"[{ticker}] armed ({category}, reports {label})")
                 send_telegram_message(
                     f"\U0001F514 *{ticker}* reports earnings {label}. "
@@ -125,6 +120,26 @@ def arm() -> None:
         start_earnings_watcher()
     else:
         print("No new watches to arm.")
+
+
+def _store_consensus(state, ticker, day):
+    """Record the analyst EPS estimate now, so beat/miss costs nothing later.
+
+    Estimates are published before the company reports, unlike Finnhub's
+    epsActual, which is the field that lagged the Cerebras release by an
+    entire evening. Fetching it at arm time keeps the alert path fast and
+    keeps a slow calendar API out of the moment that matters.
+    """
+    try:
+        consensus = fetch_consensus(ticker, day)
+    except Exception as e:
+        print(f"[{ticker}] consensus lookup failed: {type(e).__name__}: {e}")
+        return
+    if consensus:
+        key = f"ew_watch::{ticker.upper()}"
+        if key in state:
+            state[key]["consensus"] = consensus
+            print(f"[{ticker}] consensus EPS {consensus['eps_estimate']}")
 
 
 def _set_baseline_now(state, ticker):
@@ -174,22 +189,69 @@ def _baseline(state, ticker, cik):
     return newest
 
 
-def extract_figures(text: str) -> str:
-    """A few headline numbers for the follow-up message.
+_METRIC_ORDER = (
+    ("period", "Period"),
+    ("revenue", "Revenue"),
+    ("revenue_yoy", "Revenue YoY"),
+    ("eps_gaap", "EPS (GAAP)"),
+    ("eps_adjusted", "EPS (adj.)"),
+    ("net_income", "Net income"),
+    ("gross_margin", "Gross margin"),
+    ("operating_income", "Operating income"),
+    ("operating_margin", "Operating margin"),
+    ("adjusted_ebitda", "Adj. EBITDA"),
+    ("free_cash_flow", "Free cash flow"),
+)
 
-    Deliberately shallow. Press releases vary far too much to parse reliably,
-    and a confidently wrong revenue figure is worse than none -- the link is
-    always sent, so the authoritative numbers are one tap away.
+
+def build_metrics_message(ticker, text, consensus):
+    """The follow-up message: figures, beat/miss, guidance, and a quote.
+
+    Order is deliberate. Beat/miss leads because it is the most price-relevant
+    single line; guidance follows because it frequently moves the stock more
+    than the quarter itself; the company's own words come last as a check on
+    everything above.
+
+    The verbatim quote is always included, even when extraction succeeds.
+    Structured figures are convenient but they are a machine's reading of a
+    document; the quote is what the company actually wrote, and it costs a few
+    lines to make the difference visible rather than invisible.
     """
-    out = []
-    for label, pattern in _FIGURE_PATTERNS:
-        m = re.search(pattern, text, re.IGNORECASE)
-        if m:
-            out.append(f"{label}: {m.group(1).strip()}")
-    return "  |  ".join(out)
+    metrics = llm_extract.extract_metrics(text, ticker)
+    lines = []
+
+    if metrics:
+        verdict = llm_extract.compare_to_consensus(metrics, consensus or {})
+        if verdict:
+            lines.append(f"*{escape_markdown(verdict)}*")
+        elif consensus and consensus.get("eps_estimate") is not None:
+            lines.append(f"_Consensus EPS was {consensus['eps_estimate']}_")
+
+        if metrics.get("headline"):
+            lines.append(escape_markdown(metrics["headline"]))
+
+        figures = [f"{label}: {metrics[key]}"
+                   for key, label in _METRIC_ORDER if metrics.get(key)]
+        if figures:
+            lines.append("")
+            lines.extend(escape_markdown(f) for f in figures)
+
+        if metrics.get("guidance"):
+            lines.append("")
+            lines.append(f"*Guidance*: {escape_markdown(metrics['guidance'])}")
+
+    quote = llm_extract.highlights(text)
+    if quote:
+        lines.append("")
+        lines.append("_From the release:_")
+        lines.append(escape_markdown(quote))
+
+    if not lines:
+        return ""
+    return f"*{ticker}*\n" + "\n".join(lines)
 
 
-def _report(ticker, cik, filing, kind):
+def _report(ticker, cik, filing, kind, consensus=None):
     """Two-stage alert: the fact first, the figures once parsed."""
     accepted = filing.get("accepted", "")
     send_telegram_message(
@@ -204,9 +266,9 @@ def _report(ticker, cik, filing, kind):
         print(f"[{ticker}] figures unavailable: {e}")
         return
 
-    figures = extract_figures(text)
-    if figures:
-        send_telegram_message(f"*{ticker}* — {escape_markdown(figures)}")
+    message = build_metrics_message(ticker, text, consensus)
+    if message:
+        send_telegram_message(message)
 
     # The number that decides whether POLL_SECONDS is worth tightening. It
     # can only be measured against a real filing, so it is logged every time.
@@ -234,7 +296,7 @@ def _process(state, key, watch, ticker, cik, filings, seen):
 
     for filing in reversed(fresh):
         if sec_edgar.is_domestic_earnings(filing):
-            _report(ticker, cik, filing, "8-K item 2.02")
+            _report(ticker, cik, filing, "8-K item 2.02", watch.get("consensus"))
             sent = True
         elif filing["form"] == "6-K":
             try:
@@ -243,7 +305,7 @@ def _process(state, key, watch, ticker, cik, filings, seen):
                 print(f"[{ticker}] 6-K scoring failed, skipping: {e}")
                 continue
             if sec_edgar.is_foreign_earnings(score, period):
-                _report(ticker, cik, filing, f"6-K (score {score})")
+                _report(ticker, cik, filing, f"6-K (score {score})", watch.get("consensus"))
                 sent = True
             else:
                 print(f"[{ticker}] 6-K score {score} period={period} "
