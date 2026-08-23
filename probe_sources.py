@@ -45,6 +45,7 @@ Sends nothing, writes nothing. Delete once the answer is recorded.
 """
 
 import json
+import re
 import sys
 import time
 
@@ -181,6 +182,59 @@ def main():
         elif not results_8k:
             print("      >>> foreign issuer: 6-K has no item codes, so the")
             print("      >>> rule is 'a new 6-K appeared', which is noisier.")
+
+    print()
+    print("=" * 72)
+    print("4. CAN WE FETCH THE FILING ITSELF?")
+    print("=" * 72)
+    print("Decides whether alerts carry real revenue/EPS numbers or just a link.")
+    print("Also the only way to tell a foreign issuer's earnings 6-K from its")
+    print("other 6-Ks -- XPeng names every filing dNNNNNNd6k.htm, so the")
+    print("filename says nothing.\n")
+
+    # Archives is on www.sec.gov, whose SEARCH endpoints (browse-edgar, efts)
+    # return 403. Static file paths may not be blocked at all -- section 2
+    # already fetched /files/company_tickers.json successfully.
+    samples = [
+        ("AMAT", CIKS["AMAT"], "0000006951", None),
+        ("XPEV", CIKS["XPEV"], "0001810997", None),
+    ]
+    for ticker, cik, _, _ in samples:
+        r = get(SUBMISSIONS.format(cik=cik), ua, ticker)
+        if r is None or r.status_code != 200:
+            continue
+        rec = r.json().get("filings", {}).get("recent", {})
+        forms = rec.get("form", [])
+        idx = None
+        for i, f in enumerate(forms):
+            items = (rec.get("items") or [""] * len(forms))[i]
+            if (f == "8-K" and EARNINGS_ITEM in items) or f == "6-K":
+                idx = i
+                break
+        if idx is None:
+            continue
+
+        accession = rec["accessionNumber"][idx].replace("-", "")
+        doc = rec["primaryDocument"][idx]
+        base = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{accession}"
+
+        # The filing index lists every attachment, including the EX-99.1
+        # press release that carries the actual numbers.
+        for label, target in (("index", f"{base}/index.json"),
+                              ("primary doc", f"{base}/{doc}")):
+            time.sleep(0.2)
+            rr = get(target, ua, f"{ticker} {label}")
+            code = rr.status_code if rr is not None else "ERR"
+            size = len(rr.content) if rr is not None and rr.ok else 0
+            print(f"  {ticker} {label:12} -> {code}  {size} bytes")
+            if rr is not None and rr.ok and label == "primary doc":
+                text = re.sub(r"<[^>]+>", " ", rr.text)
+                text = re.sub(r"\s+", " ", text)
+                hits = [w for w in ("revenue", "net loss", "net income",
+                                    "per share", "gross margin", "deliveries")
+                        if w in text.lower()]
+                print(f"      financial terms present: {hits}")
+                print(f"      first 200 chars: {text[:200]!r}")
 
     print()
     print("=" * 72)
