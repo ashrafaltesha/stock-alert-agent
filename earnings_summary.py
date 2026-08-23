@@ -19,13 +19,10 @@ is just left out rather than blocking the EPS portion of the summary.
 """
 
 import math
-import time
 from datetime import datetime, timedelta
 
 from earnings_utils import (
     now_et,
-    POLL_INTERVAL_SECONDS,
-    POLL_TIMEOUT_MINUTES,
     fetch_earnings_history_finnhub,
 )
 from telegram_utils import send_telegram_message
@@ -167,35 +164,3 @@ def build_summary_message(ticker: str, target_date: str, data: dict) -> str:
         "figures only, without a revenue-estimate comparison._"
     )
     return "\n".join(lines)
-
-
-def poll_for_releases(tickers: list[str], target_date: str, state: dict) -> None:
-    """Checks each ticker roughly once a minute until its earnings release is
-    detected (sending a summary immediately), or until POLL_TIMEOUT_MINUTES
-    elapses (sending one give-up notice per still-pending ticker). Mutates
-    and persists `state` as it goes, so progress survives an interrupted job."""
-    deadline = now_et() + timedelta(minutes=POLL_TIMEOUT_MINUTES)
-    pending = set(tickers)
-
-    while pending:
-        for ticker in list(pending):
-            data = get_earnings_release(ticker, target_date)
-            if data:
-                send_telegram_message(build_summary_message(ticker, target_date, data))
-                state[f"ew_summary_sent::{ticker}::{target_date}"] = True
-                pending.discard(ticker)
-                save_state(state)
-
-        if not pending or now_et() >= deadline:
-            break
-        time.sleep(POLL_INTERVAL_SECONDS)
-
-    for ticker in pending:
-        giveup_key = f"ew_poll_giveup::{ticker}::{target_date}"
-        if not state.get(giveup_key):
-            send_telegram_message(
-                f"⚠️ *{ticker}*: earnings still not detected as released after "
-                f"~{POLL_TIMEOUT_MINUTES} min of checking. It may be delayed — worth a manual look."
-            )
-            state[giveup_key] = True
-    save_state(state)

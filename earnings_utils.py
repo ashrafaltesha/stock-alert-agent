@@ -25,14 +25,13 @@ fetch_earnings_history_finnhub -- same Finnhub endpoint, filtered to one
 """
 
 import sys
-import time
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import requests
 import yfinance as yf
 
-from config import EARNINGS_POLL_INTERVAL_SECONDS, EARNINGS_POLL_TIMEOUT_MINUTES, FINNHUB_API_KEY
+from config import FINNHUB_API_KEY
 
 EASTERN = ZoneInfo("America/New_York")
 
@@ -41,12 +40,8 @@ NASDAQ_HEADERS = {
     "Accept": "application/json",
 }
 
-# Shared across every earnings_watch.py / market_earnings_watch.py entry
-# point: pass --test on the command line to skip all sleeping and use a
-# short poll timeout, for a fast manual smoke test via workflow_dispatch.
+# Pass --test on the command line for a fast manual smoke test.
 TEST_MODE = "--test" in sys.argv
-POLL_INTERVAL_SECONDS = 5 if TEST_MODE else EARNINGS_POLL_INTERVAL_SECONDS
-POLL_TIMEOUT_MINUTES = 1 if TEST_MODE else EARNINGS_POLL_TIMEOUT_MINUTES
 
 # Nasdaq's calendar reports one of these three strings per row. We treat
 # anything else (or a missing value) the same as "time-not-supplied".
@@ -62,23 +57,6 @@ def now_et() -> datetime:
 def date_str_et(offset_days: int = 0) -> str:
     """YYYY-MM-DD for today (offset=0) or a future/past day, in America/New_York."""
     return (now_et() + timedelta(days=offset_days)).strftime("%Y-%m-%d")
-
-
-def sleep_until_et(target_hm: str) -> None:
-    """Sleep until today's target local ET time (HH:MM). No-op if that time
-    has already passed today, or if running in --test mode."""
-    if TEST_MODE:
-        print(f"[TEST MODE] skipping sleep-until {target_hm} ET")
-        return
-    hh, mm = (int(p) for p in target_hm.split(":"))
-    now = now_et()
-    target = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
-    if target <= now:
-        print(f"{target_hm} ET has already passed ({now.time()} now) -- continuing immediately.")
-        return
-    delay = (target - now).total_seconds()
-    print(f"Sleeping {delay / 60:.1f} min until {target_hm} ET...")
-    time.sleep(delay)
 
 
 def fetch_earnings_calendar(date_str: str) -> list[dict]:

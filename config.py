@@ -84,80 +84,50 @@ MATERIAL_NEWS_KEYWORDS = [
     "guidance", "contract win", "contract award", "regulatory approval",
 ]
 
-# -- Per-holding earnings reminders + release watcher (earnings_watch.py) --
+# -- Earnings detection (earnings_watch.py + sec_edgar.py) ------------------
 #
-# Nasdaq's calendar only tells us before-open / after-close / "not
-# supplied" -- not an exact release minute -- so these are reasonable
-# assumptions, not confirmed company schedules. Adjust per your experience
-# with a given holding (e.g. if one of your tickers reliably reports later).
+# Detection is SEC filings, nothing else. For domestic filers an 8-K carrying
+# item 2.02 ("Results of Operations and Financial Condition") IS the earnings
+# release -- the SEC labels it, so nothing has to be inferred. Foreign issuers
+# file 6-K, which has no item codes, so those are scored on financial content
+# (see sec_edgar.FILING_SCORE_MIN).
 #
-# Day-before reminder time (local ET, 24h "HH:MM") for holdings reporting
-# before market open the next day.
-EARNINGS_BMO_REMINDER_TIME_ET = "18:00"
-# When to start polling for a before-market-open release.
-EARNINGS_BMO_POLL_START_ET = "06:30"
-# Same-day reminder time for holdings reporting after market close.
-EARNINGS_AMC_REMINDER_TIME_ET = "15:00"
-# When to start polling for an after-market-close release (assumes released
-# at/soon after the 4:00pm close).
-EARNINGS_AMC_POLL_START_ET = "16:00"
-# How often to re-check for the release once polling starts.
-EARNINGS_POLL_INTERVAL_SECONDS = 60
-# Give up (and send one heads-up that it's still not detected) after this
-# many minutes of polling.
-EARNINGS_POLL_TIMEOUT_MINUTES = 180
+# What this replaced, and why:
+#   Finnhub epsActual   lagged the Cerebras release by an entire evening
+#   IR page scraping    worked for ~half the holdings; GENI serves a
+#                       reCAPTCHA and APP an empty shell
+#   FMP press releases  HTTP 402, paid tier only
+#   SEC EDGAR (www/efts) 403 to GitHub runners -- but data.sec.gov answers
+#
+# There are no poll windows any more. Measured across 40 foreign issuers and
+# 166 domestic filings, earnings land anywhere from 06:00 to 17:23 ET; the old
+# 06:00-09:00 / 16:00-18:00 pair missed Itau (09:50), Shell (10:02), Ericsson
+# (10:14), HSBC (11:46), Vale (12:08) and Tesla (09:01-09:20) entirely.
+#
+# Finnhub survives for the earnings CALENDAR only -- knowing a report is
+# scheduled, which a filing can never tell you in advance.
 
-# -- Market-wide earnings watcher (market_earnings_watch.py) --
+# How long a watch stays armed once created. Deliberately longer than a day:
+# a company reporting pre-market at ~6am would otherwise need the command sent
+# overnight. Armed the previous afternoon, both release times are covered.
+ON_DEMAND_WATCH_HOURS = 24
+
+# -- "earnings today" list (market_earnings_watch.py) -----------------------
 #
-# How many top market-wide earnings reporters to watch, ranked by market cap.
+# Only the calendar list survives here. The market-wide RELEASE watcher was
+# removed: it still polled Finnhub's epsActual and held a runner in a
+# time.sleep loop for up to three hours.
+
+# How many top market-wide earnings reporters to list, ranked by market cap.
 TOP_N_EARNINGS = 10
 
-# How many additional companies to watch based on analyst attention (number
-# of analysts covering the stock), among that day's earnings reporters that
-# aren't already in the market-cap list above.
+# How many more to list based on analyst attention, among that day's
+# reporters not already in the market-cap list above.
 TOP_N_ANALYST_ATTENTION = 5
 
 # Cap on how many of the day's reporters get an analyst-coverage lookup.
-# Keeps the job fast/reliable on busy earnings days (100+ companies reporting)
-# by only checking analyst counts for the largest-cap subset.
+# Keeps the job fast on busy days (100+ companies reporting).
 ANALYST_LOOKUP_POOL_SIZE = 40
-
-# Time (local ET, "HH:MM") to send the heads-up list of today's top
-# market-wide earnings reporters + most-analyst-attention names.
-MARKET_EARNINGS_LIST_TIME_ET = "15:55"
-# Time to start polling for each of those companies' releases (assumes most
-# after-close reporters release at/soon after the 4:00pm close).
-MARKET_EARNINGS_POLL_START_ET = "16:00"
-
-# -- On-demand "earnings for TICKER" (telegram_commands.py) --
-#
-# Detection is the company's investor-relations RSS feed where one exists,
-# falling back to Google News headlines otherwise (ir_feeds.py). Not Finnhub,
-# whose epsActual can lag the release by hours; not SEC EDGAR, which returns
-# HTTP 403 to GitHub Actions runners; not FMP, whose press-release feed is
-# paid-only and whose 8-K feed refreshes just hourly. Finnhub is still used
-# for the earnings *calendar* -- knowing a report is scheduled -- which a feed
-# can never tell you, since a feed only says something has happened.
-#
-# One command arms a watch lasting ON_DEMAND_WATCH_HOURS. Within that window
-# the feed is checked once per run, but only during the two windows below.
-# Polling around the clock would gain nothing: releases land either just
-# after the close or before the open.
-#
-# The 24-hour span is what makes the command usable. Detection used to be
-# same-day only, which meant a company reporting pre-market at ~6am required
-# sending the command overnight. Now it can be armed the previous afternoon.
-ON_DEMAND_WATCH_HOURS = 24
-
-# Local ET windows to poll in, as (start, end) 24h "HH:MM" pairs.
-#   16:00-18:00  after-close releases (Cerebras filed ~16:05)
-#   06:00-09:00  before-open releases
-# Anything reporting midday or late evening falls outside these; widen if
-# that ever bites. Foreign issuers are the likeliest to report off-schedule.
-ON_DEMAND_POLL_WINDOWS_ET = [
-    ("16:00", "18:00"),
-    ("06:00", "09:00"),
-]
 
 # Telegram credentials — supplied via GitHub Actions secrets, never hardcode here.
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
