@@ -25,13 +25,21 @@ name: Earnings watch (SEC filings)
 
 on:
   schedule:
-    # Arm twice daily: early enough for before-open reporters, and again in
-    # the afternoon to catch anything the calendar only listed later.
-    - cron: "0 10 * * 1-5"
+    # Arm twice daily. The morning run is at 09:00 UTC (05:00 ET summer,
+    # 04:00 winter) -- deliberately BEFORE the earliest observed filing time,
+    # because arming also records the baseline and a watch armed after the
+    # filing would swallow it.
+    - cron: "0 9 * * 1-5"
     - cron: "0 19 * * 1-5"
-    # Start a fresh watcher every hour on weekdays. Each runs ~55 minutes,
-    # so cover is continuous and a job that dies is replaced within the hour.
-    - cron: "5 10-22 * * 1-5"
+    # A fresh watcher every hour, each running ~55 minutes, so cover is
+    # continuous and a dead job is replaced within the hour.
+    #
+    # 09:00-23:00 UTC = 05:00-19:00 ET in summer, 04:00-18:00 in winter.
+    # It starts an hour before the earliest filing measured (SAP 06:00 ET,
+    # TSMC and Honda 06:02) and runs past the latest (Novo 17:23). The
+    # previous 10:00 UTC start put first cover at 06:05 ET -- five minutes
+    # after SAP files.
+    - cron: "5 9-23 * * 1-5"
   workflow_dispatch: {}
 
 # Its own lane. Sharing one with monitor.yml is what produced 163 cancelled
@@ -47,7 +55,7 @@ permissions:
 
 jobs:
   arm:
-    if: github.event.schedule == '0 10 * * 1-5' || github.event.schedule == '0 19 * * 1-5'
+    if: github.event.schedule == '0 9 * * 1-5' || github.event.schedule == '0 19 * * 1-5'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -89,7 +97,7 @@ jobs:
           exit 1
 
   watch:
-    if: github.event.schedule != '0 10 * * 1-5' && github.event.schedule != '0 19 * * 1-5'
+    if: github.event.schedule != '0 9 * * 1-5' && github.event.schedule != '0 19 * * 1-5'
     runs-on: ubuntu-latest
     # 55-minute loop plus headroom. Not 360 (the maximum): a shorter ceiling
     # means a wedged job is cleared sooner.

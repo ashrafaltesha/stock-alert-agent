@@ -96,6 +96,7 @@ def arm() -> None:
                 continue
             if arm_earnings_watch(state, ticker, ON_DEMAND_WATCH_HOURS):
                 changed = True
+                _set_baseline_now(state, ticker)
                 print(f"[{ticker}] armed ({category}, reports {label})")
                 send_telegram_message(
                     f"\U0001F514 *{ticker}* reports earnings {label}. "
@@ -109,11 +110,38 @@ def arm() -> None:
         print("No new watches to arm.")
 
 
-def _baseline(state, ticker, cik):
-    """Newest accession at the moment polling starts for this ticker.
+def _set_baseline_now(state, ticker):
+    """Record what already exists, at ARM time rather than at first poll.
 
-    Anything newer is new. Without it, the first poll would treat last
-    quarter's 8-K as breaking news.
+    This closes a silent-miss window. The baseline marks "everything before
+    this is old", and it used to be set on the first poll. A company armed at
+    06:00 that files at 06:02, with the first poll landing at 06:05, would
+    have had its filing swallowed into the baseline and treated as already
+    seen -- no alert, and a run that looked entirely normal in the logs.
+
+    Setting it here means the gap between arming and polling cannot hide a
+    filing, however the schedules drift.
+    """
+    cik_map = sec_edgar.load_cik_map()
+    cik = sec_edgar.resolve_cik(ticker, cik_map)
+    if not cik:
+        return
+    try:
+        filings, _ = sec_edgar.recent_filings(cik)
+    except sec_edgar.FetchError as e:
+        # Leaving the key unset is the safe failure: the first poll will set
+        # it instead, which is the old behaviour rather than a worse one.
+        print(f"[{ticker}] baseline at arm time failed ({e}); poll will set it.")
+        return
+    state[f"ew_seen::{ticker}"] = filings[0]["accession"] if filings else ""
+
+
+def _baseline(state, ticker, cik):
+    """Newest accession, if arming didn't already record one.
+
+    Normally set by _set_baseline_now() when the watch is armed. This is the
+    fallback for watches armed by the Telegram command, and for the case
+    where the arm-time lookup failed.
     """
     key = f"ew_seen::{ticker}"
     if key in state:
