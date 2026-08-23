@@ -27,11 +27,11 @@ model applies cleanly at the level of JSON keys:
 Take `theirs`, then apply exactly what this run changed relative to `base`.
 Nothing the other workflow wrote is lost, and nothing this run did is lost.
 
-Deletions are handled explicitly and that matters. check_on_demand_earnings
-deletes an `ew_watch::TICKER` key once it has sent the release. Merging by
-overlay alone would let `theirs` reinstate that key, the watch would come
-back to life, and you would get the same earnings alert again -- the exact
-bug class this whole change is meant to end.
+Deletions are handled explicitly and that matters. earnings_watch.py
+deletes an `ew_watch::TICKER` key once the watch expires or is satisfied.
+Merging by overlay alone would let `theirs` reinstate that key, the watch
+would come back to life, and you would get the same earnings alert again --
+the exact bug class this whole change is meant to end.
 
 Conflicts (both sides changed the same key to different values) resolve in
 favour of this run, and are reported on stderr so they show up in the job

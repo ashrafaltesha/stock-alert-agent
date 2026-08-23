@@ -1,0 +1,137 @@
+name: Earnings watch (SEC filings)
+
+# Replaces earnings_bmo_reminder.yml, earnings_watch_premarket.yml and
+# earnings_watch_afterhours.yml, which polled Finnhub's epsActual on a
+# fixed schedule and detected releases hours late, or not at all.
+#
+# TWO jobs, deliberately:
+#
+#   arm   -- cheap, twice a day. Asks the calendar which holdings report
+#            today or tomorrow and creates the watch records.
+#   watch -- one long-running job per hour that polls SEC filings every 15
+#            seconds for whatever is armed.
+#
+# The long job is the point. The old design started a fresh run per poll and
+# spent 45-100 seconds provisioning a machine and installing yfinance to do
+# 2 seconds of work -- so polling faster just repeated the overhead. Paying
+# startup once an hour instead takes detection from 90-150s down to ~15s.
+#
+# No poll windows. Measured across 40 foreign issuers and 166 domestic
+# filings, earnings land anywhere from 06:00 to 17:23 ET: Itau 09:50, Shell
+# 10:02, Ericsson 10:14, HSBC 11:46, Vale 12:08 all sit in the gap the old
+# 06:00-09:00 / 16:00-18:00 windows left open, and Tesla's 09:01-09:20
+# filings fell just past the morning cutoff. The windows were an optimisation
+# for a cost that no longer exists.
+
+on:
+  schedule:
+    # Arm twice daily: early enough for before-open reporters, and again in
+    # the afternoon to catch anything the calendar only listed later.
+    - cron: "0 10 * * 1-5"
+    - cron: "0 19 * * 1-5"
+    # Start a fresh watcher every hour on weekdays. Each runs ~55 minutes,
+    # so cover is continuous and a job that dies is replaced within the hour.
+    - cron: "5 10-22 * * 1-5"
+  workflow_dispatch: {}
+
+# Its own lane. Sharing one with monitor.yml is what produced 163 cancelled
+# runs and the duplicate-reply bug. cancel-in-progress is TRUE here, unlike
+# elsewhere: each hour's watcher should replace the previous one rather than
+# queue behind it, which also makes a hung job self-healing.
+concurrency:
+  group: stock-alert-agent-earnings
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  arm:
+    if: github.event.schedule == '0 10 * * 1-5' || github.event.schedule == '0 19 * * 1-5'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Arming needs the calendar, which needs requests. Only this job pays
+      # for dependencies; the watcher below deliberately does not.
+      - run: pip install -r requirements.txt
+      - name: Arm watches
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+        run: python earnings_watch.py arm
+      - name: Commit state
+        run: |
+          git config user.name "stock-agent-bot"
+          git config user.email "actions@github.com"
+          git add state.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Arm earnings watches [skip ci]"
+          for i in 1 2 3 4 5; do
+            git push && exit 0
+            git fetch origin main
+            BASE=$(git merge-base HEAD origin/main)
+            git show "$BASE":state.json     > /tmp/base.json   2>/dev/null || echo '{}' > /tmp/base.json
+            git show origin/main:state.json > /tmp/theirs.json 2>/dev/null || echo '{}' > /tmp/theirs.json
+            git show HEAD:state.json        > /tmp/ours.json
+            git reset --hard origin/main
+            python merge_state.py --base /tmp/base.json --ours /tmp/ours.json \
+                                  --theirs /tmp/theirs.json --out state.json
+            git add state.json
+            git diff --cached --quiet && exit 0
+            git commit -m "Arm earnings watches [skip ci]"
+            sleep $(( (RANDOM % 5) + 1 ))
+          done
+          exit 1
+
+  watch:
+    if: github.event.schedule != '0 10 * * 1-5' && github.event.schedule != '0 19 * * 1-5'
+    runs-on: ubuntu-latest
+    # 55-minute loop plus headroom. Not 360 (the maximum): a shorter ceiling
+    # means a wedged job is cleared sooner.
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+
+      # NO setup-python and NO pip install, on purpose. Ubuntu runners ship
+      # with Python, and sec_edgar.py uses only the standard library. That
+      # removes 25-55 seconds from startup -- which was the single largest
+      # component of the old detection latency.
+
+      - name: Watch SEC filings
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 earnings_watch.py poll
+
+      # State is committed once, after the loop. Committing on every
+      # detection would mean a git push inside the hot path, and pushes take
+      # longer than the poll interval itself.
+      - name: Commit state
+        if: always()
+        run: |
+          git config user.name "stock-agent-bot"
+          git config user.email "actions@github.com"
+          git add state.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Update earnings watch state [skip ci]"
+          for i in 1 2 3 4 5; do
+            git push && exit 0
+            git fetch origin main
+            BASE=$(git merge-base HEAD origin/main)
+            git show "$BASE":state.json     > /tmp/base.json   2>/dev/null || echo '{}' > /tmp/base.json
+            git show origin/main:state.json > /tmp/theirs.json 2>/dev/null || echo '{}' > /tmp/theirs.json
+            git show HEAD:state.json        > /tmp/ours.json
+            git reset --hard origin/main
+            python3 merge_state.py --base /tmp/base.json --ours /tmp/ours.json \
+                                   --theirs /tmp/theirs.json --out state.json
+            git add state.json
+            git diff --cached --quiet && exit 0
+            git commit -m "Update earnings watch state [skip ci]"
+            sleep $(( (RANDOM % 5) + 1 ))
+          done
+          exit 1

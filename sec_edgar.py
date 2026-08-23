@@ -1,0 +1,283 @@
+"""Earnings detection from SEC filings.
+
+Standard library only, deliberately. The polling loop that uses this runs
+every 15 seconds, and the old workflow spent 20-40 seconds of every run
+installing yfinance and lxml before doing 2 seconds of work. Nothing here
+needs a third-party package, so that entire cost disappears.
+
+Why filings rather than the company's own website
+-------------------------------------------------
+Earlier versions read investor-relations pages. That worked for about half
+the holdings and failed for the rest -- Genius Sports serves a reCAPTCHA,
+AppLovin returns an empty shell, and several others are JavaScript apps that
+give an automated reader nothing. No amount of parsing fixes a site that
+declines to be read.
+
+Filing with the SEC is a legal obligation, so coverage is universal. Both of
+those companies file on time, every quarter.
+
+The detection rules, and the evidence for them
+----------------------------------------------
+DOMESTIC filers (8-K): item 2.02 is "Results of Operations and Financial
+Condition". The SEC labels the earnings release itself, so there is nothing
+to infer. Measured across 166 filings from 15 companies, this never once
+mislabelled anything.
+
+FOREIGN filers (6-K): no item codes exist, so the filing's own text has to
+decide. Every cheaper signal was tested against 40 foreign issuers and every
+one failed:
+
+    isXBRLNumeric   0 for all 344 of Alibaba's 6-Ks
+    reportDate      mirrors the filing date, says nothing
+    file size       Alibaba's earnings exhibit 22k, a routine one 10k
+    filename        Genius Sports names them q2_26; XPeng names everything
+                    dNNNNNNd6k.htm
+    attachment type the index.json "type" field is a UI icon, not a category
+
+What does work is counting financial-statement terms in the exhibits. Across
+40 foreign issuers the separation was stark: earnings filings scored 5-14,
+routine ones 0-4, with almost nothing in between.
+
+FILING_SCORE_MIN is 5 rather than 7 because of Honda specifically. Its
+quarterly filings score 5-6 every single quarter (Aug 5, May 14, Feb 10,
+Nov 7), while an earlier sample of 20 issuers suggested 7 was safe. Honda
+alone would have been missed four times a year. Precision at 5 is still very
+high: HSBC files daily buyback notices and produced exactly one hit in 45
+filings; Li Auto, one in 26.
+
+Known gap: Sea Limited files bare 1,418-character cover pages with no exhibit
+at all. There is no content to read, so no content rule can catch it.
+"""
+
+import json
+import os
+import re
+import urllib.error
+import urllib.request
+
+# The SEC asks automated clients to identify themselves with a contact
+# address. Both this and a generic agent return 200 from GitHub runners, but
+# declaring is the condition of continued access, so it is not optional.
+USER_AGENT = "ashrafaltesha personal-stock-alerts altesha@outlook.com"
+
+SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
+ARCHIVES_URL = "https://www.sec.gov/Archives/edgar/data/{cik}/{accession}"
+TICKER_MAP_URL = "https://www.sec.gov/files/company_tickers.json"
+
+CIK_MAP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "cik_map.json")
+
+# 8-K item code for "Results of Operations and Financial Condition".
+EARNINGS_ITEM = "2.02"
+
+# Financial-statement vocabulary. A results release contains most of these; a
+# governance notice or buyback announcement contains almost none.
+FINANCIAL_TERMS = (
+    "revenue", "net income", "net loss", "per share", "gross margin",
+    "gross profit", "operating income", "operating expenses", "ebitda",
+    "cash flow", "total assets", "unaudited", "diluted", "income statement",
+    "balance sheet",
+)
+
+PERIOD_RE = re.compile(
+    r"\b(first|second|third|fourth)[- ]quarter\b|\bq[1-4]\b|"
+    r"\b(three|six|nine|twelve) months ended\b|\bquarter ended\b|"
+    r"\byear ended\b|\bfull[- ]year\b|\bhalf[- ]year\b", re.IGNORECASE)
+
+# See the module docstring: 5, not 7, because Honda's quarterlies score 5-6.
+FILING_SCORE_MIN = 5
+
+# R1.htm, R12.htm and friends are XBRL viewer render fragments, not filed
+# documents. They contain financial vocabulary and would inflate scores.
+_XBRL_RENDER_RE = re.compile(r"^R\d+\.htm$", re.IGNORECASE)
+
+
+class FetchError(Exception):
+    """Network failure, as distinct from a document that scored low.
+
+    This distinction is not cosmetic. During testing Vale scored 1 on one run
+    and 12 on the next for the identical filing -- a transient failure had
+    been silently swallowed and read as "not earnings". Without a separate
+    error path a dropped connection is indistinguishable from a routine
+    filing, and a missed earnings report looks exactly like normal operation.
+    """
+
+
+def _get(url, timeout=15, etag=None):
+    """Returns (status, body_bytes, etag). Raises FetchError on failure.
+
+    304 comes back with an empty body: the caller already has current data.
+    """
+    req = urllib.request.Request(url, headers={
+        "User-Agent": USER_AGENT,
+        "Accept-Encoding": "gzip, deflate",
+    })
+    if etag:
+        req.add_header("If-None-Match", etag)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.status, resp.read(), resp.headers.get("ETag")
+    except urllib.error.HTTPError as e:
+        if e.code == 304:
+            return 304, b"", etag
+        raise FetchError(f"{url} -> HTTP {e.code}") from e
+    except Exception as e:
+        raise FetchError(f"{url} -> {type(e).__name__}: {e}") from e
+
+
+def _get_json(url, timeout=15, etag=None):
+    status, body, new_etag = _get(url, timeout=timeout, etag=etag)
+    if status == 304:
+        return None, etag
+    try:
+        return json.loads(body.decode("utf-8", "replace")), new_etag
+    except ValueError as e:
+        raise FetchError(f"{url} -> malformed JSON: {e}") from e
+
+
+# -- Ticker -> CIK ---------------------------------------------------------
+
+def load_cik_map():
+    try:
+        with open(CIK_MAP_FILE) as f:
+            return json.load(f)
+    except (OSError, ValueError) as e:
+        print(f"cik_map.json unreadable ({e}); starting empty.")
+        return {}
+
+
+def resolve_cik(ticker: str, cik_map: dict):
+    """Ten-digit zero-padded CIK, or None.
+
+    The bundled map covers the tickers in use. Anything else triggers one
+    lookup against the SEC's full list, which is ~800KB and changes slowly --
+    far too heavy to fetch on a polling loop, which is why it is cached to
+    disk rather than fetched per run.
+    """
+    ticker = ticker.upper()
+    if ticker in cik_map:
+        return cik_map[ticker]
+
+    print(f"[{ticker}] not in cik_map.json; fetching the SEC's full list.")
+    try:
+        data, _ = _get_json(TICKER_MAP_URL, timeout=30)
+    except FetchError as e:
+        print(f"[{ticker}] CIK lookup failed: {e}")
+        return None
+    if not data:
+        return None
+
+    for entry in data.values():
+        sym = str(entry.get("ticker", "")).upper()
+        if sym:
+            cik_map[sym] = str(entry.get("cik_str", "")).zfill(10)
+    try:
+        with open(CIK_MAP_FILE, "w") as f:
+            json.dump(cik_map, f, indent=2, sort_keys=True)
+            f.write("\n")
+    except OSError as e:
+        print(f"Could not persist cik_map.json: {e}")
+    return cik_map.get(ticker)
+
+
+# -- Filing discovery ------------------------------------------------------
+
+def recent_filings(cik: str, etag=None):
+    """Returns (filings, etag). filings is None when nothing changed (304).
+
+    Conditional requests matter here: at one poll every 15 seconds, an
+    unchanged 304 costs a fraction of a 100KB body, and it is the difference
+    between polite polling and hammering a government API.
+    """
+    data, new_etag = _get_json(SUBMISSIONS_URL.format(cik=cik), etag=etag)
+    if data is None:
+        return None, new_etag
+
+    recent = data.get("filings", {}).get("recent", {})
+    forms = recent.get("form", []) or []
+    out = []
+    for i, form in enumerate(forms):
+        out.append({
+            "form": form,
+            "accession": (recent.get("accessionNumber") or [""] * len(forms))[i],
+            "filed": (recent.get("filingDate") or [""] * len(forms))[i],
+            "accepted": (recent.get("acceptanceDateTime") or [""] * len(forms))[i],
+            "items": (recent.get("items") or [""] * len(forms))[i] or "",
+            "doc": (recent.get("primaryDocument") or [""] * len(forms))[i] or "",
+        })
+    return out, new_etag
+
+
+def is_domestic_earnings(filing: dict) -> bool:
+    """8-K carrying item 2.02 -- the SEC's own label for a results release.
+
+    The item list is split rather than substring-matched. A plain `in` test
+    means "2.02" also matches "12.02"; no such item exists today, but a code
+    added later would silently start firing false alerts, and a false
+    earnings alert is expensive to trust once and lose confidence in.
+    """
+    if filing.get("form") != "8-K":
+        return False
+    codes = {c.strip() for c in (filing.get("items") or "").split(",")}
+    return EARNINGS_ITEM in codes
+
+
+def score_filing(cik: str, accession: str, max_docs: int = 3):
+    """Count distinct financial terms in a filing's exhibits.
+
+    Returns (score, has_period, text). Raises FetchError rather than
+    returning zero when the network fails -- see FetchError.
+
+    Every exhibit is considered, not just the largest. Nu Holdings filed four
+    6-Ks on one day and the biggest HTML file in one of them was a 9.5MB
+    document containing 1,304 characters of text; the press release was
+    elsewhere in the same filing.
+    """
+    acc_nodash = accession.replace("-", "")
+    base = ARCHIVES_URL.format(cik=str(int(cik)), accession=acc_nodash)
+
+    index, _ = _get_json(f"{base}/index.json")
+    if not index:
+        raise FetchError(f"{base}/index.json returned nothing")
+
+    docs = [
+        item for item in (index.get("directory", {}).get("item") or [])
+        if str(item.get("name", "")).lower().endswith(".htm")
+        and not _XBRL_RENDER_RE.match(str(item.get("name", "")))
+    ]
+    # Largest first: the press release is usually the biggest real document,
+    # so the answer is normally found on the first fetch.
+    docs.sort(key=lambda d: int(d.get("size") or 0), reverse=True)
+
+    best_score, best_period, best_text = 0, False, ""
+    for doc in docs[:max_docs]:
+        _, body, _ = _get(f"{base}/{doc['name']}", timeout=20)
+        text = strip_html(body.decode("utf-8", "replace"))
+        lowered = text.lower()
+        score = sum(1 for term in FINANCIAL_TERMS if term in lowered)
+        if score > best_score:
+            best_score, best_period, best_text = score, bool(PERIOD_RE.search(text)), text
+    return best_score, best_period, best_text
+
+
+def is_foreign_earnings(score: int, has_period: bool) -> bool:
+    """A 6-K is results if it reads like financial statements AND names a
+    period. Both halves are needed: JD filed a 23KB 6-K that mentioned a
+    quarter but contained no financial terms at all."""
+    return score >= FILING_SCORE_MIN and has_period
+
+
+def strip_html(raw: str) -> str:
+    text = re.sub(r"<script[\s\S]*?</script>", " ", raw, flags=re.IGNORECASE)
+    text = re.sub(r"<style[\s\S]*?</style>", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = (text.replace("&nbsp;", " ").replace("&amp;", "&")
+                .replace("&lt;", "<").replace("&gt;", ">")
+                .replace("&#39;", "'").replace("&quot;", '"'))
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def filing_url(cik: str, accession: str, doc: str = "") -> str:
+    base = ARCHIVES_URL.format(cik=str(int(cik)),
+                               accession=accession.replace("-", ""))
+    return f"{base}/{doc}" if doc else f"{base}/"

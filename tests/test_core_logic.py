@@ -27,8 +27,8 @@ os.environ.setdefault("TELEGRAM_BOT_TOKEN", "test-token")
 os.environ.setdefault("TELEGRAM_CHAT_ID", "test-chat")
 os.environ.setdefault("FINNHUB_API_KEY", "test-key")
 
-import ir_feeds  # noqa: E402
 import merge_state  # noqa: E402
+import sec_edgar  # noqa: E402
 import monitor  # noqa: E402
 import telegram_commands as tc  # noqa: E402
 from telegram_utils import escape_markdown  # noqa: E402
@@ -157,144 +157,6 @@ def test_immaterial_headlines_are_filtered_out(headline):
     assert not monitor.is_material(headline)
 
 
-# --- IR feed results classifier -------------------------------------------
-#
-# This classifier decides whether to declare "earnings are out", so both
-# directions matter: a missed release means no alert, a false positive means
-# a partnership headline masquerading as results. The Cerebras case below is
-# the one that caught a real bug -- the first version required a results word
-# in the title and would have silently missed the very release the module
-# was built for.
-
-@pytest.mark.parametrize("title,body", [
-    ("Cerebras Reports Second Quarter 2026 Financial Results", ""),
-    ("Genius Sports Announces Q2 2026 Results", ""),
-    ("XPeng Reports Fourth Quarter and Full Year 2025 Unaudited Financial Results", ""),
-    # Title carries the period but no results word; body must carry it.
-    ("Fast Inference Cloud Business Nearly Quadruples in Second Quarter 2026",
-     "Revenue of $312 million, GAAP net loss of $41 million, gross margin of 58%."),
-])
-def test_real_results_releases_are_detected(title, body):
-    assert ir_feeds.is_results_entry(title, body)
-
-
-@pytest.mark.parametrize("title,body", [
-    # Scheduling notices -- posted weeks ahead, carry every keyword.
-    ("Cerebras Sets Date of Second Quarter 2026 Financial Results", ""),
-    ("Wolfspeed to Report Fourth Quarter Fiscal 2026 Results on August 20", ""),
-    ("Shift4 Announces Conference Call to Discuss Q2 2026 Results", ""),
-    # Period reference, but not a results release and no financials in body.
-    ("AppLovin Announces Strategic Partnership Expanding Q1 2026 Ad Reach",
-     "The companies will collaborate on new advertising formats."),
-    # No fiscal period marker at all.
-    ("uniQure Announces FDA Clearance of IND Application", ""),
-])
-def test_non_results_entries_are_rejected(title, body):
-    assert not ir_feeds.is_results_entry(title, body)
-
-
-def test_empty_title_is_rejected():
-    assert not ir_feeds.is_results_entry("", "revenue gaap per share")
-
-
-# --- On-demand watch poll windows -----------------------------------------
-#
-# Polling only inside ON_DEMAND_POLL_WINDOWS_ET is what keeps a 24-hour watch
-# from burning ~1,400 runs a day. Getting a boundary wrong silently means
-# either wasted runs or a missed release, neither of which is visible until
-# an earnings day.
-
-def _at(hour, minute=0):
-    return datetime(2026, 8, 12, hour, minute)
-
-
-@pytest.mark.parametrize("moment", [
-    _at(16, 0),    # after-close window opens exactly at the close
-    _at(16, 5),    # when Cerebras actually published
-    _at(17, 59),
-    _at(18, 0),    # inclusive upper bound
-    _at(6, 0),     # pre-market window opens
-    _at(8, 45),
-    _at(9, 0),     # inclusive upper bound
-])
-def test_moments_inside_poll_windows(moment):
-    assert tc._in_poll_window(moment)
-
-
-@pytest.mark.parametrize("moment", [
-    _at(5, 59),    # one minute before the pre-market window
-    _at(9, 1),     # one minute after it closes
-    _at(12, 0),    # midday, between the two windows
-    _at(15, 59),   # one minute before the close window
-    _at(18, 1),    # one minute after it closes
-    _at(23, 30),   # late evening
-    _at(3, 0),     # overnight
-])
-def test_moments_outside_poll_windows(moment):
-    assert not tc._in_poll_window(moment)
-
-
-# --- Google News headline classifier --------------------------------------
-#
-# Detection falls back to news headlines for the 7 tickers with no IR feed,
-# and newsrooms word things differently from company press releases. The
-# false-positive direction is the dangerous one here: pre-earnings coverage
-# mentions the same quarter and uses the same verbs, but is published days
-# EARLY. A hit on one of those ends the watch, so nothing gets sent when the
-# results actually land -- a silent failure, the worst kind.
-
-@pytest.mark.parametrize("headline", [
-    "Cerebras Reports Second Quarter 2026 Financial Results",
-    "Cerebras Q2 revenue tops estimates",
-    "XPeng posts Q4 2025 net loss as deliveries climb",
-    "Genius Sports beats Q2 earnings estimates",
-    "Wolfspeed misses on fourth-quarter revenue",
-    "Shift4 Payments Q1 2026 earnings: EPS $1.02",
-    "AppLovin reported second quarter 2026 results after the bell",
-])
-def test_results_coverage_is_detected(headline):
-    assert ir_feeds.is_media_results_headline(headline)
-
-
-@pytest.mark.parametrize("headline", [
-    # Forward-looking: published before the release.
-    "Analysts expect Cerebras to beat Q2 estimates",
-    "Cerebras Q2 earnings preview: what to expect",
-    "What to expect from XPeng's fourth quarter results",
-    "Wolfspeed stock rises ahead of Q4 earnings",
-    "Cerebras could beat Q2 revenue forecasts, analyst says",
-    "Options traders brace for AppLovin Q2 earnings move",
-    "Upcoming Q2 earnings: 5 stocks to watch",
-    # Scheduling notices.
-    "Genius Sports will report Q2 results on August 20",
-    "Shift4 to announce first quarter 2026 results",
-    "AppLovin sets date for second quarter 2026 earnings call",
-    "Cerebras announces conference call to discuss Q2 2026 results",
-    # Ordinary news with no fiscal period at all.
-    "Cerebras announces partnership with major cloud provider",
-    "XPeng launches new EV model in Europe",
-])
-def test_non_results_coverage_is_rejected(headline):
-    assert not ir_feeds.is_media_results_headline(headline)
-
-
-@pytest.mark.parametrize("raw,expected", [
-    ("Cerebras Reports Q2 2026 Results - Reuters",
-     "Cerebras Reports Q2 2026 Results"),
-    ("XPeng posts Q4 loss - Business Wire", "XPeng posts Q4 loss"),
-    ("No suffix here", "No suffix here"),
-])
-def test_google_news_outlet_suffix_is_stripped(raw, expected):
-    assert ir_feeds._strip_source(raw) == expected
-
-
-def test_hyphenated_headline_survives_suffix_stripping():
-    # Naive splitting on "-" would mangle this; only a trailing outlet goes.
-    assert "Full-year" in ir_feeds._strip_source(
-        "Wolfspeed Full-year Results Beat - CNBC"
-    )
-
-
 # --- state.json three-way merge -------------------------------------------
 #
 # monitor.py and telegram_commands.py now run in separate concurrency groups,
@@ -367,3 +229,85 @@ def test_conflict_resolves_to_ours_and_is_counted():
 ])
 def test_merge_handles_degenerate_inputs(base, ours, theirs, expected):
     assert merge_state.merge(base, ours, theirs)[0] == expected
+
+
+# --- SEC filing earnings detection ----------------------------------------
+#
+# Replaces the IR-page scraping that came before it. That approach worked for
+# roughly half the holdings; sites like Genius Sports and AppLovin serve
+# nothing to an automated reader at all. Filing with the SEC is a legal
+# obligation, so coverage is universal.
+
+@pytest.mark.parametrize("items", ["2.02", "2.02,9.01", "9.01, 2.02", "1.01,2.02,9.01"])
+def test_item_202_is_earnings(items):
+    assert sec_edgar.is_domestic_earnings({"form": "8-K", "items": items})
+
+
+@pytest.mark.parametrize("items", ["5.02", "8.01,9.01", "", "1.01"])
+def test_other_8k_items_are_not_earnings(items):
+    assert not sec_edgar.is_domestic_earnings({"form": "8-K", "items": items})
+
+
+@pytest.mark.parametrize("items", ["12.02", "2.021"])
+def test_item_codes_are_not_substring_matched(items):
+    # A plain `in` test makes "2.02" match "12.02". No such item exists today,
+    # but a code added later would silently start firing false earnings
+    # alerts -- and a false alert is expensive to trust once and then doubt.
+    assert not sec_edgar.is_domestic_earnings({"form": "8-K", "items": items})
+
+
+def test_6k_never_matches_the_domestic_rule():
+    assert not sec_edgar.is_domestic_earnings({"form": "6-K", "items": "2.02"})
+
+
+def test_missing_keys_do_not_raise():
+    assert not sec_edgar.is_domestic_earnings({"form": "4"})
+    assert not sec_edgar.is_domestic_earnings({"form": "8-K", "items": None})
+
+
+@pytest.mark.parametrize("score", [5, 6, 9, 14])
+def test_foreign_scores_at_or_above_threshold_are_earnings(score):
+    # 5 is the floor because Honda's quarterlies score 5-6 EVERY quarter
+    # (Aug 5, May 14, Feb 10, Nov 7). A threshold of 7 -- which a smaller
+    # 20-issuer sample suggested -- would have missed Honda four times a year.
+    assert sec_edgar.is_foreign_earnings(score, True)
+
+
+@pytest.mark.parametrize("score", [0, 1, 2, 4])
+def test_foreign_scores_below_threshold_are_rejected(score):
+    assert not sec_edgar.is_foreign_earnings(score, True)
+
+
+def test_period_reference_is_required():
+    # JD filed a 23KB 6-K mentioning a quarter but containing no financial
+    # terms; Alibaba filed ones with a term but no period. Both halves needed.
+    assert not sec_edgar.is_foreign_earnings(13, False)
+    assert not sec_edgar.is_foreign_earnings(0, True)
+
+
+def test_xbrl_render_fragments_are_excluded():
+    # Rio Tinto's filings surface R12.htm etc -- XBRL viewer renderings full
+    # of financial vocabulary that would inflate the score of any filing.
+    assert sec_edgar._XBRL_RENDER_RE.match("R12.htm")
+    assert not sec_edgar._XBRL_RENDER_RE.match("d143720dex991.htm")
+    assert not sec_edgar._XBRL_RENDER_RE.match("Report.htm")
+
+
+def test_filing_url_strips_leading_zeros_from_cik():
+    # EDGAR's Archives paths use the unpadded CIK; the submissions API uses
+    # the padded one. Mixing them up yields a 404.
+    assert sec_edgar.filing_url("0000006951", "0000006951-26-000045", "a8-k.htm") == (
+        "https://www.sec.gov/Archives/edgar/data/6951/000000695126000045/a8-k.htm"
+    )
+
+
+def test_script_contents_are_stripped_before_scoring():
+    # Otherwise a page's JavaScript could supply the financial vocabulary.
+    assert sec_edgar.strip_html("<script>var revenue='x'</script><p>Hi</p>") == "Hi"
+
+
+def test_fetch_failure_is_distinguishable_from_a_low_score():
+    # Vale scored 1 on one run and 12 on the next for the same filing: a
+    # swallowed network error read as "not earnings". A missed earnings
+    # report must never look like normal operation.
+    assert issubclass(sec_edgar.FetchError, Exception)

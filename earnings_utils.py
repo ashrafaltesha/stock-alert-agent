@@ -208,7 +208,7 @@ def classify_holdings_for_date(date_str: str, tickers: list[str]) -> dict:
 
 
 def arm_earnings_watch(state: dict, ticker: str, hours: int) -> bool:
-    """Create the watch record that check_on_demand_earnings() acts on.
+    """Create the watch record that earnings_watch.py's poll loop acts on.
 
     This is the single point where a watch is armed, whether it came from you
     texting "earnings for X" or from a holding turning up on the calendar.

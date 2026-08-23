@@ -23,8 +23,8 @@ At ~3:55pm ET (config.MARKET_EARNINGS_LIST_TIME_ET), if manually run:
 At ~4:00pm ET (config.MARKET_EARNINGS_POLL_START_ET), if manually run:
   Polls roughly once a minute for each of those companies' earnings release
   (Finnhub earnings history -- see earnings_summary.py; note this is NOT
-  how per-holding watches work any more, those read the company's own IR
-  page via telegram_commands.check_on_demand_earnings),
+  how per-holding watches work any more, those read SEC filings via
+  earnings_watch.py),
   sending an individual beat/miss + revenue/EPS + QoQ/YoY summary as soon as
   each is detected, up to EARNINGS_POLL_TIMEOUT_MINUTES.
 
