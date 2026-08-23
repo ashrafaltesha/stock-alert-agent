@@ -17,7 +17,9 @@ Two earnings-calendar sources, used for different jobs:
 fetch_earnings_history_finnhub -- same Finnhub endpoint, filtered to one
   symbol across a date range instead of one date across all symbols, which
   also surfaces epsActual/revenueActual once Finnhub has them. Used by
-  earnings_summary.get_earnings_release() to actually detect a release --
+  earnings_summary.get_earnings_release() to detect a release (the
+  market-wide watcher and the backtester still do; per-holding watches
+  no longer do) --
   switched from Yahoo Finance because Yahoo's earnings-dates table lagged
   the real release by hours in practice.
 """
@@ -163,7 +165,7 @@ def fetch_earnings_history_finnhub(ticker: str, from_date: str, to_date: str) ->
     fetch_earnings_calendar_finnhub but filtered to a single symbol so it
     also returns actuals -- epsActual/revenueActual -- once Finnhub has
     them, alongside epsEstimate/revenueEstimate. Used by
-    earnings_summary.get_earnings_release() to detect a release: Finnhub
+    earnings_summary.get_earnings_release(): Finnhub
     populates these actual fields as companies report, with much less lag
     than Yahoo Finance's earnings-dates table (which is what this replaced,
     after Yahoo's data for AST SpaceMobile's 2026-08-10 release still hadn't
