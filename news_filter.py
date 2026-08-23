@@ -60,19 +60,52 @@ TIMEOUT = 25
 # This blocks the SOURCE, not the story: a genuine event covered by these
 # outlets is invariably covered by the wires and the majors too, and that copy
 # still gets through.
+# Both spaced and domain spellings are listed on purpose. Google News puts
+# the publisher's own display name in <source>, and for several of these that
+# is the domain rather than the prose name -- the alert history shows
+# "simplywall.st", not "Simply Wall St". Matching only the spaced form let
+# every one of that publisher's articles through.
 BLOCKED_SOURCES = (
-    "zacks", "motley fool", "fool.com", "simply wall st", "insider monkey",
-    "investorplace", "24/7 wall st", "stocktwits", "benzinga insights",
-    "tipranks", "seeking alpha - all", "marketbeat", "gurufocus",
+    "zacks",
+    "motley fool", "fool.com",
+    "simply wall st", "simplywall.st", "simplywallst",
+    "insider monkey", "insidermonkey",
+    "investorplace",
+    "24/7 wall st", "247wallst",
+    "stocktwits",
+    "benzinga insights",
+    "tipranks",
+    "seeking alpha - all",
+    "marketbeat",
+    "gurufocus",
+    "wall street zen", "wallstreetzen",
+    "blockonomi",
     "invezz", "the tokenist", "finbold", "watcher.guru",
 )
 
 # Headline shapes that are never a company event, whoever published them.
-_LISTICLE_RE = re.compile(
+# Every pattern here was taken from an alert this bot actually sent.
+_NOISE_RE = re.compile(
+    # Listicles and opinion framing.
     r"^\s*\d+\s+(?:best|top|great|cheap|growth|dividend|ai|stocks?)\b|"
     r"\b(?:stocks? to (?:watch|buy|sell)|things to know|what to know|"
     r"here'?s why|is it time to|should you buy|better buy|motley fool|"
-    r"jim cramer|price prediction|forecast for 20\d\d)\b",
+    r"jim cramer|price prediction|forecast for 20\d\d)\b|"
+    # Institutional ownership churn. A pension fund rebalancing its book is a
+    # regulatory filing, not news about the company.
+    r"\b(?:shares? (?:acquired|sold|bought|purchased) by|"
+    r"(?:acquires|buys|sells|takes) (?:new )?(?:shares|stake|position)|"
+    r"(?:position|stake|holdings?) (?:boosted|lowered|trimmed|raised|cut) by|"
+    r"13f|sells shares of)\b|"
+    # Single-bank price-target tweaks. These were the largest single category
+    # of false alert in the history -- six of thirteen -- and a broker moving
+    # its target from $600 to $650 is not something you act on.
+    r"\b(?:price target|target price)\b.{0,40}\b(?:to \$|from \$|cut|"
+    r"raised|lowered|adjust\w*|maintain\w*|set\w*)\b|"
+    r"\badjusts? (?:its )?(?:price )?target\b|"
+    r"\b\d+.?month price target\b|"
+    # Valuation opinion with no event behind it.
+    r"\b(?:under|over)valued\b|\b(?:fair|intrinsic) value\b",
     re.IGNORECASE)
 
 _SCHEMA = """[
@@ -87,9 +120,10 @@ For each numbered headline decide:
 - event: a short label, e.g. M&A, guidance, contract, regulatory, litigation,
   analyst action, capital raise, product, management change, earnings.
 - impact: "high" only if a reasonable holder would plausibly act on it or
-  reassess the position today. Opinion, speculation, recycled analysis,
-  price-target roundups with no new information, and general market
-  commentary are never high.
+  reassess the position today. Never high: opinion, speculation, recycled
+  analysis, general market commentary, a single broker changing its price
+  target or rating, institutional ownership filings, and "stock moved X%%
+  today" stories that only restate the price.
 - why: one short clause stating the actual fact. No hedging.
 
 Return ONLY a JSON array, one object per headline, no prose, no code fences.
@@ -154,7 +188,7 @@ def source_allowed(source: str, title: str) -> bool:
     lowered = (source or "").lower()
     if any(bad in lowered for bad in BLOCKED_SOURCES):
         return False
-    return not _LISTICLE_RE.search(title or "")
+    return not _NOISE_RE.search(title or "")
 
 
 def _providers():
