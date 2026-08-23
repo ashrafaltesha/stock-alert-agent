@@ -163,25 +163,68 @@ def fetch_earnings_history_finnhub(ticker: str, from_date: str, to_date: str) ->
         return []
 
 
-def classify_holdings_for_date(date_str: str, tickers: list[str]) -> dict:
-    """Returns {ticker: 'bmo' | 'amc' | 'unsupplied'} for tickers that are on
-    that date's Finnhub earnings calendar. Tickers not reporting that date
-    are simply absent from the returned dict."""
-    rows = fetch_earnings_calendar_finnhub(date_str)
-    by_symbol = {row.get("symbol"): row for row in rows if row.get("symbol")}
+def _label_to_category(time_label):
+    if time_label == BMO_LABEL:
+        return "bmo"
+    if time_label == AMC_LABEL:
+        return "amc"
+    return "unsupplied"
 
+
+def classify_holdings_for_date(date_str: str, tickers: list[str]) -> dict:
+    """Returns {ticker: 'bmo' | 'amc' | 'unsupplied'} for tickers reporting
+    that date, per EITHER Finnhub or Nasdaq. Absent means neither lists it.
+
+    Two calendars, unioned, because arming is the single point of failure in
+    the whole earnings system: no watch armed means the SEC detection never
+    runs, however good it is. A calendar that misses a company silently
+    disables everything downstream for that company.
+
+    And free calendars do miss. Wall Street Horizon sells confirmed-versus-
+    estimated earnings dates to institutions for real money precisely because
+    this is a hard data problem -- the failure modes cluster on recent IPOs
+    and foreign issuers, which describes Cerebras, Genius Sports and XPeng.
+
+    Unioning is the right operator rather than intersecting: a wasted watch
+    costs a few hundred HTTP requests and expires quietly after 24 hours,
+    while a missed one costs the alert entirely. The two are not comparable,
+    so any single source saying "reporting" is enough.
+
+    Timing (bmo/amc) no longer gates anything -- polling runs from 05:05 to
+    20:00 ET regardless -- so a disagreement between sources only affects the
+    wording of the heads-up message. The more specific answer wins.
+    """
+    sources = []
+    try:
+        sources.append(("finnhub", fetch_earnings_calendar_finnhub(date_str)))
+    except Exception as e:
+        print(f"Finnhub calendar failed for {date_str}: {type(e).__name__}: {e}")
+    try:
+        sources.append(("nasdaq", fetch_earnings_calendar(date_str)))
+    except Exception as e:
+        print(f"Nasdaq calendar failed for {date_str}: {type(e).__name__}: {e}")
+
+    wanted = {t.upper() for t in tickers}
     result = {}
-    for ticker in tickers:
-        row = by_symbol.get(ticker)
-        if not row:
-            continue
-        time_label = row.get("time")
-        if time_label == BMO_LABEL:
-            result[ticker] = "bmo"
-        elif time_label == AMC_LABEL:
-            result[ticker] = "amc"
-        else:
-            result[ticker] = "unsupplied"
+    found_by = {}
+
+    for name, rows in sources:
+        for row in rows or []:
+            symbol = str(row.get("symbol") or "").upper()
+            if symbol not in wanted:
+                continue
+            category = _label_to_category(row.get("time"))
+            found_by.setdefault(symbol, []).append(name)
+            # A source that actually knows the timing beats one that says
+            # "not supplied"; otherwise first writer wins.
+            if symbol not in result or (result[symbol] == "unsupplied"
+                                        and category != "unsupplied"):
+                result[symbol] = category
+
+    for symbol, names in sorted(found_by.items()):
+        print(f"[{symbol}] {date_str}: listed by {', '.join(sorted(set(names)))} "
+              f"-> {result[symbol]}")
+
     return result
 
 

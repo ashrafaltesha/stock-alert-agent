@@ -83,11 +83,16 @@ def _watches(state):
 
 
 def arm() -> None:
-    """Arm watches for holdings the calendar says report today or tomorrow.
+    """Arm watches for holdings EITHER calendar says report today or tomorrow.
 
-    Finnhub supplies the calendar and nothing else. Knowing a report is
-    SCHEDULED is the one thing filings can never tell you, since a filing
-    only ever reports what has already happened.
+    Finnhub and Nasdaq are both consulted and the results unioned. Knowing a
+    report is SCHEDULED is the one thing filings can never tell you, since a
+    filing only ever reports what has already happened -- so a calendar is
+    unavoidable, and a single one is a single point of failure.
+
+    Two sources make a miss less likely; they do not make it impossible.
+    Nothing here detects a company neither calendar lists, and the "earnings
+    for <ticker>" command remains the manual override for that.
     """
     state = load_state()
     changed = False

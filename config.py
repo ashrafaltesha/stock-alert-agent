@@ -104,8 +104,18 @@ MATERIAL_NEWS_KEYWORDS = [
 # 06:00-09:00 / 16:00-18:00 pair missed Itau (09:50), Shell (10:02), Ericsson
 # (10:14), HSBC (11:46), Vale (12:08) and Tesla (09:01-09:20) entirely.
 #
-# Finnhub survives for the earnings CALENDAR only -- knowing a report is
-# scheduled, which a filing can never tell you in advance.
+# Calendars survive for one job only: knowing a report is SCHEDULED, which a
+# filing can never tell you in advance. TWO are used -- Finnhub and Nasdaq --
+# and either one listing a company arms it.
+#
+# Arming is the single point of failure in the whole system: no watch armed
+# means the SEC detection never runs, however good it is. Free calendars miss,
+# and they miss hardest on recent IPOs and foreign issuers -- which describes
+# Cerebras, Genius Sports and XPeng. Wall Street Horizon sells confirmed-vs-
+# estimated dates to institutions precisely because this is a hard problem.
+#
+# Unioning rather than intersecting is deliberate: a wasted watch costs a few
+# hundred HTTP requests and expires quietly, a missed one costs the alert.
 
 # How long a watch stays armed once created. Deliberately longer than a day:
 # a company reporting pre-market at ~6am would otherwise need the command sent
