@@ -397,8 +397,17 @@ def handle_earnings_for(raw: str, state: dict) -> None:
     # and one armed by the calendar are identical records handled by one code
     # path. An already-active watch is left alone rather than reset, which
     # would wipe the record of what it has already sent you.
+    armed_any = False
     for ticker in valid:
-        arm_earnings_watch(state, ticker, ON_DEMAND_WATCH_HOURS)
+        if arm_earnings_watch(state, ticker, ON_DEMAND_WATCH_HOURS):
+            armed_any = True
+
+    # The watcher exits when nothing is armed, so starting one here is what
+    # keeps an on-demand command fast. Without it you'd wait for the next
+    # hourly run -- up to ~55 minutes.
+    if armed_any:
+        from workflow_trigger import start_earnings_watcher
+        start_earnings_watcher()
 
     send_telegram_message(
         f"\U0001F514 Watching {', '.join(valid)} for the next "

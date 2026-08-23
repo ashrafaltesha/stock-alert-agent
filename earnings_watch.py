@@ -106,6 +106,9 @@ def arm() -> None:
 
     if changed:
         save_state(state)
+        # The watcher exits when idle, so arming has to start one.
+        from workflow_trigger import start_earnings_watcher
+        start_earnings_watcher()
     else:
         print("No new watches to arm.")
 
@@ -250,11 +253,18 @@ def poll() -> None:
         watches = _watches(state)
 
         if not watches:
-            if cycles % 20 == 0:
-                print("No armed watches; idling.")
-            cycles += 1
-            time.sleep(60)
-            continue
+            # Exit rather than idle. Nine holdings reporting quarterly means
+            # roughly 36 armed days a year out of ~250 trading days; idling
+            # through the other ~215 held a runner for about 11 hours a day
+            # to do nothing.
+            #
+            # Exiting is only safe because arming TRIGGERS this workflow --
+            # both the calendar job and the Telegram "earnings for" command
+            # dispatch it -- so an on-demand watch starts within seconds
+            # instead of waiting for the next hourly run.
+            print(f"No armed watches after {cycles} cycles; exiting. "
+                  f"Arming will start a fresh watcher.")
+            return
 
         now = now_et()
         changed = False

@@ -52,6 +52,8 @@ concurrency:
 
 permissions:
   contents: write
+  # The arm job dispatches the watch job below.
+  actions: write
 
 jobs:
   arm:
@@ -71,6 +73,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python earnings_watch.py arm
       - name: Commit state
         run: |
@@ -97,6 +100,8 @@ jobs:
           exit 1
 
   watch:
+    # workflow_dispatch has no schedule, so this also covers a watcher
+    # started on demand by the arm job or the Telegram command.
     if: github.event.schedule != '0 9 * * 1-5' && github.event.schedule != '0 19 * * 1-5'
     runs-on: ubuntu-latest
     # 55-minute loop plus headroom. Not 360 (the maximum): a shorter ceiling
