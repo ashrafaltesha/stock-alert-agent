@@ -41,6 +41,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 import llm_extract
+import early_signal
 import sec_edgar
 from config import ON_DEMAND_WATCH_HOURS, TICKERS
 from earnings_utils import (
@@ -60,6 +61,12 @@ from telegram_utils import escape_markdown, send_telegram_message
 # not close. Revisit once the SEC's own indexing lag is measured -- if that
 # turns out to be 45 seconds, nothing below a minute matters anyway.
 POLL_SECONDS = 15
+
+# The early wire check runs once every this many poll cycles, not on every
+# one. At 15s polling that is roughly a minute, which is fast enough for a
+# signal whose whole purpose is to beat a filing that may be hours away, and
+# it keeps Google News requests to a handful per armed hour instead of 240.
+EARLY_EVERY_N_CYCLES = 4
 
 # LONGER than the hourly restart interval, deliberately. At 55 minutes each
 # watcher ended at :00 while the next began at :05, leaving a five-minute
@@ -450,6 +457,43 @@ def _process(state, key, watch, ticker, cik, filings, seen):
     return True
 
 
+def _check_early_signal(state, key, watch, ticker, filings, cycles) -> bool:
+    """Wire-service heads-up while waiting on a lagging foreign filing.
+
+    Deliberately narrow. It fires at most once per watch, only for foreign
+    private issuers, only while the watch is armed, and only on a results
+    headline from an outlet that republishes company releases.
+
+    It does NOT resolve the watch. `hit` is left alone, so the watcher keeps
+    polling EDGAR and still sends the figures when the filing lands -- this
+    is a heads-up, not a substitute for the document.
+    """
+    if watch.get("early_sent") or watch.get("hit"):
+        return False
+    if cycles % EARLY_EVERY_N_CYCLES:
+        return False
+    if not sec_edgar.is_foreign_issuer(filings):
+        return False   # domestic issuers file with the release; nothing to gain
+
+    hit = early_signal.find_results_headline(
+        ticker, state.get(f"company_name::{ticker}", ""))
+    if not hit:
+        return False
+
+    print(f"[{ticker}] EARLY SIGNAL: {hit['source']} -- {hit['title'][:80]}")
+    send_telegram_message(
+        f"\u26A1 *{ticker} results appear to be out*\n"
+        f"{escape_markdown(hit['title'])}\n"
+        f"_{escape_markdown(hit['source'])}_\n"
+        f"{hit['link']}\n\n"
+        f"_Headline only -- their SEC filing hasn't landed yet. "
+        f"I'll send the figures when it does._"
+    )
+    watch["early_sent"] = True
+    state[key] = watch
+    return True
+
+
 def poll() -> None:
     """The detection loop. Exits after LOOP_MINUTES; the workflow restarts it."""
     deadline = datetime.now(timezone.utc) + timedelta(minutes=LOOP_MINUTES)
@@ -524,6 +568,12 @@ def poll() -> None:
                 continue  # 304 -- nothing changed since last poll
 
             if _process(state, key, watch, ticker, cik, filings, seen):
+                changed = True
+                continue
+
+            # Nothing on EDGAR yet. For a foreign private issuer that may
+            # simply mean the filing has not arrived, so look for the wire.
+            if _check_early_signal(state, key, watch, ticker, filings, cycles):
                 changed = True
 
         if changed:

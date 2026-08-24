@@ -298,6 +298,36 @@ def score_filing(cik: str, accession: str, max_docs: int = 3):
     return best_score, best_period, best_text
 
 
+# Forms only a FOREIGN PRIVATE ISSUER files. This is the classification, and
+# it is definitional rather than heuristic: Form 6-K exists solely for FPIs
+# under Rule 13a-16, and 20-F/40-F are their annual reports. A company filing
+# any of them IS one, by the SEC's own definition.
+#
+# Why classify at all: domestic issuers furnish results on an 8-K item 2.02
+# essentially simultaneously with the press release, so EDGAR is first or
+# joint-first and there is nothing to gain from watching headlines. FPIs have
+# no equivalent obligation. XPeng announced Q2 2026 on the morning of
+# 2026-08-24 and by mid-morning the only 6-K on EDGAR was an unrelated
+# transaction notice -- the results filing had not arrived.
+#
+# Better than a hand-maintained list of "foreign tickers" because it cannot
+# go stale: it is read from the same submissions payload the watcher already
+# fetches, so a re-domiciled company reclassifies itself.
+FOREIGN_FORMS = ("6-K", "20-F", "40-F")
+
+
+def is_foreign_issuer(filings, lookback: int = 40) -> bool:
+    """True if this company files as a foreign private issuer.
+
+    `lookback` bounds it to recent history so a company that converted to
+    domestic filing status years ago is not classified on ancient forms.
+    """
+    for filing in (filings or [])[:lookback]:
+        if str(filing.get("form", "")).upper() in FOREIGN_FORMS:
+            return True
+    return False
+
+
 def is_foreign_earnings(score: int, has_period: bool) -> bool:
     """A 6-K is results if it reads like financial statements AND names a
     period. Both halves are needed: JD filed a 23KB 6-K that mentioned a
