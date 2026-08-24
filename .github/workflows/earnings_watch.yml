@@ -132,9 +132,10 @@ jobs:
     concurrency:
       group: stock-alert-agent-earnings-watch
       cancel-in-progress: true
-    # 62-minute loop plus headroom. Not 360 (the maximum): a shorter ceiling
-    # means a wedged job is cleared sooner.
-    timeout-minutes: 70
+    # 330-minute loop plus headroom, against GitHub's 6-hour job cap. An
+    # idle watcher still exits in seconds; this ceiling only applies when
+    # something is actually armed.
+    timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
 

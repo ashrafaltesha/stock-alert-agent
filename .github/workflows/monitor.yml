@@ -41,6 +41,9 @@ concurrency:
 
 permissions:
   contents: write
+  # Lets this workflow restart the Telegram listener when GitHub's
+  # scheduler has dropped it. See ensure_listener_running().
+  actions: write
 
 jobs:
   monitor:
@@ -59,6 +62,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # News screening. One batched call per run -- a handful a day, well
           # inside either free tier. With NEITHER key set the run still works:
           # news_filter falls back to the old keyword match, which is noisier

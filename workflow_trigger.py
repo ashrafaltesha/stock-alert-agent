@@ -19,32 +19,93 @@ import urllib.error
 import urllib.request
 
 WORKFLOW = "earnings_watch.yml"
+LISTENER_WORKFLOW = "telegram_commands.yml"
 
 
-def start_earnings_watcher() -> bool:
-    """Dispatch the watcher workflow. Returns True if accepted."""
+def _credentials():
     token = os.environ.get("GITHUB_TOKEN")
     repo = os.environ.get("GITHUB_REPOSITORY")
     if not token or not repo:
         # Running locally, or the workflow didn't grant actions: write.
-        print("No GITHUB_TOKEN/GITHUB_REPOSITORY; skipping watcher dispatch.")
-        return False
+        return None, None
+    return token, repo
 
+
+def _api(url, method="GET", body=None):
+    token, _ = _credentials()
+    req = urllib.request.Request(
+        url, data=body, method=method, headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "Content-Type": "application/json",
+        })
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        payload = resp.read()
+        return resp.status, (json.loads(payload) if payload else {})
+
+
+def _dispatch(workflow: str, label: str) -> bool:
+    token, repo = _credentials()
+    if not token:
+        print(f"No GITHUB_TOKEN/GITHUB_REPOSITORY; skipping {label} dispatch.")
+        return False
     url = (f"https://api.github.com/repos/{repo}/actions/workflows/"
-           f"{WORKFLOW}/dispatches")
+           f"{workflow}/dispatches")
     body = json.dumps({"ref": os.environ.get("GITHUB_REF_NAME", "main")}).encode()
-    req = urllib.request.Request(url, data=body, method="POST", headers={
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-        "Content-Type": "application/json",
-    })
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            print(f"Earnings watcher dispatched (HTTP {resp.status}).")
-            return True
+        status, _ = _api(url, method="POST", body=body)
+        print(f"{label} dispatched (HTTP {status}).")
+        return True
     except urllib.error.HTTPError as e:
-        print(f"Watcher dispatch failed: HTTP {e.code} {e.read()[:200]!r}")
+        print(f"{label} dispatch failed: HTTP {e.code} {e.read()[:200]!r}")
     except Exception as e:
-        print(f"Watcher dispatch failed: {type(e).__name__}: {e}")
+        print(f"{label} dispatch failed: {type(e).__name__}: {e}")
     return False
+
+
+def start_earnings_watcher() -> bool:
+    """Dispatch the watcher workflow. Returns True if accepted."""
+    return _dispatch(WORKFLOW, "Earnings watcher")
+
+
+def _run_is_active(workflow: str):
+    """True/False if known, None if the question could not be answered.
+
+    None matters: dispatching on a failed lookup would cancel a healthy
+    listener, since that workflow cancels in progress.
+    """
+    token, repo = _credentials()
+    if not token:
+        return None
+    base = (f"https://api.github.com/repos/{repo}/actions/workflows/"
+            f"{workflow}/runs?per_page=1&status=")
+    try:
+        for status in ("in_progress", "queued"):
+            _, data = _api(base + status)
+            if (data.get("total_count") or 0) > 0:
+                return True
+        return False
+    except Exception as e:
+        print(f"Could not check {workflow} runs: {type(e).__name__}: {e}")
+        return None
+
+
+def ensure_listener_running() -> bool:
+    """Restart the Telegram listener if nothing is currently listening.
+
+    GitHub's scheduler is best-effort and, in practice, badly so: on
+    2026-08-24 the hourly cron for the listener actually fired at 19:56,
+    21:03, 23:33, 01:58, 04:29, 06:58 and 10:26 -- gaps of up to 89 minutes
+    between runs that were supposed to be an hour apart. A 62-minute loop
+    cannot cover a 150-minute interval, and the bot simply stops answering.
+
+    This runs from the monitor workflow, which is driven by an external cron
+    every five minutes and is therefore punctual. It only dispatches when
+    nothing is running, so it cannot interrupt a healthy listener.
+    """
+    active = _run_is_active(LISTENER_WORKFLOW)
+    if active is None or active:
+        return False
+    print("No Telegram listener running -- starting one.")
+    return _dispatch(LISTENER_WORKFLOW, "Telegram listener")

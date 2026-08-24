@@ -78,7 +78,11 @@ EARLY_EVERY_N_CYCLES = 4
 # Running past the hour means the incoming watcher overlaps the outgoing one.
 # concurrency: cancel-in-progress is true, so the new run cancels the old on
 # creation and the only remaining gap is runner provisioning, ~30 seconds.
-LOOP_MINUTES = 62
+# Same reasoning as the Telegram listener: the hourly cron is unreliable
+# enough that a 62-minute loop leaves real gaps. Idle watchers still exit
+# within seconds, so a long ceiling costs nothing on a day with nothing
+# armed -- it only matters on the day something is.
+LOOP_MINUTES = 330
 
 def _watches(state):
     return {k: v for k, v in state.items() if k.startswith("ew_watch::")}

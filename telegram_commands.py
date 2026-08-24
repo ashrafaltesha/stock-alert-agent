@@ -107,11 +107,21 @@ import yfinance as yf
 # hour to ~144 requests.
 POLL_TIMEOUT_SECONDS = 25
 
-# LONGER than the 60-minute restart, deliberately: the incoming listener
-# overlaps the outgoing one instead of leaving a gap at the top of the hour.
-# Telegram allows one poller, so the overlap shows up as a brief 409 that the
-# new listener waits out -- see TelegramConflict.
-LOOP_MINUTES = 62
+# Five and a half hours, not 62 minutes, against an hourly cron.
+#
+# The original reasoning -- "loop slightly longer than the restart interval
+# so runs overlap" -- assumed the restart interval was real. It is not.
+# GitHub delivers scheduled events best-effort, and on 2026-08-24 this
+# workflow's hourly cron actually fired at 19:56, 21:03, 23:33, 01:58, 04:29,
+# 06:58 and 10:26: gaps of up to 89 minutes. A 62-minute loop against a
+# 150-minute interval means the bot is simply not listening for an hour and
+# a half at a time, which is exactly how it looked from the outside.
+#
+# A long loop inverts the dependency. The cron is now an opportunity to
+# refresh rather than a lifeline: whenever it fires, cancel-in-progress
+# replaces the running listener with a newer one, and when it does not fire,
+# the existing listener just keeps going. GitHub caps a job at six hours.
+LOOP_MINUTES = 330
 
 from config import (
     TELEGRAM_BOT_TOKEN,

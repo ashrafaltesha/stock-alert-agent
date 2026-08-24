@@ -428,6 +428,15 @@ def main() -> None:
     process_news_candidates(candidates, state)
     save_state(state)
 
+    # This workflow is driven by an external cron every five minutes and is
+    # therefore punctual, which the listener's own hourly schedule is not.
+    # Cheapest reliable place to notice the bot has stopped answering.
+    try:
+        from workflow_trigger import ensure_listener_running
+        ensure_listener_running()
+    except Exception as e:
+        print(f"Listener check failed (non-fatal): {type(e).__name__}: {e}")
+
 
 if __name__ == "__main__":
     main()

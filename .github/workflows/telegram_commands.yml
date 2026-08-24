@@ -55,9 +55,10 @@ permissions:
 jobs:
   process-commands:
     runs-on: ubuntu-latest
-    # 62-minute loop plus headroom. Not 360 (the maximum): a shorter ceiling
-    # means a wedged job is cleared sooner.
-    timeout-minutes: 70
+    # 330-minute loop plus headroom, against GitHub's 6-hour job cap. A
+    # wedged job is still cleared within the hour by the next cron, since
+    # this workflow cancels in progress.
+    timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
 
