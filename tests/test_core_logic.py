@@ -9,7 +9,10 @@ the suite runs in about a second and needs no secrets:
   * Markdown escaping of external text (unbalanced characters in a news
     headline used to make Telegram reject the whole message)
   * news-id hashing and the one-time migration of old raw ids
-  * the material-news keyword filter
+  * the three-stage news screen that replaced keyword matching
+  * foreign-private-issuer classification and the early wire signal
+  * the SEC fetch layer, including the gzip bug that meant earnings
+    detection had never once worked
 
 Run locally with:  python -m pytest tests/ -q
 """
@@ -27,9 +30,16 @@ os.environ.setdefault("TELEGRAM_BOT_TOKEN", "test-token")
 os.environ.setdefault("TELEGRAM_CHAT_ID", "test-chat")
 os.environ.setdefault("FINNHUB_API_KEY", "test-key")
 
+import gzip  # noqa: E402
+import zlib  # noqa: E402
+
+import early_signal  # noqa: E402
+import earnings_watch  # noqa: E402
+import llm_extract  # noqa: E402
 import merge_state  # noqa: E402
-import sec_edgar  # noqa: E402
 import monitor  # noqa: E402
+import news_filter  # noqa: E402
+import sec_edgar  # noqa: E402
 import telegram_commands as tc  # noqa: E402
 from telegram_utils import escape_markdown  # noqa: E402
 
@@ -138,23 +148,165 @@ def test_unrelated_headlines_are_not_duplicates():
     )
 
 
-# --- Material news filter -------------------------------------------------
+# --- News screening -------------------------------------------------------
+#
+# monitor.is_material() is gone. It was a substring match over ~40 keywords,
+# and content farms write headlines containing exactly those words because
+# that is how they rank. What replaced it is three stages in news_filter.py;
+# these cover the two that need no model.
 
-@pytest.mark.parametrize("headline", [
-    "Analyst upgrades GENI to Buy",
-    "Company announces acquisition of rival",
-    "FDA approval granted for lead candidate",
+@pytest.mark.parametrize("source,title", [
+    ("Zacks", "AMAT vs LRCX: which is the better value?"),
+    ("The Motley Fool", "Why Wolfspeed stock popped today"),
+    ("MarketBeat", "AppLovin trading down 4.7% on analyst downgrade"),
+    # The publisher name arrives as a domain, not prose. Matching only
+    # "simply wall st" let every one of this outlet's articles through.
+    ("simplywall.st", "Shift4 could be 26% undervalued on cut guidance"),
+    ("wallstreetzen", "uniQure upgraded to Hold"),
 ])
-def test_material_headlines_pass_filter(headline):
-    assert monitor.is_material(headline)
+def test_blocked_publishers_are_dropped(source, title):
+    assert not news_filter.source_allowed(source, title)
 
 
-@pytest.mark.parametrize("headline", [
-    "5 stocks to watch this week",
-    "What the market did today",
+@pytest.mark.parametrize("title", [
+    # Shapes that are never a company event, whoever published them. Each of
+    # these is taken from an alert this bot actually sent.
+    "5 AI stocks to watch this week",
+    "Citigroup adjusts AppLovin price target to $600 from $650",
+    "Truist Financial cuts Evolent Health price target to $6.00",
+    "Erste Asset Management GmbH acquires new shares in AppLovin",
+    "Shift4 Payments stock 12-month price target cut to $52.1",
+    "Jim Cramer says buy NVDA",
+    "XPEV price prediction for 2027",
 ])
-def test_immaterial_headlines_are_filtered_out(headline):
-    assert not monitor.is_material(headline)
+def test_noise_shapes_are_dropped_from_any_source(title):
+    assert not news_filter.source_allowed("Reuters", title)
+
+
+@pytest.mark.parametrize("title", [
+    "Applied Materials forecasts fourth-quarter revenue above estimates",
+    "Genius Sports signs multi-year deal with the NFL",
+    "Wolfspeed emerges from Chapter 11 bankruptcy",
+    "XPeng recalls 47,000 vehicles over steering defect",
+    "uniQure announces FDA breakthrough therapy designation for AMT-130",
+    # A real ratings action must survive, even though price-target noise
+    # does not. The distinction is the shape, not the vocabulary.
+    "Morgan Stanley downgrades AppLovin to underweight",
+])
+def test_real_events_reach_the_classifier(title):
+    assert news_filter.source_allowed("Reuters", title)
+
+
+def test_alert_requires_subject_and_impact():
+    """Both halves are needed.
+
+    Impact alone passes "chip stocks surge on AI demand" -- genuinely
+    high-impact news about somebody else. Subject alone passes every product
+    blog post.
+    """
+    send, label = news_filter.should_alert(
+        {"subject": True, "impact": "high", "event": "M&A", "why": "acquired X"}, "t")
+    assert send and "M&A" in label
+
+    assert not news_filter.should_alert(
+        {"subject": False, "impact": "high", "event": "sector", "why": ""}, "t")[0]
+    assert not news_filter.should_alert(
+        {"subject": True, "impact": "medium", "event": "product", "why": ""}, "t")[0]
+
+
+def test_no_model_falls_back_to_keywords_not_silence():
+    assert news_filter.should_alert(None, "Applied Materials announces acquisition of X")[0]
+    assert not news_filter.should_alert(None, "Applied Materials opens a new office")[0]
+
+
+def test_prompts_survive_percent_signs():
+    """Earnings releases and headlines are full of percentages.
+
+    `PROMPT % (ticker, text)` raised "unsupported format character" on
+    ordinary documents -- "Revenue increased 12%, driven by..." was enough.
+    """
+    for hazard in ("Revenue increased 12%, driven by deliveries",
+                   "Margin of 100%s of plan", "Up 5%d", "Discount of 50%%",
+                   "Cash at 90%(x)s", "Braces {like} {0} these"):
+        assert hazard in llm_extract.build_prompt("XPEV", hazard)
+        assert hazard in news_filter.build_prompt(f"0. [APP] {hazard}")
+
+
+# --- Foreign private issuer classification --------------------------------
+
+def test_foreign_issuer_is_read_from_the_forms_filed():
+    """Form 6-K exists only for foreign private issuers, so this is
+    definitional rather than a heuristic, and needs no maintained list."""
+    assert sec_edgar.is_foreign_issuer([{"form": "6-K"}, {"form": "6-K"}])
+    assert sec_edgar.is_foreign_issuer([{"form": "20-F"}])
+    assert not sec_edgar.is_foreign_issuer([{"form": "8-K"}, {"form": "10-Q"}])
+    assert not sec_edgar.is_foreign_issuer([])
+    # A conversion long ago must not classify the company today.
+    assert not sec_edgar.is_foreign_issuer([{"form": "8-K"}] * 40 + [{"form": "20-F"}])
+
+
+# --- Early wire signal ----------------------------------------------------
+
+@pytest.mark.parametrize("title", [
+    "XPeng Inc. Announces Unaudited Second Quarter 2026 Financial Results",
+    "Li Auto Inc. Reports Second Quarter 2026 Financial Results",
+    "Genius Sports Reports Q2 2026 Results",
+    "HSBC Holdings plc announces interim results for 2026",
+])
+def test_results_announcements_are_recognised(title):
+    assert early_signal.looks_like_results(title)
+
+
+@pytest.mark.parametrize("title", [
+    # The scheduling notice is the dangerous one: it contains "report",
+    # "second quarter" and "results", and publishes days early. The IR-page
+    # scraper made exactly this mistake with Applied Materials.
+    "XPeng to report second quarter results on August 24",
+    "XPeng will announce Q2 2026 results next week",
+    "XPeng to host second quarter 2026 earnings call",
+    "XPeng Q2 2026 earnings preview: what to watch",
+    "Analysts expect XPeng Q2 2026 results to show margin gains",
+    "XPeng reports record June deliveries",
+    "XPeng announces new P7 model launch",
+])
+def test_scheduling_and_preview_headlines_are_rejected(title):
+    assert not early_signal.looks_like_results(title)
+
+
+def test_only_wire_services_can_trigger_an_early_alert():
+    for wire in ("Business Wire", "PR Newswire", "Reuters", "GlobeNewswire"):
+        assert early_signal.source_is_wire(wire)
+    for aggregator in ("Zacks", "The Motley Fool", "MarketBeat", "TipRanks"):
+        assert not early_signal.source_is_wire(aggregator)
+
+
+# --- SEC fetch layer ------------------------------------------------------
+
+def test_gzip_responses_are_decompressed():
+    """sec_edgar asks for gzip; urllib, unlike requests, does not decode it.
+
+    Handing gzip bytes to json.loads failed every call into data.sec.gov,
+    and did it invisibly: decoding with errors="replace" produces a string,
+    so nothing raised until the JSON parser complained about column 1.
+    """
+    payload = b'{"ok": true}'
+    assert sec_edgar._decompress(gzip.compress(payload), "gzip") == payload
+    # A proxy that decompresses while leaving the header set must not
+    # resurrect this, hence the magic-number check.
+    assert sec_edgar._decompress(gzip.compress(payload), None) == payload
+    assert sec_edgar._decompress(gzip.compress(payload), "identity") == payload
+    assert sec_edgar._decompress(zlib.compress(payload), "deflate") == payload
+    assert sec_edgar._decompress(payload, None) == payload
+
+
+def test_acceptance_timestamps_are_eastern_not_utc():
+    """EDGAR writes a trailing Z but the values are Eastern -- it only
+    accepts filings 06:00-22:00 ET, so 06:45:59 cannot be UTC. Reading them
+    as UTC puts every morning filing on the previous day."""
+    parsed = earnings_watch._accepted_et({"accepted": "2026-08-24T06:45:59.000Z"})
+    assert parsed is not None
+    assert parsed.hour == 6 and parsed.strftime("%Y-%m-%d") == "2026-08-24"
+    assert earnings_watch._accepted_et({"accepted": ""}) is None
 
 
 # --- state.json three-way merge -------------------------------------------
