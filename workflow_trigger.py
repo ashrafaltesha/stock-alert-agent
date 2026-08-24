@@ -69,6 +69,16 @@ def start_earnings_watcher() -> bool:
     return _dispatch(WORKFLOW, "Earnings watcher")
 
 
+def restart_listener() -> bool:
+    """Start a fresh listener, for when the running one is on stale code.
+
+    Dispatched as the current listener exits, so there is no window where
+    nothing is listening. Safe against the watchdog: that workflow cancels in
+    progress, so at worst one of the two replaces the other.
+    """
+    return _dispatch(LISTENER_WORKFLOW, "Telegram listener (code updated)")
+
+
 def _run_is_active(workflow: str):
     """True/False if known, None if the question could not be answered.
 

@@ -95,6 +95,7 @@ reply), so normal chatter with the bot doesn't trigger anything.
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 from datetime import datetime, timedelta
@@ -122,6 +123,10 @@ POLL_TIMEOUT_SECONDS = 25
 # replaces the running listener with a newer one, and when it does not fire,
 # the existing listener just keeps going. GitHub caps a job at six hours.
 LOOP_MINUTES = 330
+
+# A long loop runs stale code until it ends. Checked every N long-poll cycles
+# (25s each), so roughly every ten minutes.
+UPDATE_CHECK_EVERY_N_CYCLES = 24
 
 from config import (
     TELEGRAM_BOT_TOKEN,
@@ -1083,6 +1088,34 @@ def handle_updates(updates: list[dict], session: _Session) -> None:
         acknowledge(session.offset)
 
 
+def _code_has_changed() -> bool:
+    """Has any Python file on origin/main moved since this run checked out?
+
+    A long-running job runs the code it started with. That was harmless at 62
+    minutes and is not at 330: a fix pushed at 15:45 would not take effect
+    until the loop ended at 21:10, so the bot keeps giving the old answer long
+    after the bug is fixed. That happened the first time this was used -- the
+    `set` command was live on main and the running listener had never heard
+    of it, so it replied "I didn't understand that one".
+
+    Compares only *.py, deliberately. state.json is committed every few
+    minutes by the monitor and by this listener itself; watching every commit
+    would restart the loop continuously.
+    """
+    try:
+        subprocess.run(["git", "fetch", "--quiet", "origin", "main"],
+                       check=True, capture_output=True, timeout=30)
+        diff = subprocess.run(
+            ["git", "diff", "--quiet", "HEAD", "origin/main", "--", "*.py"],
+            capture_output=True, timeout=30)
+        return diff.returncode != 0
+    except Exception as e:
+        # Never fatal: a listener that cannot check for updates is still a
+        # working listener.
+        print(f"Update check failed (non-fatal): {type(e).__name__}: {e}")
+        return False
+
+
 def listen() -> None:
     """Hold an open connection to Telegram and answer as messages arrive.
 
@@ -1097,6 +1130,7 @@ def listen() -> None:
     made the same move for the same reason.
     """
     deadline = time.monotonic() + LOOP_MINUTES * 60
+    cycles = 0
     session = _Session()
     print(f"Listening for {LOOP_MINUTES} minutes "
           f"(long poll {POLL_TIMEOUT_SECONDS}s), offset={session.offset}.")
@@ -1119,6 +1153,19 @@ def listen() -> None:
                   f"-- retrying in {idle_backoff}s")
             time.sleep(idle_backoff)
             continue
+
+        cycles += 1
+        # Roughly every ten minutes of idling.
+        if cycles % UPDATE_CHECK_EVERY_N_CYCLES == 0 and _code_has_changed():
+            print("New code on origin/main -- exiting so a fresh run picks it up.")
+            if session.dirty:
+                session.flush()
+            try:
+                from workflow_trigger import restart_listener
+                restart_listener()
+            except Exception as e:
+                print(f"Restart dispatch failed: {type(e).__name__}: {e}")
+            return
 
         if not updates:
             continue
