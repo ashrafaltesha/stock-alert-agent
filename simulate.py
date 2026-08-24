@@ -9,7 +9,19 @@ Does NOT read or write state.json, so it can never interfere with real
 alert dedup state or the live bot's memory of what it has already sent.
 
 Usage:
-  python simulate.py [YYYY-MM-DD]     (defaults to 2026-08-07)
+  python simulate.py [YYYY-MM-DD]           backtest a past trading day
+  python simulate.py replay TICKER [ACCN]   replay one real SEC filing
+
+The `replay` mode exists because the backtest above does NOT exercise the
+current earnings pipeline. It replays the Finnhub-actuals path that SEC
+filing detection replaced, so a green backtest says nothing about whether
+the code that now sends your earnings alerts works.
+
+`replay` runs the real thing end to end -- fetch the filing from EDGAR,
+classify it, extract the figures, compare to consensus, format the message
+-- against a filing that genuinely exists. It is how you answer "would this
+have worked?" after a miss, and how you check a change to the extraction
+or formatting without waiting for a company to report.
 
 Triggered manually via .github/workflows/simulate.yml (workflow_dispatch
 only -- never runs on a schedule).
@@ -144,7 +156,96 @@ def simulate_market_earnings(sim_date: str) -> None:
             print(f"[{symbol}] no earnings release detected for {sim_date}")
 
 
+def replay_filing(ticker: str, accession: str = "") -> None:
+    """Run one real SEC filing through the live detection and alert path.
+
+    Reads nothing from state.json and writes nothing to it, so replaying a
+    filing cannot mark it as seen and cannot suppress the real alert if the
+    watcher is about to find it independently.
+    """
+    import sec_edgar
+    import earnings_watch
+    from earnings_utils import fetch_consensus
+
+    ticker = ticker.upper()
+    cik = sec_edgar.resolve_cik(ticker, sec_edgar.load_cik_map())
+    if not cik:
+        send_telegram_message(f"{SIM_TAG}\nNo CIK known for *{ticker}*.")
+        print(f"No CIK for {ticker}; add it to cik_map.json.")
+        return
+
+    filings, _ = sec_edgar.recent_filings(cik)
+    if not filings:
+        print(f"No filings returned for {ticker}.")
+        return
+
+    if accession:
+        match = [f for f in filings if f["accession"] == accession]
+        if not match:
+            print(f"{accession} not in {ticker}'s recent filings.")
+            print("Recent: " + ", ".join(f["accession"] for f in filings[:8]))
+            return
+        target = match[0]
+    else:
+        # Newest filing that classifies as results, so the common case is
+        # just `replay TICKER`.
+        target = None
+        for f in filings[:15]:
+            if sec_edgar.is_domestic_earnings(f):
+                target = f
+                break
+            if f["form"] == "6-K":
+                try:
+                    score, period, _ = sec_edgar.score_filing(cik, f["accession"])
+                except sec_edgar.FetchError as e:
+                    print(f"scoring {f['accession']} failed: {e}")
+                    continue
+                if sec_edgar.is_foreign_earnings(score, period):
+                    target = f
+                    break
+        if target is None:
+            print(f"No recent {ticker} filing classifies as earnings.")
+            return
+
+    print(f"Replaying {ticker} {target['form']} {target['accession']} "
+          f"accepted {target.get('accepted')}")
+
+    score, period, text = sec_edgar.score_filing(cik, target["accession"])
+    kind = ("8-K item 2.02" if sec_edgar.is_domestic_earnings(target)
+            else f"6-K (score {score}, period={period})")
+    verdict = (sec_edgar.is_domestic_earnings(target)
+               or sec_edgar.is_foreign_earnings(score, period))
+    print(f"classified as earnings: {verdict}  ({kind})")
+
+    consensus = fetch_consensus(ticker, (target.get("filed") or "")) or {}
+    if consensus:
+        print(f"consensus: {consensus}")
+
+    send_telegram_message(
+        f"{SIM_TAG}\n\U0001F4CA *{ticker} earnings filing (replay)*\n"
+        f"{kind}, accepted {target.get('accepted')}\n"
+        f"{sec_edgar.filing_url(cik, target['accession'], target.get('doc'))}"
+    )
+
+    message = earnings_watch.build_metrics_message(ticker, text, consensus)
+    if message:
+        send_telegram_message(f"{SIM_TAG}\n{message}")
+    else:
+        send_telegram_message(
+            f"{SIM_TAG}\nNothing could be extracted from the document. "
+            f"With no GROQ_API_KEY or GEMINI_API_KEY set this is expected."
+        )
+    print("Replay complete.")
+
+
 def main() -> None:
+    if len(sys.argv) > 1 and sys.argv[1] == "replay":
+        if len(sys.argv) < 3:
+            print("Usage: python simulate.py replay TICKER [ACCESSION]")
+            return
+        replay_filing(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "")
+        return
+
     sim_date = sys.argv[1] if len(sys.argv) > 1 else "2026-08-07"
     tickers = load_tickers()
 
