@@ -112,7 +112,11 @@ _SCHEMA = """[
   {"i": 0, "subject": true|false, "event": "short label", "impact": "high"|"medium"|"low", "why": "one short clause"}
 ]"""
 
-PROMPT = """You screen financial news for someone who HOLDS these stocks.
+# Substitution, not %-formatting: headlines are full of percent signs
+# ("AppLovin trading down 4.7% on analyst downgrade" is a real one from this
+# bot's own alert history) and `PROMPT % (...)` raises on them. A stray "%s"
+# or "%," in a headline would have taken down the whole run's classification.
+PROMPT_TEMPLATE = """You screen financial news for someone who HOLDS these stocks.
 
 For each numbered headline decide:
 - subject: is this company the PRIMARY subject? false if it is one of several
@@ -122,17 +126,23 @@ For each numbered headline decide:
 - impact: "high" only if a reasonable holder would plausibly act on it or
   reassess the position today. Never high: opinion, speculation, recycled
   analysis, general market commentary, a single broker changing its price
-  target or rating, institutional ownership filings, and "stock moved X%%
+  target or rating, institutional ownership filings, and "stock moved X%
   today" stories that only restate the price.
 - why: one short clause stating the actual fact. No hedging.
 
 Return ONLY a JSON array, one object per headline, no prose, no code fences.
 
 Schema:
-%s
+<<SCHEMA>>
 
 Headlines:
-%s"""
+<<HEADLINES>>"""
+
+
+def build_prompt(listing: str) -> str:
+    return (PROMPT_TEMPLATE
+            .replace("<<SCHEMA>>", _SCHEMA)
+            .replace("<<HEADLINES>>", listing))
 
 
 def _post(url, payload, headers):
@@ -213,7 +223,7 @@ def classify(articles):
     listing = "\n".join(
         f'{i}. [{a["ticker"]}] {a["title"]}  (source: {a.get("source") or "?"})'
         for i, a in enumerate(articles))
-    prompt = PROMPT % (_SCHEMA, listing)
+    prompt = build_prompt(listing)
 
     for name, call, key in providers:
         try:

@@ -67,7 +67,17 @@ _SCHEMA = """{
   "headline": "the single most important fact, one short sentence"
 }"""
 
-PROMPT = """You are extracting figures from a company earnings press release.
+# Built by substitution, NOT by %-formatting.
+#
+# The document being inserted is an earnings release, and earnings releases
+# are made of percentages. "Revenue increased 12%, driven by..." makes
+# `PROMPT % (ticker, text)` raise "unsupported format character ','" -- so
+# extraction did not degrade on unusual documents, it crashed on ordinary
+# ones. Almost every release in existence contains a percent sign.
+#
+# Never %-format or .format() a template with untrusted text in it. The
+# text decides whether your format string is valid.
+PROMPT_TEMPLATE = """You are extracting figures from a company earnings press release.
 
 Rules:
 - Report ONLY the CURRENT reporting period. Releases also state the year-ago
@@ -78,12 +88,19 @@ Rules:
 - Return ONLY a JSON object, no prose, no code fences.
 
 Schema:
-%s
+<<SCHEMA>>
 
-Release for %s:
+Release for <<TICKER>>:
 ---
-%s
----""" % (_SCHEMA, "%s", "%s")
+<<RELEASE>>
+---"""
+
+
+def build_prompt(ticker: str, text: str) -> str:
+    return (PROMPT_TEMPLATE
+            .replace("<<SCHEMA>>", _SCHEMA)
+            .replace("<<TICKER>>", ticker)
+            .replace("<<RELEASE>>", text[:MAX_CHARS]))
 
 _FIELDS = ("period", "revenue", "revenue_yoy", "eps_gaap", "eps_adjusted",
            "net_income", "gross_margin", "operating_income",
@@ -154,7 +171,7 @@ def extract_metrics(text: str, ticker: str):
         print("No GROQ_API_KEY or GEMINI_API_KEY; using verbatim highlights.")
         return None
 
-    prompt = PROMPT % (ticker, text[:MAX_CHARS])
+    prompt = build_prompt(ticker, text)
     for name, call, key in providers:
         try:
             result = _parse(call(prompt, key))

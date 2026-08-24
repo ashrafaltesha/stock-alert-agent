@@ -205,10 +205,26 @@ def replay_filing(ticker: str, accession: str = "") -> None:
                     break
         if target is None:
             print(f"No recent {ticker} filing classifies as earnings.")
+            send_telegram_message(
+                f"{SIM_TAG}\nNo recent *{ticker}* filing classifies as earnings. "
+                f"If they have announced results, the 6-K has not reached EDGAR yet."
+            )
             return
 
     print(f"Replaying {ticker} {target['form']} {target['accession']} "
           f"accepted {target.get('accepted')}")
+
+    # Say so loudly when the newest earnings filing is not recent. Picking
+    # the newest match is convenient, but silently replaying LAST quarter
+    # while you are looking for today's is worse than refusing: the message
+    # arrives, the numbers look plausible, and nothing says they are stale.
+    filed = (target.get("filed") or "")
+    if filed and (datetime.now().date() - datetime.strptime(filed, "%Y-%m-%d").date()).days > 3:
+        stale = (f"{SIM_TAG}\n\u26A0\uFE0F Newest *{ticker}* earnings filing on EDGAR "
+                 f"is from *{filed}*, not today. Replaying that one. If results "
+                 f"were announced today, the 6-K has not been filed yet.")
+        print(stale.replace(SIM_TAG, "").strip())
+        send_telegram_message(stale)
 
     score, period, text = sec_edgar.score_filing(cik, target["accession"])
     kind = ("8-K item 2.02" if sec_edgar.is_domestic_earnings(target)
