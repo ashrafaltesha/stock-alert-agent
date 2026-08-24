@@ -14,7 +14,8 @@
     "braskem board approves restructuring of $10.9b in debt - plastics news",
     "braskem agrees to out-of-court restructuring of $10.9b in debt (bak:nyse) - seeking alpha",
     "braskem (nyse: bak) shields $10.9b debt, eyes equity steps - stock titan",
-    "ftse braskem s.a. pn to be deleted from ftse rafi index series effective aug 27 - tradingview"
+    "ftse braskem s.a. pn to be deleted from ftse rafi index series effective aug 27 - tradingview",
+    "braskem (nyse: bak) opens creditor talks data in debt revamp - stock titan"
   ],
   "alerted_titles::CENX": [
     "freedom expects century aluminum shares to rise by more than a quarter - freedom broker"
@@ -1506,6 +1507,10 @@
     [
       "9f3a62d092bdbcf0",
       29793494
+    ],
+    [
+      "a42a2adc34a43e83",
+      29793503
     ]
   ],
   "seen_news_google::BAK": [
@@ -1936,6 +1941,10 @@
     [
       "948d182a43d5a270",
       29793494
+    ],
+    [
+      "a9ca70361b5fcc86",
+      29793503
     ]
   ],
   "seen_news_google::CENX": [
@@ -4994,6 +5003,14 @@
     [
       "fe724008c5a2b9a8",
       29793495
+    ],
+    [
+      "bbd4281e700c34e0",
+      29793503
+    ],
+    [
+      "e9a514fac13a3f13",
+      29793503
     ]
   ],
   "seen_news_google::RDDT": [
@@ -6822,6 +6839,130 @@
     [
       "4931f36bd8c6001c",
       29793493
+    ],
+    [
+      "12d01809025ecdf0",
+      29793503
+    ],
+    [
+      "1ce8b5ac5c09b459",
+      29793503
+    ],
+    [
+      "1e08c87aed24a48b",
+      29793503
+    ],
+    [
+      "22add2646210ea21",
+      29793503
+    ],
+    [
+      "2a27b854754eab92",
+      29793503
+    ],
+    [
+      "3482124bb7063ee5",
+      29793503
+    ],
+    [
+      "385359e8a9955d4c",
+      29793503
+    ],
+    [
+      "49bb0c8b323a1523",
+      29793503
+    ],
+    [
+      "549d47a504320dc0",
+      29793503
+    ],
+    [
+      "6381bfb45708ea85",
+      29793503
+    ],
+    [
+      "6b966f0c6b50849a",
+      29793503
+    ],
+    [
+      "7e160c9c1e2959c5",
+      29793503
+    ],
+    [
+      "8605d84c5b91427a",
+      29793503
+    ],
+    [
+      "90d37067adbf2233",
+      29793503
+    ],
+    [
+      "94f1fea0ca478049",
+      29793503
+    ],
+    [
+      "95e9fcf42cb5aac8",
+      29793503
+    ],
+    [
+      "a84f15cb223c1094",
+      29793503
+    ],
+    [
+      "aefa5e04c727c4ca",
+      29793503
+    ],
+    [
+      "b05f3782699708b8",
+      29793503
+    ],
+    [
+      "b4684ef325908ca0",
+      29793503
+    ],
+    [
+      "b7999fc158503a50",
+      29793503
+    ],
+    [
+      "c332b9179bf5f1ba",
+      29793503
+    ],
+    [
+      "cbcb035b88097a35",
+      29793503
+    ],
+    [
+      "d20dc262d3612142",
+      29793503
+    ],
+    [
+      "d7dc290ae66e8cd5",
+      29793503
+    ],
+    [
+      "e8863963d551c180",
+      29793503
+    ],
+    [
+      "ea6f4e46b709c5b9",
+      29793503
+    ],
+    [
+      "ec614e29d6194155",
+      29793503
+    ],
+    [
+      "f6b97475eb51cbcb",
+      29793503
+    ],
+    [
+      "fd44806d9c4fd121",
+      29793503
+    ],
+    [
+      "ff9a6ddf85cdfc8c",
+      29793503
     ]
   ],
   "tg_update_offset": 785157266
