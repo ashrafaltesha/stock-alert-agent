@@ -188,6 +188,27 @@ WITHDRAW_RE = re.compile(
     rf"^\s*(?:withdrew|withdraw|withdrawn)\s+\$?({_NUM})\s*\.?\s*$", re.IGNORECASE)
 EARNINGS_TODAY_RE = re.compile(r"^\s*earnings\s+today\.?\s*$", re.IGNORECASE)
 EARNINGS_FOR_RE = re.compile(r"^\s*earnings\s+for\s+(.+?)\.?\s*$", re.IGNORECASE)
+HELP_RE = re.compile(r"^\s*(?:help|commands|\?|/help|/start|what can you do)\.?\s*$",
+                     re.IGNORECASE)
+
+HELP_TEXT = (
+    "*What I understand*\n\n"
+    "*Positions*\n"
+    "added 10 shares of NVDA at 500\n"
+    "sold 10 shares of NVDA at 600\n"
+    "summary\n\n"
+    "*Cash*\n"
+    "deposited 2000  /  withdrew 1000\n"
+    "set cash to 10500  /  set deposits to 40000\n\n"
+    "*Lists*\n"
+    "add GENI to my list  /  remove GENI from my list\n"
+    "add GENI, XPEV to my watchlist  /  remove GENI from my watchlist\n"
+    "watchlist\n\n"
+    "*Earnings*\n"
+    "earnings today\n"
+    "earnings for XPEV\n\n"
+    "_Tickers are case-insensitive and a leading $ is fine._"
+)
 
 
 def parse_num(s: str) -> float:
@@ -825,6 +846,10 @@ def process_message(
             )
         return False, False, bool(valid)
 
+    if HELP_RE.match(text):
+        send_telegram_message(HELP_TEXT)
+        return False, False, False
+
     remove_watchlist_match = REMOVE_WATCHLIST_RE.match(text)
     if remove_watchlist_match:
         requested = parse_ticker_list(remove_watchlist_match.group(1))
@@ -846,6 +871,18 @@ def process_message(
             send_telegram_message(f"\U0001F5D1 Removed {', '.join(present)} from your watchlist.")
         return False, False, bool(present)
 
+    # Nothing matched. Say so.
+    #
+    # This used to `return False, False, False` and send nothing at all, which
+    # is indistinguishable from the bot being down -- and it HAS been down,
+    # repeatedly, so silence is the one response that cannot be interpreted.
+    # A near-miss on a command's wording ("sold 10 NVDA at 600", missing
+    # "shares of") produced exactly the same nothing as a dead listener.
+    if text and text.strip():
+        print(f"Unrecognised command: {text[:80]!r}")
+        send_telegram_message(
+            "I didn't understand that one.\n\n" + HELP_TEXT
+        )
     return False, False, False
 
 

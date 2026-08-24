@@ -531,3 +531,43 @@ def test_requests_carry_a_user_agent():
     """Cloudflare fronts Groq and rejects urllib's default signature with
     HTTP 403 "error code: 1010"."""
     assert "Mozilla" in llm_client.BASE_HEADERS["User-Agent"]
+
+
+# --- Unrecognised commands ------------------------------------------------
+
+@pytest.mark.parametrize("text", [
+    "sold 10 NVDA at 600",        # near-miss: missing "shares of"
+    "add GENI",                   # near-miss: missing "to my list"
+    "whats my portfolio",
+    "summry",
+])
+def test_unrecognised_commands_get_a_reply(text, monkeypatch):
+    """Silence is the one response that cannot be interpreted.
+
+    This used to return without sending anything, so a typo in a command was
+    indistinguishable from the listener being down -- and it had been down,
+    repeatedly, so that ambiguity cost real debugging time.
+    """
+    sent = []
+    monkeypatch.setattr(tc, "send_telegram_message", sent.append)
+    tc.process_message(text, ["AMAT"], {}, [], {})
+    assert sent, f"no reply to {text!r}"
+    assert "didn't understand" in sent[0]
+
+
+@pytest.mark.parametrize("text", ["help", "commands", "/help", "?"])
+def test_help_is_reachable_and_does_not_apologise(text, monkeypatch):
+    sent = []
+    monkeypatch.setattr(tc, "send_telegram_message", sent.append)
+    tc.process_message(text, ["AMAT"], {}, [], {})
+    assert sent and "What I understand" in sent[0]
+    assert "didn't understand" not in sent[0]
+
+
+def test_empty_messages_stay_silent(monkeypatch):
+    """A photo or sticker carries no text; nagging about it would be noise."""
+    sent = []
+    monkeypatch.setattr(tc, "send_telegram_message", sent.append)
+    tc.process_message("", ["AMAT"], {}, [], {})
+    tc.process_message("   ", ["AMAT"], {}, [], {})
+    assert sent == []
