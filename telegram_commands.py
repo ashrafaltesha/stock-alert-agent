@@ -939,7 +939,8 @@ class _Session:
         if self.tickers_changed:
             save_tickers(self.tickers)
             print(f"tickers.json updated: {self.tickers}")
-        if self.holdings_changed:
+        holdings_dirty = self.holdings_changed
+        if holdings_dirty:
             save_holdings(self.holdings)
             print("holdings.json updated (values redacted -- this repo is public)")
         if self.watchlist_changed:
@@ -953,6 +954,25 @@ class _Session:
         repo_commit.commit_and_push(
             ["tickers.json", "watchlist.json", "state.json"],
             "Update tickers/watchlist/state via Telegram command [skip ci]")
+
+        # holdings.json lives in the SEPARATE private repo checked out at
+        # data/, and must be committed here rather than left to the
+        # workflow's final step.
+        #
+        # That step only runs when the job finishes normally. The listener
+        # loops for hours and is cancelled by design -- every hour by the
+        # cron, and by the watchdog -- so it had stopped running at all. The
+        # trade was applied in memory, written to the runner's disk, and
+        # correctly acknowledged over Telegram; then the runner was destroyed
+        # and the private repo still held the old numbers. The next listener
+        # loaded those, so `summary` showed stale share counts and any later
+        # buy or sell computed from the wrong base.
+        if holdings_dirty:
+            repo_commit.commit_and_push(
+                ["holdings.json"],
+                "Update holdings via Telegram command [skip ci]",
+                cwd=os.path.dirname(HOLDINGS_FILE),
+                merged_file="holdings.json")
 
         self.tickers_changed = self.holdings_changed = False
         self.watchlist_changed = self.state_changed = False

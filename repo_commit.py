@@ -30,7 +30,9 @@ earnings alert.
 
 import os
 import random
+import shutil
 import subprocess
+import tempfile
 import time
 
 BOT_NAME = "stock-agent-bot"
@@ -44,80 +46,96 @@ MERGED_FILE = "state.json"
 MAX_ATTEMPTS = 5
 
 
-def _git(*args, check=True, capture=True):
+def _git(*args, check=True, capture=True, cwd=None):
     return subprocess.run(
         ["git", "-c", f"user.name={BOT_NAME}", "-c", f"user.email={BOT_EMAIL}", *args],
-        check=check, capture_output=capture, text=True)
+        check=check, capture_output=capture, text=True, cwd=cwd)
 
 
-def _has_staged_changes() -> bool:
-    return _git("diff", "--cached", "--quiet", check=False).returncode != 0
+def _has_staged_changes(cwd=None) -> bool:
+    return _git("diff", "--cached", "--quiet", check=False, cwd=cwd).returncode != 0
 
 
-def _read_blob(ref: str, path: str, fallback: str = "{}") -> str:
-    result = _git("show", f"{ref}:{path}", check=False)
+def _read_blob(ref: str, path: str, fallback: str = "{}", cwd=None) -> str:
+    result = _git("show", f"{ref}:{path}", check=False, cwd=cwd)
     return result.stdout if result.returncode == 0 else fallback
 
 
-def commit_and_push(paths, message: str) -> bool:
-    """Stage `paths`, commit, and push, merging state.json on rejection.
+def commit_and_push(paths, message: str, cwd=None, merged_file=MERGED_FILE) -> bool:
+    """Stage `paths`, commit, and push, merging by key on rejection.
+
+    `cwd` selects the repository -- the public one by default, or the private
+    data repo checked out at data/ for holdings.json.
+
+    `merged_file` is the one file both sides may have touched. Merging by key
+    rather than rebasing matters for holdings just as much as for state: a
+    rebase conflicts on the whole file and, when it fails, silently drops the
+    trade that caused it. Both files are flat JSON dictionaries, so a
+    three-way key merge is exact -- our changed keys applied over theirs.
 
     Returns True if something was pushed, False if there was nothing to do.
     Never raises: a failed push is worth logging loudly, but it is not worth
     killing a listener that is otherwise answering messages correctly.
     """
-    existing = [p for p in paths if os.path.exists(p)]
+    root = cwd or "."
+    existing = [p for p in paths if os.path.exists(os.path.join(root, p))]
     if not existing:
         return False
 
+    merger = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "merge_state.py")
     try:
-        _git("add", *existing)
-        if not _has_staged_changes():
+        _git("add", *existing, cwd=cwd)
+        if not _has_staged_changes(cwd):
             return False
-        _git("commit", "-m", message)
+        _git("commit", "-m", message, cwd=cwd)
 
         for attempt in range(1, MAX_ATTEMPTS + 1):
-            if _git("push", check=False).returncode == 0:
+            if _git("push", check=False, cwd=cwd).returncode == 0:
                 print(f"Pushed: {message}")
                 return True
 
             print(f"Push rejected (attempt {attempt}/{MAX_ATTEMPTS}) -- "
-                  f"merging {MERGED_FILE} by key before retry.")
-            _git("fetch", "origin", "main")
+                  f"merging {merged_file} by key before retry.")
+            _git("fetch", "origin", "main", cwd=cwd)
 
-            base = _git("merge-base", "HEAD", "origin/main").stdout.strip()
-            base_json = _read_blob(base, MERGED_FILE)
-            theirs_json = _read_blob("origin/main", MERGED_FILE)
-            ours_json = _read_blob("HEAD", MERGED_FILE)
+            base = _git("merge-base", "HEAD", "origin/main", cwd=cwd).stdout.strip()
+            base_json = _read_blob(base, merged_file, cwd=cwd)
+            theirs_json = _read_blob("origin/main", merged_file, cwd=cwd)
+            ours_json = _read_blob("HEAD", merged_file, cwd=cwd)
             # Files only this process writes survive the reset verbatim.
-            ours_other = {p: _read_blob("HEAD", p, fallback="")
-                          for p in existing if p != MERGED_FILE}
+            ours_other = {p: _read_blob("HEAD", p, fallback="", cwd=cwd)
+                          for p in existing if p != merged_file}
 
-            _git("reset", "--hard", "origin/main")
+            _git("reset", "--hard", "origin/main", cwd=cwd)
 
             for path, content in ours_other.items():
                 if content:
-                    with open(path, "w") as fh:
+                    with open(os.path.join(root, path), "w") as fh:
                         fh.write(content)
 
-            for name, content in (("/tmp/base.json", base_json),
-                                  ("/tmp/ours.json", ours_json),
-                                  ("/tmp/theirs.json", theirs_json)):
-                with open(name, "w") as fh:
+            tmp = tempfile.mkdtemp()
+            names = {}
+            for label, content in (("base", base_json), ("ours", ours_json),
+                                   ("theirs", theirs_json)):
+                names[label] = os.path.join(tmp, f"{label}.json")
+                with open(names[label], "w") as fh:
                     fh.write(content)
 
             subprocess.run(
-                ["python3", "merge_state.py",
-                 "--base", "/tmp/base.json", "--ours", "/tmp/ours.json",
-                 "--theirs", "/tmp/theirs.json", "--out", MERGED_FILE],
+                ["python3", merger,
+                 "--base", names["base"], "--ours", names["ours"],
+                 "--theirs", names["theirs"],
+                 "--out", os.path.join(root, merged_file)],
                 check=True)
+            shutil.rmtree(tmp, ignore_errors=True)
 
-            _git("add", *existing)
-            if not _has_staged_changes():
+            _git("add", *existing, cwd=cwd)
+            if not _has_staged_changes(cwd):
                 print("Nothing left to commit after merge -- "
                       "the other run covered it.")
                 return False
-            _git("commit", "-m", message)
+            _git("commit", "-m", message, cwd=cwd)
             # Jittered, so two workflows colliding do not retry in lockstep.
             time.sleep(random.uniform(1, 5))
 
