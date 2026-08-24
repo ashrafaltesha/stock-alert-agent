@@ -437,6 +437,11 @@ def main() -> None:
     except Exception as e:
         print(f"Listener check failed (non-fatal): {type(e).__name__}: {e}")
 
+    # Last thing in the run, so a ping means the whole run completed. Placing
+    # it earlier would report health for a run that later died.
+    import heartbeat
+    heartbeat.ping(heartbeat.MONITOR)
+
 
 if __name__ == "__main__":
     main()

@@ -42,6 +42,7 @@ from datetime import datetime, timedelta, timezone
 
 import llm_extract
 import early_signal
+import heartbeat
 import sec_edgar
 from config import ON_DEMAND_WATCH_HOURS, TICKERS
 from earnings_utils import (
@@ -131,6 +132,9 @@ def arm() -> None:
 
     if not changed:
         print("No new watches to arm.")
+        # Still alive: "nothing reports today" is a normal, healthy answer,
+        # and must not look the same as the job never running.
+        heartbeat.ping(heartbeat.EARNINGS_ARM)
         return
 
     save_state(state)
@@ -155,6 +159,11 @@ def arm() -> None:
 
     from workflow_trigger import start_earnings_watcher
     start_earnings_watcher()
+
+    # Arming is the single point of failure for the whole earnings path: no
+    # watch armed means detection never runs, however good it is. This is the
+    # thing most worth knowing has stopped.
+    heartbeat.ping(heartbeat.EARNINGS_ARM)
 
 
 def _store_consensus(state, ticker, day):

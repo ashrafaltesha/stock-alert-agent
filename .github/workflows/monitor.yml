@@ -54,6 +54,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          # ~13s per run reinstalling identical packages, ~290 runs a day.
+          # yfinance drags in pandas and numpy; lxml is a compiled wheel.
+          cache: pip
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -63,6 +66,8 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Dead-man's switch. Absent secret = silently disabled.
+          HEALTHCHECK_PING_KEY: ${{ secrets.HEALTHCHECK_PING_KEY }}
           # News screening. One batched call per run -- a handful a day, well
           # inside either free tier. With NEITHER key set the run still works:
           # news_filter falls back to the old keyword match, which is noisier

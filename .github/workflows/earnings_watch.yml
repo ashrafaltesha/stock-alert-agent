@@ -87,6 +87,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          # ~13s per run reinstalling identical packages, ~290 runs a day.
+          # yfinance drags in pandas and numpy; lxml is a compiled wheel.
+          cache: pip
       # Arming needs the calendar, which needs requests. Only this job pays
       # for dependencies; the watcher below deliberately does not.
       - run: pip install -r requirements.txt
@@ -96,6 +99,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEALTHCHECK_PING_KEY: ${{ secrets.HEALTHCHECK_PING_KEY }}
         run: python earnings_watch.py arm
       - name: Commit state
         run: |
@@ -153,6 +157,7 @@ jobs:
           # own highlights instead of listing parsed metrics.
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          HEALTHCHECK_PING_KEY: ${{ secrets.HEALTHCHECK_PING_KEY }}
         run: python3 earnings_watch.py poll
 
       # State is committed once, after the loop. Committing on every

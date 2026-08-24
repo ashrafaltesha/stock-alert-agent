@@ -74,6 +74,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          # ~13s per run reinstalling identical packages, ~290 runs a day.
+          # yfinance drags in pandas and numpy; lxml is a compiled wheel.
+          cache: pip
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -84,6 +87,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEALTHCHECK_PING_KEY: ${{ secrets.HEALTHCHECK_PING_KEY }}
         # "listen" loops on a long-poll connection. Without the argument
         # this still runs the old one-shot path, which is what a manual
         # `python telegram_commands.py` does locally.

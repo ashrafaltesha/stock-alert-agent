@@ -31,6 +31,9 @@ os.environ.setdefault("TELEGRAM_CHAT_ID", "test-chat")
 os.environ.setdefault("FINNHUB_API_KEY", "test-key")
 
 import gzip  # noqa: E402
+
+import heartbeat  # noqa: E402
+import state_utils  # noqa: E402
 import zlib  # noqa: E402
 
 import early_signal  # noqa: E402
@@ -625,3 +628,69 @@ def test_set_cash_still_means_cash(monkeypatch):
     tc.process_message("set cash to 5000", [], holdings, [], {})
     assert holdings.get(tc.CASH_KEY) == 5000.0
     assert not any("Set *CASH*" in m for m in sent)
+
+
+# --- Dead-man's switch ----------------------------------------------------
+
+def test_heartbeat_is_silent_without_a_key(monkeypatch):
+    """Absent secret must disable it completely, not half-configure it."""
+    monkeypatch.delenv("HEALTHCHECK_PING_KEY", raising=False)
+    called = []
+    monkeypatch.setattr(heartbeat.urllib.request, "urlopen",
+                        lambda *a, **k: called.append(1))
+    assert heartbeat.ping(heartbeat.MONITOR) is False
+    assert not called
+
+
+def test_heartbeat_never_raises(monkeypatch):
+    """Instrumentation that can break the thing it instruments is worse than
+    none. The whole point is to survive an outage of the monitoring service."""
+    monkeypatch.setenv("HEALTHCHECK_PING_KEY", "pk")
+
+    def boom(*a, **k):
+        raise OSError("healthchecks unreachable")
+
+    monkeypatch.setattr(heartbeat.urllib.request, "urlopen", boom)
+    assert heartbeat.ping(heartbeat.MONITOR) is False
+
+
+def test_heartbeat_url_shape(monkeypatch):
+    monkeypatch.setenv("HEALTHCHECK_PING_KEY", "pk")
+    seen = []
+
+    class Resp:
+        status = 200
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    monkeypatch.setattr(heartbeat.urllib.request, "urlopen",
+                        lambda req, timeout=5: (seen.append(req.full_url), Resp())[1])
+    heartbeat.ping(heartbeat.LISTENER)
+    assert seen[-1] == "https://hc-ping.com/pk/stock-telegram-listener?create=1"
+    heartbeat.ping(heartbeat.LISTENER, fail=True)
+    assert seen[-1].endswith("/stock-telegram-listener/fail?create=1")
+
+
+# --- Retired state keys ---------------------------------------------------
+
+def test_pruning_removes_dead_keys_and_spares_live_ones():
+    """The near-miss that matters: ew_watch:: and ew_seen:: share a prefix
+    with several retired ew_ families and must survive."""
+    state = {
+        "ir_page::WOLF": "http://x",
+        "ew_summary_sent::CBRS::2026-08-12": True,
+        "ew_on_demand::2026-08-10": ["ASTS"],
+        "ew_on_demand_giveup::ASTS": True,
+        "ew_poll_started::afterhours": "t",
+        "ew_amc_reminder_sent::WOLF": True,
+        "ew_watch::XPEV": {"armed": "t"},
+        "ew_seen::XPEV": "acc",
+        "ew_mark::XPEV": "acc",
+        "price_ref::AMAT": {},
+        "tg_update_offset": 1,
+    }
+    assert state_utils.prune_retired(state) == 6
+    for key in ("ew_watch::XPEV", "ew_seen::XPEV", "ew_mark::XPEV",
+                "price_ref::AMAT", "tg_update_offset"):
+        assert key in state, f"pruning destroyed a live key: {key}"
+    assert state_utils.prune_retired(state) == 0

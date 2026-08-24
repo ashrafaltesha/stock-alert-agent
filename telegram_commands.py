@@ -103,6 +103,8 @@ from datetime import datetime, timedelta
 import requests
 import yfinance as yf
 
+import heartbeat
+
 # Telegram holds the connection open this long when there is nothing to
 # report. 25s is comfortably inside Telegram's own limit and keeps an idle
 # hour to ~144 requests.
@@ -1132,6 +1134,7 @@ def listen() -> None:
     deadline = time.monotonic() + LOOP_MINUTES * 60
     cycles = 0
     session = _Session()
+    heartbeat.ping(heartbeat.LISTENER)   # connected
     print(f"Listening for {LOOP_MINUTES} minutes "
           f"(long poll {POLL_TIMEOUT_SECONDS}s), offset={session.offset}.")
 
@@ -1155,6 +1158,14 @@ def listen() -> None:
             continue
 
         cycles += 1
+
+        # Proof of life while idle. The listener's failure mode is ABSENCE --
+        # it was missing for half of 2026-08-24 and nothing noticed -- and an
+        # idle listener sends nothing else, so silence is otherwise
+        # indistinguishable from death.
+        if cycles % UPDATE_CHECK_EVERY_N_CYCLES == 0:
+            heartbeat.ping(heartbeat.LISTENER)
+
         # Roughly every ten minutes of idling.
         if cycles % UPDATE_CHECK_EVERY_N_CYCLES == 0 and _code_has_changed():
             print("New code on origin/main -- exiting so a fresh run picks it up.")
