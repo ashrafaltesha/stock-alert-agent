@@ -464,21 +464,30 @@ def handle_earnings_for(raw: str, state: dict) -> None:
     armed_any = False
     caught_up = False
     for ticker in valid:
-        if not arm_earnings_watch(state, ticker, ON_DEMAND_WATCH_HOURS):
-            continue
-        armed_any = True
+        key = f"ew_watch::{ticker.upper()}"
+        if arm_earnings_watch(state, ticker, ON_DEMAND_WATCH_HOURS):
+            armed_any = True
 
         # Report anything ALREADY filed today before baselining it away.
         #
         # Without this, texting "earnings for XPEV" after the company has
         # filed does nothing useful: the watch is armed, the first poll marks
         # the existing filing as the baseline, and you wait 24 hours for a
-        # "nothing appeared" notice about results that were published hours
-        # ago. Which is exactly the position this command is reached from --
-        # you text it BECAUSE you think something was missed.
+        # "nothing appeared" notice about results published hours ago. Which
+        # is exactly the position this command is reached from -- you text it
+        # BECAUSE you think something was missed.
+        #
+        # This runs even when the watch ALREADY EXISTS, which is the case that
+        # actually bit. An existing watch makes arm_earnings_watch return
+        # False, so gating the catch-up on "a new watch was created" turned
+        # the retry into a silent no-op: the one command available to fix a
+        # miss did nothing at all, precisely because the first attempt had
+        # already armed something. `hit` keeps it from re-sending.
+        if state.get(key, {}).get("hit"):
+            print(f"[{ticker}] results already sent for this watch.")
+            continue
         try:
             import earnings_watch
-            key = f"ew_watch::{ticker.upper()}"
             if earnings_watch._set_baseline_now(state, ticker):
                 state[key]["hit"] = True
                 caught_up = True
@@ -496,7 +505,12 @@ def handle_earnings_for(raw: str, state: dict) -> None:
     if armed_any:
         request_watcher_start()
 
-    note = (" (results already filed today are above)" if caught_up else "")
+    if caught_up:
+        note = " Results already filed today are above."
+    elif not armed_any:
+        note = " (already watching; nothing filed yet today)"
+    else:
+        note = ""
     send_telegram_message(
         f"\U0001F514 Watching {', '.join(valid)} for the next "
         f"{ON_DEMAND_WATCH_HOURS}h. I check their SEC filings every 15 seconds "
