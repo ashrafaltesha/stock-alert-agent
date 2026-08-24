@@ -44,6 +44,7 @@ import llm_extract
 import sec_edgar
 from config import ON_DEMAND_WATCH_HOURS, TICKERS
 from earnings_utils import (
+    EASTERN,
     arm_earnings_watch,
     classify_holdings_for_date,
     date_str_et,
@@ -104,22 +105,45 @@ def arm() -> None:
                 continue
             if arm_earnings_watch(state, ticker, ON_DEMAND_WATCH_HOURS):
                 changed = True
-                _set_baseline_now(state, ticker)
                 _store_consensus(state, ticker, day)
+                key = f"ew_watch::{ticker.upper()}"
+                consensus = state.get(key, {}).get("consensus")
                 print(f"[{ticker}] armed ({category}, reports {label})")
                 send_telegram_message(
                     f"\U0001F514 *{ticker}* reports earnings {label}. "
                     f"I'm watching their SEC filings and will send results "
                     f"within seconds of them being filed."
                 )
+                # After the heads-up, so a catch-up alert reads in order.
+                if _set_baseline_now(state, ticker, consensus):
+                    state[key]["hit"] = True
 
-    if changed:
-        save_state(state)
-        # The watcher exits when idle, so arming has to start one.
-        from workflow_trigger import start_earnings_watcher
-        start_earnings_watcher()
-    else:
+    if not changed:
         print("No new watches to arm.")
+        return
+
+    save_state(state)
+
+    # COMMIT BEFORE DISPATCH, and not only for the reason the listener has.
+    #
+    # This job used to end by dispatching the watcher and letting the
+    # workflow's commit step run afterwards. Both land in the same
+    # concurrency group, and the watch lane cancels in progress -- so the
+    # dispatch killed THIS JOB before its commit step ran. Every single time.
+    #
+    # On 2026-08-24 that produced the worst possible shape of failure: the
+    # Telegram heads-up went out, so it looked armed, but state.json never
+    # recorded the watch. The watcher started, found nothing armed, exited in
+    # four seconds, and XPeng's results were never sent. The run shows as
+    # "cancelled" rather than "failed", so nothing looked wrong.
+    #
+    # The jobs now use separate concurrency groups, and committing here means
+    # a cancellation after this point costs nothing.
+    import repo_commit
+    repo_commit.commit_and_push(["state.json"], "Arm earnings watches [skip ci]")
+
+    from workflow_trigger import start_earnings_watcher
+    start_earnings_watcher()
 
 
 def _store_consensus(state, ticker, day):
@@ -142,30 +166,71 @@ def _store_consensus(state, ticker, day):
             print(f"[{ticker}] consensus EPS {consensus['eps_estimate']}")
 
 
-def _set_baseline_now(state, ticker):
-    """Record what already exists, at ARM time rather than at first poll.
+def _accepted_today(filing) -> bool:
+    """Was this filing accepted today, Eastern time?
 
-    This closes a silent-miss window. The baseline marks "everything before
-    this is old", and it used to be set on the first poll. A company armed at
-    06:00 that files at 06:02, with the first poll landing at 06:05, would
-    have had its filing swallowed into the baseline and treated as already
-    seen -- no alert, and a run that looked entirely normal in the logs.
+    EDGAR reports acceptanceDateTime with a trailing Z, but the values are
+    Eastern -- EDGAR only accepts filings between 06:00 and 22:00 ET, and
+    XPeng's 2026-08-24 6-K carries 06:45:59, which is impossible as UTC.
+    Treating it as UTC would place every morning filing "yesterday" and defeat
+    the whole check below.
+    """
+    stamp = (filing.get("accepted") or "")[:10]
+    return bool(stamp) and stamp == now_et().strftime("%Y-%m-%d")
 
-    Setting it here means the gap between arming and polling cannot hide a
-    filing, however the schedules drift.
+
+def _set_baseline_now(state, ticker, consensus=None):
+    """Record what already exists -- but never bury a filing already made.
+
+    The baseline marks "everything before this is old". Setting it at arm time
+    rather than at first poll closes the gap between the two: a company armed
+    at 06:00 that files at 06:02 and is first polled at 06:05 would otherwise
+    have had its filing swallowed and treated as already seen.
+
+    That is not enough on its own, because arming itself can be late. On
+    2026-08-24 XPeng filed at 06:46 ET and the arm job did not run until
+    06:57 -- so the earnings 6-K was the newest filing at arm time and would
+    have become the baseline. No alert, and a log that looked entirely normal:
+    the exact failure this function exists to prevent, one level up.
+
+    So before baselining, look at what arrived TODAY. If results are already
+    out, report them now rather than marking them old.
     """
     cik_map = sec_edgar.load_cik_map()
     cik = sec_edgar.resolve_cik(ticker, cik_map)
     if not cik:
-        return
+        return False
     try:
         filings, _ = sec_edgar.recent_filings(cik)
     except sec_edgar.FetchError as e:
         # Leaving the key unset is the safe failure: the first poll will set
         # it instead, which is the old behaviour rather than a worse one.
         print(f"[{ticker}] baseline at arm time failed ({e}); poll will set it.")
-        return
+        return False
+
     state[f"ew_seen::{ticker}"] = filings[0]["accession"] if filings else ""
+
+    # Oldest first, so a company filing twice in a morning arrives in order.
+    caught = False
+    for filing in reversed([f for f in filings if _accepted_today(f)]):
+        if sec_edgar.is_domestic_earnings(filing):
+            print(f"[{ticker}] CATCH-UP: earnings already filed today at "
+                  f"{filing.get('accepted')}")
+            _report(ticker, cik, filing, "8-K item 2.02 (already filed)", consensus)
+            caught = True
+        elif filing["form"] == "6-K":
+            try:
+                score, period, _ = sec_edgar.score_filing(cik, filing["accession"])
+            except sec_edgar.FetchError as e:
+                print(f"[{ticker}] catch-up scoring failed: {e}")
+                continue
+            if sec_edgar.is_foreign_earnings(score, period):
+                print(f"[{ticker}] CATCH-UP: earnings already filed today at "
+                      f"{filing.get('accepted')}")
+                _report(ticker, cik, filing,
+                        f"6-K (score {score}, already filed)", consensus)
+                caught = True
+    return caught
 
 
 def _baseline(state, ticker, cik):
@@ -273,7 +338,12 @@ def _report(ticker, cik, filing, kind, consensus=None):
     # The number that decides whether POLL_SECONDS is worth tightening. It
     # can only be measured against a real filing, so it is logged every time.
     try:
-        filed_at = datetime.fromisoformat(accepted.replace("Z", "+00:00"))
+        # EDGAR writes a trailing Z but the value is EASTERN, not UTC -- it
+        # only accepts filings 06:00-22:00 ET, and 06:45:59 is impossible as
+        # UTC. Reading it as UTC inflated this figure by four hours, which
+        # would have made a 15-second detection look like an hour's lag.
+        filed_at = datetime.fromisoformat(
+            accepted.replace("Z", "").replace("+00:00", "")).replace(tzinfo=EASTERN)
         lag = (datetime.now(timezone.utc) - filed_at).total_seconds()
         print(f"[{ticker}] DETECTION LAG {lag:.0f}s after SEC acceptance "
               f"(score {score})")

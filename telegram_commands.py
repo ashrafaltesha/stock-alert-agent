@@ -462,9 +462,28 @@ def handle_earnings_for(raw: str, state: dict) -> None:
     # path. An already-active watch is left alone rather than reset, which
     # would wipe the record of what it has already sent you.
     armed_any = False
+    caught_up = False
     for ticker in valid:
-        if arm_earnings_watch(state, ticker, ON_DEMAND_WATCH_HOURS):
-            armed_any = True
+        if not arm_earnings_watch(state, ticker, ON_DEMAND_WATCH_HOURS):
+            continue
+        armed_any = True
+
+        # Report anything ALREADY filed today before baselining it away.
+        #
+        # Without this, texting "earnings for XPEV" after the company has
+        # filed does nothing useful: the watch is armed, the first poll marks
+        # the existing filing as the baseline, and you wait 24 hours for a
+        # "nothing appeared" notice about results that were published hours
+        # ago. Which is exactly the position this command is reached from --
+        # you text it BECAUSE you think something was missed.
+        try:
+            import earnings_watch
+            key = f"ew_watch::{ticker.upper()}"
+            if earnings_watch._set_baseline_now(state, ticker):
+                state[key]["hit"] = True
+                caught_up = True
+        except Exception as e:
+            print(f"[{ticker}] catch-up check failed: {type(e).__name__}: {e}")
 
     # The watcher exits when nothing is armed, so starting one is what keeps
     # an on-demand command fast -- without it you'd wait for the next hourly
@@ -477,10 +496,11 @@ def handle_earnings_for(raw: str, state: dict) -> None:
     if armed_any:
         request_watcher_start()
 
+    note = (" (results already filed today are above)" if caught_up else "")
     send_telegram_message(
         f"\U0001F514 Watching {', '.join(valid)} for the next "
         f"{ON_DEMAND_WATCH_HOURS}h. I check their SEC filings every 15 seconds "
-        f"and will send results within seconds of them being filed."
+        f"and will send results within seconds of them being filed." + note
         + calendar_note
     )
 

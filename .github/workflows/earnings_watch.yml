@@ -25,31 +25,46 @@ name: Earnings watch (SEC filings)
 
 on:
   schedule:
-    # Arm twice daily. The morning run is at 09:00 UTC (05:00 ET summer,
-    # 04:00 winter) -- deliberately BEFORE the earliest observed filing time,
-    # because arming also records the baseline and a watch armed after the
-    # filing would swallow it.
-    - cron: "0 9 * * 1-5"
-    - cron: "0 19 * * 1-5"
-    # A fresh watcher every hour. Each loops for 62 minutes -- LONGER than
-    # the interval -- so the incoming run overlaps the outgoing one instead
-    # of leaving a gap at the top of the hour.
+    # EVENING, EVERY DAY. This is the one that matters: it arms tomorrow's
+    # reporters the night before, so a Monday pre-market filer is armed on
+    # Sunday rather than depending on a Monday morning run that has to land
+    # before the company files. It runs seven days a week for exactly that
+    # reason -- a weekday-only arm leaves Monday with no margin at all.
+    - cron: "37 22 * * *"
+    # MORNING BACKUP, weekdays. 08:37 UTC is 04:37 ET, ahead of the earliest
+    # filing time ever measured (SAP 06:00 ET).
+    #
+    # Deliberately not on the hour. Scheduled runs are queued best-effort and
+    # :00 is the most contended minute on the platform; the 09:00 UTC run on
+    # 2026-08-24 did not start until 10:57 UTC, by which point XPeng had
+    # already filed at 06:46 ET. An odd minute is not a guarantee, which is
+    # why arm() now also reports anything already filed today.
+    - cron: "37 8 * * 1-5"
+    # A fresh watcher every hour, at :07 rather than :05 for the same
+    # contention reason. Each loops for 62 minutes -- LONGER than the
+    # interval -- so the incoming run overlaps the outgoing one instead of
+    # leaving a gap at the top of the hour.
     #
     # 09:00-23:00 UTC = 05:00-19:00 ET in summer, 04:00-18:00 in winter.
     # It starts an hour before the earliest filing measured (SAP 06:00 ET,
     # TSMC and Honda 06:02) and runs past the latest (Novo 17:23). The
     # previous 10:00 UTC start put first cover at 06:05 ET -- five minutes
     # after SAP files.
-    - cron: "5 9-23 * * 1-5"
+    - cron: "7 9-23 * * 1-5"
   workflow_dispatch: {}
 
-# Its own lane. Sharing one with monitor.yml is what produced 163 cancelled
-# runs and the duplicate-reply bug. cancel-in-progress is TRUE here, unlike
-# elsewhere: each hour's watcher should replace the previous one rather than
-# queue behind it, which also makes a hung job self-healing.
-concurrency:
-  group: stock-alert-agent-earnings
-  cancel-in-progress: true
+# NO workflow-level concurrency. The two jobs need opposite settings, and
+# putting them in one lane was a real outage.
+#
+# It used to be a single group with cancel-in-progress: true. The arm job
+# ends by dispatching the watcher -- so the run it started landed in its own
+# lane and cancelled it, mid-job, before the commit step. Deterministically,
+# every time arming succeeded. On 2026-08-24 the Telegram heads-up for XPEV
+# went out and state.json never recorded the watch; the watcher found nothing
+# armed and exited in four seconds. Cancelled runs show as "cancelled", not
+# "failed", so the Actions list looked clean.
+#
+# Each job now declares its own group below.
 
 permissions:
   contents: write
@@ -58,9 +73,15 @@ permissions:
 
 jobs:
   arm:
-    if: github.event.schedule == '0 9 * * 1-5' || github.event.schedule == '0 19 * * 1-5'
+    if: github.event.schedule == '37 22 * * *' || github.event.schedule == '37 8 * * 1-5'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Its own lane, and it must NOT cancel in progress. Arming sends Telegram
+    # messages and records watches; a half-finished arm is the one state that
+    # looks fine and isn't.
+    concurrency:
+      group: stock-alert-agent-earnings-arm
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -103,8 +124,14 @@ jobs:
   watch:
     # workflow_dispatch has no schedule, so this also covers a watcher
     # started on demand by the arm job or the Telegram command.
-    if: github.event.schedule != '0 9 * * 1-5' && github.event.schedule != '0 19 * * 1-5'
+    if: github.event.schedule != '37 22 * * *' && github.event.schedule != '37 8 * * 1-5'
     runs-on: ubuntu-latest
+    # Separate lane from arm, and this one DOES cancel in progress: each
+    # hour's watcher should replace the last rather than queue behind it,
+    # which also makes a hung job self-healing.
+    concurrency:
+      group: stock-alert-agent-earnings-watch
+      cancel-in-progress: true
     # 62-minute loop plus headroom. Not 360 (the maximum): a shorter ceiling
     # means a wedged job is cleared sooner.
     timeout-minutes: 70
