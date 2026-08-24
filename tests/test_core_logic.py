@@ -36,6 +36,7 @@ import zlib  # noqa: E402
 import early_signal  # noqa: E402
 import earnings_watch  # noqa: E402
 import llm_extract  # noqa: E402
+import llm_client  # noqa: E402
 import merge_state  # noqa: E402
 import monitor  # noqa: E402
 import news_filter  # noqa: E402
@@ -463,3 +464,70 @@ def test_fetch_failure_is_distinguishable_from_a_low_score():
     # swallowed network error read as "not earnings". A missed earnings
     # report must never look like normal operation.
     assert issubclass(sec_edgar.FetchError, Exception)
+
+
+# --- LLM provider handling ------------------------------------------------
+
+def test_deprecated_model_falls_through_to_the_next():
+    """Groq retired llama-3.3-70b-versatile for free tiers on 2026-06-17 and
+    the next call returned 404 "does not exist". A pinned model name is a
+    scheduled outage, so preferences are a list."""
+    import io
+    import urllib.error
+
+    tried = []
+
+    def fake_post(url, payload, headers=None):
+        tried.append(payload["model"])
+        if payload["model"] == llm_client.GROQ_MODELS[0]:
+            raise urllib.error.HTTPError(
+                url, 404, "err", {},
+                io.BytesIO(b'{"error":{"message":"model does not exist"}}'))
+        return {"choices": [{"message": {"content": "ok"}}]}
+
+    original_post, llm_client._post = llm_client._post, fake_post
+    original_model, llm_client._resolved_groq_model = llm_client._resolved_groq_model, None
+    try:
+        assert llm_client.call_groq("prompt", "key") == "ok"
+        assert tried == list(llm_client.GROQ_MODELS[:2])
+        # The survivor is remembered, so later calls cost nothing extra.
+        tried.clear()
+        llm_client.call_groq("prompt", "key")
+        assert tried == [llm_client.GROQ_MODELS[1]]
+    finally:
+        llm_client._post = original_post
+        llm_client._resolved_groq_model = original_model
+
+
+def test_auth_failure_is_not_retried_against_every_model():
+    """A 401 is not fixed by picking another model, and retrying each one
+    just multiplies the failures."""
+    import io
+    import urllib.error
+
+    tried = []
+
+    def fake_post(url, payload, headers=None):
+        tried.append(payload["model"])
+        raise urllib.error.HTTPError(
+            url, 401, "err", {}, io.BytesIO(b'{"error":{"message":"Invalid API Key"}}'))
+
+    original_post, llm_client._post = llm_client._post, fake_post
+    original_model, llm_client._resolved_groq_model = llm_client._resolved_groq_model, None
+    try:
+        with_error = False
+        try:
+            llm_client.call_groq("prompt", "bad-key")
+        except urllib.error.HTTPError as e:
+            with_error = e.code == 401
+        assert with_error
+        assert len(tried) == 1
+    finally:
+        llm_client._post = original_post
+        llm_client._resolved_groq_model = original_model
+
+
+def test_requests_carry_a_user_agent():
+    """Cloudflare fronts Groq and rejects urllib's default signature with
+    HTTP 403 "error code: 1010"."""
+    assert "Mozilla" in llm_client.BASE_HEADERS["User-Agent"]

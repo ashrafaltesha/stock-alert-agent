@@ -41,7 +41,8 @@ import json
 import os
 import re
 import urllib.error
-import urllib.request
+
+import llm_client
 
 # Releases run to hundreds of KB, mostly financial-statement tables. The
 # headline figures, the year-over-year comparisons and the guidance all live
@@ -108,47 +109,6 @@ _FIELDS = ("period", "revenue", "revenue_yoy", "eps_gaap", "eps_adjusted",
            "guidance", "headline")
 
 
-# Groq sits behind Cloudflare, which rejects urllib's default
-# "Python-urllib/3.x" signature with HTTP 403 and "error code: 1010" -- a
-# browser-signature ban, not a bad key or a rate limit. Sending ordinary
-# request headers is the whole fix.
-_BASE_HEADERS = {
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-    "User-Agent": "Mozilla/5.0 (compatible; personal-stock-alerts/1.0)",
-}
-
-
-def _post(url, payload, headers):
-    req = urllib.request.Request(
-        url, data=json.dumps(payload).encode(), method="POST",
-        headers={**_BASE_HEADERS, **headers})
-    with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
-        return json.loads(resp.read().decode("utf-8", "replace"))
-
-
-def _call_groq(prompt, key):
-    data = _post(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {"model": "llama-3.3-70b-versatile",
-         "messages": [{"role": "user", "content": prompt}],
-         "temperature": 0,
-         "response_format": {"type": "json_object"}},
-        {"Authorization": f"Bearer {key}"})
-    return data["choices"][0]["message"]["content"]
-
-
-def _call_gemini(prompt, key):
-    data = _post(
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-2.0-flash:generateContent?key={key}",
-        {"contents": [{"parts": [{"text": prompt}]}],
-         "generationConfig": {"temperature": 0,
-                              "responseMimeType": "application/json"}},
-        {})
-    return data["candidates"][0]["content"]["parts"][0]["text"]
-
-
 def _parse(raw):
     """Models occasionally wrap JSON in code fences despite being told not to."""
     raw = raw.strip()
@@ -173,11 +133,7 @@ def extract_metrics(text: str, ticker: str):
     """Returns a dict of figures, or None if no provider is configured or the
     call fails. None means "fall back to quoting the release", never "there
     were no earnings"."""
-    providers = []
-    if os.environ.get("GROQ_API_KEY"):
-        providers.append(("groq", _call_groq, os.environ["GROQ_API_KEY"]))
-    if os.environ.get("GEMINI_API_KEY"):
-        providers.append(("gemini", _call_gemini, os.environ["GEMINI_API_KEY"]))
+    providers = llm_client.providers()
     if not providers:
         print("No GROQ_API_KEY or GEMINI_API_KEY; using verbatim highlights.")
         return None
