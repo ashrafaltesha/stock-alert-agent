@@ -284,8 +284,11 @@ substring-matching regulatory item codes gets you.
 - **Arming is the single point of failure for earnings.** Detection is
   reliable; knowing a report is scheduled is not. Two calendars make a miss
   less likely, not impossible. `earnings for TICKER` is the override.
-- **Overnight filings.** Nothing watches between 20:00 and 05:05 ET. The
-  measured range is 06:00–17:23 ET, so this shouldn't bite.
+- **Overnight filings** are reported by the next arm rather than live. No
+  watcher runs between roughly 20:10 and 05:07 ET and EDGAR accepts until
+  22:00, but the catch-up works off a permanent per-ticker high-water mark
+  (`ew_mark::TICKER`), so it does not matter how late arming runs — anything
+  not yet evaluated still gets read.
 - **~30–45 second handover gaps**, hourly, while a new runner provisions.
   Messages sent then aren't lost — Telegram queues updates for 24 hours.
 - **GitHub's cron is best-effort** and can lag several minutes.

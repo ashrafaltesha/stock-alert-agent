@@ -166,35 +166,114 @@ def _store_consensus(state, ticker, day):
             print(f"[{ticker}] consensus EPS {consensus['eps_estimate']}")
 
 
-def _accepted_today(filing) -> bool:
-    """Was this filing accepted today, Eastern time?
+# How far back a catch-up will look. Bounded because the mark below is
+# permanent: the first time a ticker is ever armed there is no mark, and
+# without a limit the "everything newer" rule would mean "every earnings
+# release the company has ever filed".
+CATCHUP_MAX_DAYS = 4
 
-    EDGAR reports acceptanceDateTime with a trailing Z, but the values are
-    Eastern -- EDGAR only accepts filings between 06:00 and 22:00 ET, and
-    XPeng's 2026-08-24 6-K carries 06:45:59, which is impossible as UTC.
-    Treating it as UTC would place every morning filing "yesterday" and defeat
-    the whole check below.
+# The high-water mark: the newest filing this bot has actually EVALUATED for
+# a ticker, kept forever rather than deleted when a watch expires.
+#
+# ew_seen:: cannot serve this purpose. It is the per-watch baseline and is
+# deleted when the watch resolves, so each new watch starts from "whatever is
+# newest right now" -- which is precisely how a filing that arrived before
+# arming gets marked old without ever being read.
+MARK_KEY = "ew_mark::{ticker}"
+
+
+def _accepted_et(filing):
+    """Acceptance time as a real datetime.
+
+    EDGAR writes a trailing Z but the values are EASTERN -- it only accepts
+    filings between 06:00 and 22:00 ET, and XPeng's 2026-08-24 6-K carries
+    06:45:59, which is impossible as UTC. Reading these as UTC shifts every
+    morning filing onto the previous day.
     """
-    stamp = (filing.get("accepted") or "")[:10]
-    return bool(stamp) and stamp == now_et().strftime("%Y-%m-%d")
+    raw = (filing.get("accepted") or "").replace("Z", "").replace("+00:00", "")
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw).replace(tzinfo=EASTERN)
+    except ValueError:
+        return None
+
+
+def _unevaluated(filings, mark):
+    """Filings newer than the mark, oldest first, bounded by age.
+
+    Newest-first input; `filings` is ordered that way by the SEC. Stopping at
+    the mark rather than filtering on a date is the whole point: it does not
+    matter whether arming is eleven minutes late or eleven hours, or that the
+    filing landed at 21:00 last night when no watcher was running. Anything
+    not yet read is still not yet read.
+    """
+    cutoff = now_et() - timedelta(days=CATCHUP_MAX_DAYS)
+    fresh = []
+    for f in filings:
+        if mark and f["accession"] == mark:
+            break
+        when = _accepted_et(f)
+        if when and when < cutoff:
+            # Older than the window. Everything past this is older still.
+            break
+        fresh.append(f)
+    return list(reversed(fresh))
+
+
+def _catch_up(state, ticker, cik, filings, consensus=None):
+    """Report any earnings filing that arrived while nothing was watching.
+
+    This is the safety net under a system whose weakest link is knowing WHEN
+    to watch. Arming depends on a calendar and on GitHub running a scheduled
+    job on time; on 2026-08-24 the job ran 11 minutes after XPeng had already
+    filed, and the filing became the baseline instead of the alert.
+    """
+    mark = state.get(MARK_KEY.format(ticker=ticker))
+    pending = _unevaluated(filings, mark)
+
+    if mark is None:
+        # First sight of this ticker. Record where we are and report nothing:
+        # a brand-new watch should not open with last quarter's results.
+        state[MARK_KEY.format(ticker=ticker)] = filings[0]["accession"] if filings else ""
+        print(f"[{ticker}] first watch; mark set, no catch-up.")
+        return False
+
+    caught = False
+    for filing in pending:
+        kind = None
+        if sec_edgar.is_domestic_earnings(filing):
+            kind = "8-K item 2.02"
+        elif filing["form"] == "6-K":
+            try:
+                score, period, _ = sec_edgar.score_filing(cik, filing["accession"])
+            except sec_edgar.FetchError as e:
+                # Not evaluated, so do NOT advance the mark past it.
+                print(f"[{ticker}] catch-up scoring failed, leaving unread: {e}")
+                return caught
+            if sec_edgar.is_foreign_earnings(score, period):
+                kind = f"6-K (score {score})"
+        if kind:
+            print(f"[{ticker}] CATCH-UP: filed {filing.get('accepted')} "
+                  f"before anything was watching")
+            _report(ticker, cik, filing, f"{kind}, filed earlier", consensus)
+            caught = True
+        state[MARK_KEY.format(ticker=ticker)] = filing["accession"]
+
+    if filings:
+        state[MARK_KEY.format(ticker=ticker)] = filings[0]["accession"]
+    return caught
 
 
 def _set_baseline_now(state, ticker, consensus=None):
-    """Record what already exists -- but never bury a filing already made.
+    """Record what already exists -- but never bury a filing not yet read.
 
-    The baseline marks "everything before this is old". Setting it at arm time
-    rather than at first poll closes the gap between the two: a company armed
-    at 06:00 that files at 06:02 and is first polled at 06:05 would otherwise
-    have had its filing swallowed and treated as already seen.
+    The baseline marks "everything before this is old", and setting it at arm
+    time rather than at first poll closes the gap between the two.
 
-    That is not enough on its own, because arming itself can be late. On
-    2026-08-24 XPeng filed at 06:46 ET and the arm job did not run until
-    06:57 -- so the earnings 6-K was the newest filing at arm time and would
-    have become the baseline. No alert, and a log that looked entirely normal:
-    the exact failure this function exists to prevent, one level up.
-
-    So before baselining, look at what arrived TODAY. If results are already
-    out, report them now rather than marking them old.
+    That is not enough on its own, because arming itself can be late or can
+    not happen at all. So before baselining, hand off to _catch_up(), which
+    compares against a permanent per-ticker mark rather than against the clock.
     """
     cik_map = sec_edgar.load_cik_map()
     cik = sec_edgar.resolve_cik(ticker, cik_map)
@@ -203,33 +282,14 @@ def _set_baseline_now(state, ticker, consensus=None):
     try:
         filings, _ = sec_edgar.recent_filings(cik)
     except sec_edgar.FetchError as e:
-        # Leaving the key unset is the safe failure: the first poll will set
-        # it instead, which is the old behaviour rather than a worse one.
+        # Leaving the keys unset is the safe failure: the first poll will set
+        # the baseline instead, which is the old behaviour rather than a
+        # worse one.
         print(f"[{ticker}] baseline at arm time failed ({e}); poll will set it.")
         return False
 
+    caught = _catch_up(state, ticker, cik, filings, consensus)
     state[f"ew_seen::{ticker}"] = filings[0]["accession"] if filings else ""
-
-    # Oldest first, so a company filing twice in a morning arrives in order.
-    caught = False
-    for filing in reversed([f for f in filings if _accepted_today(f)]):
-        if sec_edgar.is_domestic_earnings(filing):
-            print(f"[{ticker}] CATCH-UP: earnings already filed today at "
-                  f"{filing.get('accepted')}")
-            _report(ticker, cik, filing, "8-K item 2.02 (already filed)", consensus)
-            caught = True
-        elif filing["form"] == "6-K":
-            try:
-                score, period, _ = sec_edgar.score_filing(cik, filing["accession"])
-            except sec_edgar.FetchError as e:
-                print(f"[{ticker}] catch-up scoring failed: {e}")
-                continue
-            if sec_edgar.is_foreign_earnings(score, period):
-                print(f"[{ticker}] CATCH-UP: earnings already filed today at "
-                      f"{filing.get('accepted')}")
-                _report(ticker, cik, filing,
-                        f"6-K (score {score}, already filed)", consensus)
-                caught = True
     return caught
 
 
@@ -362,6 +422,9 @@ def _process(state, key, watch, ticker, cik, filings, seen):
         return False
 
     state[f"ew_seen::{ticker}"] = filings[0]["accession"]
+    # The permanent mark advances with the per-watch baseline, so a filing
+    # handled live here is never re-reported by a later catch-up.
+    state[MARK_KEY.format(ticker=ticker)] = filings[0]["accession"]
     sent = False
 
     for filing in reversed(fresh):
