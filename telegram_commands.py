@@ -172,6 +172,19 @@ SOLD_SHARES_RE = re.compile(
 SOLD_SHARES_NO_PRICE_RE = re.compile(
     rf"^\s*sold\s+({_NUM})\s+shares?\s+of\s+{_TICKER}\s*\.?\s*$", re.IGNORECASE
 )
+# A CORRECTION, not a trade. "added 100 shares at 12" blends into the average
+# cost and moves cash; this overwrites the position outright and leaves cash
+# alone, exactly like "set cash to X" does for the balance.
+#
+# Needed because the two are genuinely different operations and only one was
+# available. Reconciling against a broker statement -- or repairing a position
+# after the bot dropped a write -- is a correction, and doing it with "added"
+# blends the correct number into the wrong one.
+SET_POSITION_RE = re.compile(
+    rf"^\s*set\s+{_TICKER}\s+(?:to\s+|=\s*)?({_NUM})\s+shares?"
+    rf"(?:\s+(?:at|@)\s+\$?({_NUM}))?\s*\.?\s*$",
+    re.IGNORECASE)
+
 ADD_WATCHLIST_RE = re.compile(r"^\s*add\s+(.+?)\s+to\s+my\s+watchlist\.?\s*$", re.IGNORECASE)
 REMOVE_WATCHLIST_RE = re.compile(r"^\s*remove\s+(.+?)\s+from\s+my\s+watchlist\.?\s*$", re.IGNORECASE)
 WATCHLIST_RE = re.compile(r"^\s*watchlist\.?\s*$", re.IGNORECASE)
@@ -196,6 +209,7 @@ HELP_TEXT = (
     "*Positions*\n"
     "added 10 shares of NVDA at 500\n"
     "sold 10 shares of NVDA at 600\n"
+    "set NVDA to 710 shares at 12.70   _(correction, cash untouched)_\n"
     "summary\n\n"
     "*Cash*\n"
     "deposited 2000  /  withdrew 1000\n"
@@ -845,6 +859,59 @@ def process_message(
                 f"and material-news alerts for {'it' if len(valid) == 1 else 'them'}, same as your holdings."
             )
         return False, False, bool(valid)
+
+    set_position_match = SET_POSITION_RE.match(text)
+    if set_position_match:
+        ticker = set_position_match.group(1).upper()
+        qty = parse_num(set_position_match.group(2))
+        price_raw = set_position_match.group(3)
+
+        if ticker in RESERVED_HOLDINGS_KEYS:
+            send_telegram_message(
+                f"*{ticker}* is a reserved name and can't be used as a ticker symbol.")
+            return False, False, False
+
+        old = holdings.get(ticker, {})
+        old_shares = old.get("shares", 0.0)
+        old_avg = old.get("avg_cost", 0.0)
+
+        if price_raw is None:
+            if not old_avg:
+                send_telegram_message(
+                    f"I don't have an average cost for *{ticker}*, so I need one: "
+                    f'try "set {ticker} to {qty:,.0f} shares at $12.34".')
+                return False, False, False
+            price = old_avg
+        else:
+            price = parse_num(price_raw)
+
+        tickers_changed = False
+        if qty > 0 and ticker not in tickers:
+            if not validate_ticker(ticker):
+                send_telegram_message(
+                    f"Couldn't find market data for *{ticker}* -- "
+                    f"double-check the symbol and try again.")
+                return False, False, False
+            tickers.append(ticker)
+            tickers_changed = True
+
+        if qty == 0:
+            holdings.pop(ticker, None)
+            send_telegram_message(
+                f"\U0001F4DD Cleared *{ticker}* (was {old_shares:,.0f} sh @ "
+                f"{format_usd(old_avg)}). Cash and deposits unchanged.")
+            return tickers_changed, True, False
+
+        holdings[ticker] = {"shares": qty, "avg_cost": price}
+        was = (f"was {old_shares:,.0f} sh @ {format_usd(old_avg)}"
+               if old_shares else "no previous position")
+        send_telegram_message(
+            f"\U0001F4DD Set *{ticker}* to {qty:,.0f} sh @ {format_usd(price)} "
+            f"(book {format_usd(qty * price)}).\n"
+            f"_{was}._\n"
+            f"Cash and deposits unchanged -- this is a correction, not a trade."
+        )
+        return tickers_changed, True, False
 
     if HELP_RE.match(text):
         send_telegram_message(HELP_TEXT)

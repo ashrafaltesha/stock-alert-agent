@@ -571,3 +571,57 @@ def test_empty_messages_stay_silent(monkeypatch):
     tc.process_message("", ["AMAT"], {}, [], {})
     tc.process_message("   ", ["AMAT"], {}, [], {})
     assert sent == []
+
+
+# --- Position corrections -------------------------------------------------
+
+def test_set_position_overwrites_and_leaves_cash_alone(monkeypatch):
+    """A correction is not a trade.
+
+    "added N shares at P" blends into the average cost and moves cash, which
+    is wrong when reconciling against a broker statement or repairing a
+    position the bot failed to persist. Only "added" existed, so corrections
+    had to be faked with it.
+    """
+    monkeypatch.setattr(tc, "send_telegram_message", lambda m: None)
+    monkeypatch.setattr(tc, "validate_ticker", lambda t: True)
+    holdings = {"BAK": {"shares": 1000, "avg_cost": 2.50},
+                tc.CASH_KEY: 5000.0, tc.DEPOSITS_KEY: 20000.0}
+    tickers = ["BAK"]
+    _, holdings_changed, _ = tc.process_message(
+        "set BAK to 1650 shares at $1.93", tickers, holdings, [], {})
+    assert holdings_changed
+    assert holdings["BAK"] == {"shares": 1650.0, "avg_cost": 1.93}
+    assert holdings[tc.CASH_KEY] == 5000.0
+    assert holdings[tc.DEPOSITS_KEY] == 20000.0
+
+
+@pytest.mark.parametrize("text", [
+    "set BAK 1650 shares at 1.93",
+    "Set $BAK to 1650 shares @ $1.93",
+    "set BAK to 1,650 shares at 1.93",
+])
+def test_set_position_accepts_the_obvious_variants(text, monkeypatch):
+    monkeypatch.setattr(tc, "send_telegram_message", lambda m: None)
+    monkeypatch.setattr(tc, "validate_ticker", lambda t: True)
+    holdings = {"BAK": {"shares": 1000, "avg_cost": 2.50}}
+    tc.process_message(text, ["BAK"], holdings, [], {})
+    assert holdings["BAK"]["shares"] == 1650.0
+
+
+def test_set_position_without_a_price_keeps_the_average(monkeypatch):
+    monkeypatch.setattr(tc, "send_telegram_message", lambda m: None)
+    monkeypatch.setattr(tc, "validate_ticker", lambda t: True)
+    holdings = {"BAK": {"shares": 1000, "avg_cost": 2.50}}
+    tc.process_message("set BAK to 1650 shares", ["BAK"], holdings, [], {})
+    assert holdings["BAK"] == {"shares": 1650.0, "avg_cost": 2.50}
+
+
+def test_set_cash_still_means_cash(monkeypatch):
+    """The new pattern must not swallow the existing cash command."""
+    sent = []
+    monkeypatch.setattr(tc, "send_telegram_message", sent.append)
+    holdings = {}
+    tc.process_message("set cash to 5000", [], holdings, [], {})
+    assert holdings.get(tc.CASH_KEY) == 5000.0
+    assert not any("Set *CASH*" in m for m in sent)
