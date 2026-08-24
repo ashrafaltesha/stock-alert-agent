@@ -145,10 +145,21 @@ def build_prompt(listing: str) -> str:
             .replace("<<HEADLINES>>", listing))
 
 
+# Groq sits behind Cloudflare, which rejects urllib's default
+# "Python-urllib/3.x" signature with HTTP 403 and "error code: 1010" -- a
+# browser-signature ban, not a bad key or a rate limit. Sending ordinary
+# request headers is the whole fix.
+_BASE_HEADERS = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    "User-Agent": "Mozilla/5.0 (compatible; personal-stock-alerts/1.0)",
+}
+
+
 def _post(url, payload, headers):
     req = urllib.request.Request(
         url, data=json.dumps(payload).encode(), method="POST",
-        headers={"Content-Type": "application/json", **headers})
+        headers={**_BASE_HEADERS, **headers})
     with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
         return json.loads(resp.read().decode("utf-8", "replace"))
 

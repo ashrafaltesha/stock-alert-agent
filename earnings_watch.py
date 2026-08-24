@@ -366,16 +366,24 @@ def build_metrics_message(ticker, text, consensus):
                    for key, label in _METRIC_ORDER if metrics.get(key)]
         if figures:
             lines.append("")
+            lines.append("*Figures*")
             lines.extend(escape_markdown(f) for f in figures)
 
         if metrics.get("guidance"):
             lines.append("")
-            lines.append(f"*Guidance*: {escape_markdown(metrics['guidance'])}")
+            lines.append("*Guidance*")
+            lines.append(escape_markdown(metrics["guidance"]))
+    else:
+        # Say why it looks like this. Silently degrading to a wall of raw
+        # prose reads as a bad summary rather than as a missing one, and
+        # sends you looking for a formatting problem instead of a 403.
+        lines.append("_Figures could not be extracted -- quoting the release "
+                     "itself. Check the log for the reason._")
 
     quote = llm_extract.highlights(text)
     if quote:
         lines.append("")
-        lines.append("_From the release:_")
+        lines.append("*From the release*")
         lines.append(escape_markdown(quote))
 
     if not lines:

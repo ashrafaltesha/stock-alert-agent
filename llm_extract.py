@@ -108,10 +108,21 @@ _FIELDS = ("period", "revenue", "revenue_yoy", "eps_gaap", "eps_adjusted",
            "guidance", "headline")
 
 
+# Groq sits behind Cloudflare, which rejects urllib's default
+# "Python-urllib/3.x" signature with HTTP 403 and "error code: 1010" -- a
+# browser-signature ban, not a bad key or a rate limit. Sending ordinary
+# request headers is the whole fix.
+_BASE_HEADERS = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    "User-Agent": "Mozilla/5.0 (compatible; personal-stock-alerts/1.0)",
+}
+
+
 def _post(url, payload, headers):
     req = urllib.request.Request(
         url, data=json.dumps(payload).encode(), method="POST",
-        headers={"Content-Type": "application/json", **headers})
+        headers={**_BASE_HEADERS, **headers})
     with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
         return json.loads(resp.read().decode("utf-8", "replace"))
 
@@ -186,8 +197,49 @@ def extract_metrics(text: str, ticker: str):
     return None
 
 
+# Abbreviations whose full stop does not end a sentence. Without these,
+# "XPeng Inc. today announced..." splits mid-name and "Aug. 24, 2026" splits
+# a date -- which is worse than not paragraphing at all, because it reads as
+# though the text itself is broken.
+_ABBREV = (
+    "Inc", "Corp", "Co", "Ltd", "LLC", "plc", "PLC", "AG", "SA", "NV", "AB",
+    "Mr", "Mrs", "Ms", "Dr", "Jr", "Sr", "St",
+    "Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sept", "Sep", "Oct",
+    "Nov", "Dec",
+    "vs", "etc", "approx", "est", "No", "Nos", "Fig", "p", "pp",
+)
+_SENTINEL = "\x00"
+_ABBREV_RE = re.compile(r"\b(" + "|".join(_ABBREV) + r")\.", re.IGNORECASE)
+
+# A real boundary: terminator, whitespace, then something that starts a
+# sentence. The uppercase lookahead also keeps decimals ("17.3%") intact.
+_SENTENCE_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z\"'(\u201c])")
+
+
+def _paragraph(text: str, per_para: int = 2) -> str:
+    """Group sentences into short paragraphs.
+
+    A press release opening arrives as one unbroken wall of prose. On a phone
+    that is genuinely hard to read, and this fallback is exactly what you get
+    when the model is unavailable -- which is when readability matters most,
+    because it is all there is.
+    """
+    protected = _ABBREV_RE.sub(lambda m: m.group(1) + _SENTINEL, text.strip())
+    sentences = [s for s in _SENTENCE_RE.split(protected) if s.strip()]
+
+    paragraphs, chunk = [], []
+    for sentence in sentences:
+        chunk.append(sentence.strip())
+        if len(chunk) >= per_para:
+            paragraphs.append(" ".join(chunk))
+            chunk = []
+    if chunk:
+        paragraphs.append(" ".join(chunk))
+    return "\n\n".join(paragraphs).replace(_SENTINEL, ".")
+
+
 def highlights(text: str, limit: int = 700) -> str:
-    """The release's own opening, verbatim.
+    """The release's own opening, verbatim, broken into paragraphs.
 
     Used when no model is available and printed alongside the extracted
     figures when one is, so there is always an unparsed version to check
@@ -205,11 +257,11 @@ def highlights(text: str, limit: int = 700) -> str:
                                head, re.IGNORECASE))
     start = markers[-1].end() if markers else 0
     body = text[start:start + 4000].strip() or text.strip()
-    if len(body) <= limit:
-        return body
-    cut = body[:limit]
-    stop = max(cut.rfind(". "), cut.rfind("! "), cut.rfind("? "))
-    return (cut[:stop + 1] if stop > limit // 2 else cut).strip() + " ..."
+    if len(body) > limit:
+        cut = body[:limit]
+        stop = max(cut.rfind(". "), cut.rfind("! "), cut.rfind("? "))
+        body = (cut[:stop + 1] if stop > limit // 2 else cut).strip() + " ..."
+    return _paragraph(body)
 
 
 def compare_to_consensus(metrics: dict, consensus: dict):
