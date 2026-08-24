@@ -31,6 +31,7 @@ os.environ.setdefault("TELEGRAM_CHAT_ID", "test-chat")
 os.environ.setdefault("FINNHUB_API_KEY", "test-key")
 
 import gzip  # noqa: E402
+import json  # noqa: E402
 
 import heartbeat  # noqa: E402
 import state_utils  # noqa: E402
@@ -694,3 +695,105 @@ def test_pruning_removes_dead_keys_and_spares_live_ones():
                 "price_ref::AMAT", "tg_update_offset"):
         assert key in state, f"pruning destroyed a live key: {key}"
     assert state_utils.prune_retired(state) == 0
+
+
+# --- Seen-article retention -----------------------------------------------
+#
+# seen_news was 85% of state.json: 26 lists of 100 ids, rewritten and
+# committed ~1,380 times a day. An article can only be alerted while it is
+# younger than NEWS_LOOKBACK_MINUTES, so ids older than that were being kept
+# for nothing. The risk of shrinking them is a DUPLICATE ALERT, so that is
+# what these cover.
+
+def _run(state, key, article_id, title, minutes_old, sent, monkeypatch=None):
+    seen = monitor._load_seen(state, key)
+    candidates = []
+    if article_id not in seen:
+        seen[article_id] = monitor._now_minutes()
+        if minutes_old <= monitor.NEWS_LOOKBACK_MINUTES:
+            candidates.append({"ticker": "WOLF", "title": title,
+                               "source": "Reuters", "link": "http://x"})
+    monitor._save_seen(state, key, seen)
+    monitor.process_news_candidates(candidates, state)
+
+
+def test_seen_ids_dedupe_then_age_out_without_re_alerting(monkeypatch):
+    clock = {"m": 29_000_000}
+    monkeypatch.setattr(monitor, "_now_minutes", lambda: clock["m"])
+    monkeypatch.setattr(news_filter, "classify",
+                        lambda arts: [{"subject": True, "impact": "high",
+                                       "event": "contract", "why": "award"}] * len(arts))
+    sent = []
+    monkeypatch.setattr(monitor, "send_telegram_message", sent.append)
+
+    state, key = {}, "seen_news_google::WOLF"
+    title = "Wolfspeed receives $750 million CHIPS award"
+
+    _run(state, key, "aaa", title, 5, sent)
+    assert len(sent) == 1, "first sighting must alert"
+
+    clock["m"] += 5
+    _run(state, key, "aaa", title, 10, sent)
+    assert len(sent) == 1, "id still remembered"
+
+    # Past retention the id is forgotten -- the age check must carry it.
+    clock["m"] += monitor.ID_RETENTION_MINUTES + 10
+    _run(state, key, "aaa", title, 230, sent)
+    assert len(sent) == 1, "forgotten id + stale article must not re-alert"
+
+    # Forgotten AND republished as fresh: fuzzy title dedupe is the backstop.
+    _run(state, key, "aaa", title, 3, sent)
+    assert len(sent) == 1, "republished story must not re-alert"
+
+
+def test_retention_is_bounded_on_save_not_only_on_load(monkeypatch):
+    """A bound enforced on one side of a round trip is not a bound.
+
+    Pruning only on load passed every test until one handed _save_seen 400
+    entries directly, and all 400 were written.
+    """
+    clock = {"m": 29_000_000}
+    monkeypatch.setattr(monitor, "_now_minutes", lambda: clock["m"])
+    state, key = {}, "seen_news::AMAT"
+    monitor._save_seen(state, key,
+                       {f"{i:016x}": clock["m"] - i * 4 for i in range(400)})
+    assert len(state[key]) <= monitor.ID_RETENTION_MINUTES // 4 + 1
+
+
+def test_seen_state_round_trip_is_byte_stable(monkeypatch):
+    """An unordered rewrite would show every line as changed on every
+    commit -- churn of a different kind."""
+    clock = {"m": 29_000_000}
+    monkeypatch.setattr(monitor, "_now_minutes", lambda: clock["m"])
+    state, key = {}, "seen_news::AMAT"
+    monitor._save_seen(state, key, {"b": clock["m"], "a": clock["m"] - 1})
+    first = json.dumps(state[key])
+    monitor._save_seen(state, key, monitor._load_seen(state, key))
+    assert json.dumps(state[key]) == first
+
+
+def test_legacy_plain_id_lists_are_carried_over(monkeypatch):
+    """Dropping them in one step would let anything still inside the
+    lookback window alert a second time on the first run after deploy."""
+    clock = {"m": 29_000_000}
+    monkeypatch.setattr(monitor, "_now_minutes", lambda: clock["m"])
+    state = {"seen_news::AMAT": ["aaa", "bbb", "ccc"]}
+    loaded = monitor._load_seen(state, "seen_news::AMAT")
+    assert set(loaded) == {"aaa", "bbb", "ccc"}
+    assert all(v == clock["m"] for v in loaded.values())
+
+
+def test_changeover_never_enlarges_state(monkeypatch):
+    """Measured against the real file, the first version of this change
+    temporarily DOUBLED state.json: 100 undated legacy ids per list were
+    stamped 'now' and held for the full retention window. Only the newest
+    are worth carrying, since only ids inside the lookback window could
+    re-alert."""
+    clock = {"m": 29_000_000}
+    monkeypatch.setattr(monitor, "_now_minutes", lambda: clock["m"])
+    key = "seen_news_google::WOLF"
+    legacy = {key: [f"{i:016x}" for i in range(100)]}
+    before = len(json.dumps(legacy, indent=2))
+    monitor._save_seen(legacy, key, monitor._load_seen(legacy, key))
+    assert len(json.dumps(legacy, indent=2)) <= before
+    assert len(legacy[key]) <= monitor.LEGACY_CARRY

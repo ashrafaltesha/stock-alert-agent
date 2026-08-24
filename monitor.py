@@ -215,6 +215,10 @@ def _migrate_news_ids(state: dict) -> None:
             continue
         new_ids = []
         for value in state.get(key) or []:
+            # Entries may be a bare id (old) or [id, minute_stamp] (current).
+            if isinstance(value, (list, tuple)) and len(value) == 2:
+                new_ids.append(list(value))
+                continue
             text = str(value)
             # Entries already in the new form are 16 lowercase hex chars.
             if len(text) == 16 and all(c in "0123456789abcdef" for c in text):
@@ -278,6 +282,80 @@ def _is_duplicate_headline(title: str, recent_titles: list, threshold: float = 0
     return False
 
 
+# How long a seen-article id is worth remembering.
+#
+# An article is only ever alerted while it is younger than
+# NEWS_LOOKBACK_MINUTES, so an id older than that cannot produce an alert
+# however many times it is re-read -- the age check rejects it first.
+# Remembering the last 100 ids per ticker per source was therefore storing
+# roughly ten times more than correctness requires, and seen_news was 85% of
+# state.json: 26 lists of 100 ids each, rewritten and committed ~1,380 times
+# a day, which is what made the repository's pack 90 MiB.
+#
+# Three times the lookback, not one, as margin against republished pubDates
+# and clock skew. Fuzzy title dedupe (alerted_titles) is the real defence
+# against a genuinely recycled story, and it is untouched.
+ID_RETENTION_MINUTES = NEWS_LOOKBACK_MINUTES * 3
+
+# How many undated legacy ids to carry across the one-time changeover.
+# Comfortably more than a lookback window's worth of articles.
+LEGACY_CARRY = 25
+
+
+def _now_minutes() -> int:
+    return int(datetime.now(timezone.utc).timestamp() // 60)
+
+
+def _load_seen(state: dict, key: str):
+    """Returns {article_id: minute_stamp}, dropping anything too old to matter.
+
+    Accepts the old plain-list form and stamps it as of now, so ids carried
+    over from before this change age out over the next few hours instead of
+    vanishing at once. Forgetting them in a single step would let anything
+    still inside the lookback window alert a second time.
+    """
+    raw = state.get(key) or []
+    now = _now_minutes()
+
+    # Carrying over the whole legacy list would stamp 100 undated ids as
+    # "now" and hold them for the full retention window, which measured out
+    # at temporarily DOUBLING state.json before it shrank -- the opposite of
+    # the point. Only the newest matter: the old writer appended in order, so
+    # the tail is the most recent, and only ids inside the lookback window
+    # could re-alert anyway.
+    legacy = [e for e in raw if not (isinstance(e, (list, tuple)) and len(e) == 2)]
+    if len(legacy) > LEGACY_CARRY:
+        drop = set(map(str, legacy[:-LEGACY_CARRY]))
+        raw = [e for e in raw
+               if (isinstance(e, (list, tuple)) and len(e) == 2) or str(e) not in drop]
+
+    seen = {}
+    for entry in raw:
+        if isinstance(entry, (list, tuple)) and len(entry) == 2:
+            article_id, stamp = entry[0], int(entry[1])
+        else:
+            article_id, stamp = str(entry), now
+        if now - stamp <= ID_RETENTION_MINUTES:
+            seen[article_id] = stamp
+    return seen
+
+
+def _save_seen(state: dict, key: str, seen: dict) -> None:
+    """Prune on the way out as well as on the way in.
+
+    Pruning only on load looked sufficient -- the working set is loaded,
+    added to, and saved -- but it left the bound depending on the caller
+    never handing this a large dict. A retention rule that is only enforced
+    on one side of the round trip is not a bound, and the test that caught
+    this wrote 400 entries straight through.
+    """
+    now = _now_minutes()
+    fresh = {a: t for a, t in seen.items() if now - t <= ID_RETENTION_MINUTES}
+    # Sorted for a stable diff: an unordered rewrite would show every line as
+    # changed on every commit, which is its own kind of churn.
+    state[key] = [[a, t] for a, t in sorted(fresh.items(), key=lambda kv: (kv[1], kv[0]))]
+
+
 def _record_headline(ticker: str, title: str, state: dict) -> None:
     key = f"alerted_titles::{ticker}"
     titles = state.get(key, [])
@@ -287,7 +365,8 @@ def _record_headline(ticker: str, title: str, state: dict) -> None:
 
 def check_yahoo_news(ticker: str, state: dict, candidates: list) -> None:
     key = f"seen_news::{ticker}"
-    seen_ids = set(state.get(key, []))
+    seen = _load_seen(state, key)
+    seen_ids = set(seen)
     now = datetime.now(timezone.utc)
 
     try:
@@ -298,7 +377,6 @@ def check_yahoo_news(ticker: str, state: dict, candidates: list) -> None:
         print(f"[{ticker}] news fetch failed after retries: {e}")
         return
 
-    new_ids = list(seen_ids)
     for art in articles:
         content = art.get("content", art)  # yfinance news schema has varied over versions
         article_id = _article_key(content.get("id") or art.get("uuid") or content.get("title"))
@@ -325,7 +403,7 @@ def check_yahoo_news(ticker: str, state: dict, candidates: list) -> None:
 
         # Always remember we've seen it (so it's never re-evaluated), but
         # only alert if it's fresh AND passes the material-news filter.
-        new_ids.append(article_id)
+        seen[article_id] = _now_minutes()
         title = content.get("title") or "New article"
         if age_minutes <= NEWS_LOOKBACK_MINUTES:
             link = (
@@ -339,8 +417,7 @@ def check_yahoo_news(ticker: str, state: dict, candidates: list) -> None:
             candidates.append({"ticker": ticker, "title": title,
                                "source": publisher, "link": link})
 
-    # Cap stored ids so state.json doesn't grow forever.
-    state[key] = new_ids[-100:]
+    _save_seen(state, key, seen)
 
 
 def check_google_news(ticker: str, state: dict, candidates: list) -> None:
@@ -348,7 +425,8 @@ def check_google_news(ticker: str, state: dict, candidates: list) -> None:
     outlets (Reuters, CNBC, Bloomberg, MarketWatch, Benzinga, Seeking Alpha,
     Motley Fool, etc.) rather than relying on Yahoo Finance alone."""
     key = f"seen_news_google::{ticker}"
-    seen_ids = set(state.get(key, []))
+    seen = _load_seen(state, key)
+    seen_ids = set(seen)
     now = datetime.now(timezone.utc)
 
     query = quote(_news_query(ticker, state))
@@ -366,7 +444,6 @@ def check_google_news(ticker: str, state: dict, candidates: list) -> None:
     except Exception as e:
         print(f"[{ticker}] Google News parse failed: {e}")
         return
-    new_ids = list(seen_ids)
     for item in items:
         guid = item.findtext("guid") or item.findtext("link") or item.findtext("title")
         article_id = _article_key(guid)
@@ -383,7 +460,7 @@ def check_google_news(ticker: str, state: dict, candidates: list) -> None:
 
         age_minutes = (now - published).total_seconds() / 60
 
-        new_ids.append(article_id)
+        seen[article_id] = _now_minutes()
         title = item.findtext("title") or "New article"
         if age_minutes <= NEWS_LOOKBACK_MINUTES:
             link = item.findtext("link") or ""
@@ -392,7 +469,7 @@ def check_google_news(ticker: str, state: dict, candidates: list) -> None:
             candidates.append({"ticker": ticker, "title": title,
                                "source": publisher, "link": link})
 
-    state[key] = new_ids[-100:]
+    _save_seen(state, key, seen)
 
 
 def main() -> None:
