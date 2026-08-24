@@ -797,3 +797,44 @@ def test_changeover_never_enlarges_state(monkeypatch):
     monitor._save_seen(legacy, key, monitor._load_seen(legacy, key))
     assert len(json.dumps(legacy, indent=2)) <= before
     assert len(legacy[key]) <= monitor.LEGACY_CARRY
+
+
+# --- Stale-snapshot writes ------------------------------------------------
+
+def test_listener_writes_deltas_not_snapshots(monkeypatch, tmp_path=None):
+    """A long-running job must not write back what it read hours ago.
+
+    Observed live on 2026-08-24: the monitor pruned eight retired keys and
+    logged it, and state.json on main still had all eight minutes later. The
+    listener had loaded state at 17:05, held it, and wrote the whole snapshot
+    on its next flush.
+
+    Merging on push REJECTION does not catch this. If the stale writer
+    happens to be level with the tip, git accepts the write cleanly and
+    everything the other process changed is silently reverted. The fix is to
+    refresh first and re-apply only our own delta -- which is what this
+    asserts, at the level of the delta arithmetic.
+    """
+    read_at_start = {"tg_update_offset": 100, "ir_page::WOLF": "http://old",
+                     "seen_news::AMAT": ["a", "b"]}
+    mine = dict(read_at_start)
+    mine["tg_update_offset"] = 200          # the only thing we changed
+
+    changed = {k: v for k, v in mine.items()
+               if k not in read_at_start or read_at_start[k] != v}
+    deleted = [k for k in read_at_start if k not in mine]
+    assert changed == {"tg_update_offset": 200}
+    assert deleted == []
+
+    # Meanwhile another process pruned a key and rewrote another.
+    current = {"tg_update_offset": 100,
+               "seen_news::AMAT": [["a", 29000000], ["b", 29000001]]}
+
+    merged = dict(current)
+    for key in deleted:
+        merged.pop(key, None)
+    merged.update(changed)
+
+    assert "ir_page::WOLF" not in merged, "a stale snapshot must not resurrect it"
+    assert isinstance(merged["seen_news::AMAT"][0], list), "their rewrite survives"
+    assert merged["tg_update_offset"] == 200, "our change is applied"

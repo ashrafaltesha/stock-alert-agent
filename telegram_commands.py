@@ -95,6 +95,7 @@ reply), so normal chatter with the bot doesn't trigger anything.
 import json
 import os
 import re
+import copy
 import subprocess
 import sys
 import time
@@ -994,6 +995,9 @@ class _Session:
 
     def __init__(self):
         self.state = load_state()
+        # What state looked like when we read it. Everything else is measured
+        # against this, so the listener writes DELTAS rather than a snapshot.
+        self._baseline = copy.deepcopy(self.state)
         self.tickers = load_tickers()
         self.holdings = load_holdings()
         self.watchlist = load_watchlist()
@@ -1022,9 +1026,26 @@ class _Session:
             print(f"watchlist.json updated: {self.watchlist}")
 
         self.state["tg_update_offset"] = self.offset
-        save_state(self.state)
+
+        # Work out what WE changed, then re-apply it on top of whatever the
+        # repository says now. Writing self.state wholesale would revert
+        # every change the monitor has made since this listener started --
+        # it runs for hours, the monitor writes the same file every minute.
+        changed = {k: v for k, v in self.state.items()
+                   if k not in self._baseline or self._baseline[k] != v}
+        deleted = [k for k in self._baseline if k not in self.state]
 
         import repo_commit
+        if repo_commit.refresh_from_origin("state.json"):
+            fresh = load_state()
+            for key in deleted:
+                fresh.pop(key, None)
+            fresh.update(changed)
+            self.state = fresh
+
+        save_state(self.state)
+        self._baseline = copy.deepcopy(self.state)
+
         repo_commit.commit_and_push(
             ["tickers.json", "watchlist.json", "state.json"],
             "Update tickers/watchlist/state via Telegram command [skip ci]")

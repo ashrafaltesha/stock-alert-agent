@@ -61,6 +61,35 @@ def _read_blob(ref: str, path: str, fallback: str = "{}", cwd=None) -> str:
     return result.stdout if result.returncode == 0 else fallback
 
 
+def refresh_from_origin(path: str, cwd=None) -> bool:
+    """Pull the newest version of ONE file from origin/main into the tree.
+
+    A long-running job checks out once and then holds whatever it read. The
+    Telegram listener loads state.json at start and keeps it for hours while
+    the monitor rewrites the same file every minute -- so the listener's copy
+    is stale almost immediately.
+
+    Merging only on push REJECTION does not save this. If the listener
+    happens to be level with the tip when it pushes, git accepts the write
+    with no conflict at all, and everything the monitor changed since is
+    silently reverted. That is exactly what happened on 2026-08-24: the
+    monitor pruned eight retired keys, logged it, and the listener put them
+    straight back.
+
+    Only touches `path`, never the working tree's code, so a running loop is
+    not swapped out from underneath itself.
+    """
+    try:
+        _git("fetch", "--quiet", "origin", "main", cwd=cwd)
+        result = _git("checkout", "origin/main", "--", path, check=False, cwd=cwd)
+        return result.returncode == 0
+    except Exception as e:
+        # Proceeding with a stale copy is worse than ideal but not fatal:
+        # the merge-on-rejection path is still there as a second line.
+        print(f"Could not refresh {path} from origin: {type(e).__name__}: {e}")
+        return False
+
+
 def commit_and_push(paths, message: str, cwd=None, merged_file=MERGED_FILE) -> bool:
     """Stage `paths`, commit, and push, merging by key on rejection.
 
