@@ -49,11 +49,13 @@ Known gap: Sea Limited files bare 1,418-character cover pages with no exhibit
 at all. There is no content to read, so no content rule can catch it.
 """
 
+import gzip
 import json
 import os
 import re
 import urllib.error
 import urllib.request
+import zlib
 
 # The SEC asks automated clients to identify themselves with a contact
 # address. Both this and a generic agent return 200 from GitHub runners, but
@@ -103,6 +105,34 @@ class FetchError(Exception):
     """
 
 
+def _decompress(body, encoding):
+    """urllib does NOT do this for you.
+
+    requests transparently decodes Content-Encoding; urllib hands back the
+    raw bytes. This module asks for gzip -- SEC submission files are hundreds
+    of KB and gzip is the difference between polite polling and hammering a
+    government API -- so it has to undo it itself.
+
+    It did not, and the failure was perfectly disguised: gzip bytes decoded
+    with errors="replace" produce a string, so nothing raised until
+    json.loads reported "Expecting value: line 1 column 1", which reads like
+    the SEC returned an error page rather than like a client bug.
+
+    The magic-number check is deliberate belt-and-braces. A proxy that
+    decompresses the body while leaving the header in place would otherwise
+    send this straight back into the same failure.
+    """
+    encoding = (encoding or "").lower()
+    if body[:2] == b"\x1f\x8b":
+        return gzip.decompress(body)
+    if "deflate" in encoding:
+        try:
+            return zlib.decompress(body)
+        except zlib.error:
+            return zlib.decompress(body, -zlib.MAX_WBITS)   # raw deflate
+    return body
+
+
 def _get(url, timeout=15, etag=None):
     """Returns (status, body_bytes, etag). Raises FetchError on failure.
 
@@ -116,11 +146,14 @@ def _get(url, timeout=15, etag=None):
         req.add_header("If-None-Match", etag)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.status, resp.read(), resp.headers.get("ETag")
+            body = _decompress(resp.read(), resp.headers.get("Content-Encoding"))
+            return resp.status, body, resp.headers.get("ETag")
     except urllib.error.HTTPError as e:
         if e.code == 304:
             return 304, b"", etag
         raise FetchError(f"{url} -> HTTP {e.code}") from e
+    except FetchError:
+        raise
     except Exception as e:
         raise FetchError(f"{url} -> {type(e).__name__}: {e}") from e
 
@@ -132,7 +165,12 @@ def _get_json(url, timeout=15, etag=None):
     try:
         return json.loads(body.decode("utf-8", "replace")), new_etag
     except ValueError as e:
-        raise FetchError(f"{url} -> malformed JSON: {e}") from e
+        # Include what actually came back. "Expecting value: line 1 column 1"
+        # on its own is indistinguishable between an HTML error page, an
+        # empty body, and bytes we failed to decompress -- which cost a whole
+        # debugging cycle.
+        raise FetchError(f"{url} -> malformed JSON: {e}; "
+                         f"first bytes {body[:32]!r}") from e
 
 
 # -- Ticker -> CIK ---------------------------------------------------------
