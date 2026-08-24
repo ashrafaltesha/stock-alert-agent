@@ -10,8 +10,14 @@ watch. Once one exists, detection and delivery are identical.
 
 ### Step 1: Arming
 
-Twice a day — **05:00 and 15:00 ET** (04:00 and 14:00 in winter) — a small job
-asks two calendars which of your holdings report **today or tomorrow**:
+Twice a day — **05:00 and 15:00 ET** (04:00 and 14:00 in winter; 09:00 and
+19:00 UTC) — a small job asks two calendars which of your holdings report
+**today or tomorrow**:
+
+Weekdays only. Nothing arms over the weekend, so a Monday pre-market reporter
+is armed by Monday's 05:00 ET run — before the earliest filing time measured,
+but with no margin to spare. If you know about it in advance, text
+`earnings for TICKER` the night before.
 
 | Source | Notes |
 |---|---|
@@ -43,8 +49,10 @@ already seen. No alert, and a log that looked entirely normal.
 
 ### Step 3: Polling
 
-A watcher job runs **hourly from 05:05 to 20:00 ET on weekdays**, each looping
-for 62 minutes so the incoming run overlaps the outgoing one.
+A watcher job runs **hourly from 05:05 to 19:05 ET on weekdays** (09:05–23:00
+UTC), each looping for 62 minutes so the incoming run overlaps the outgoing
+one. It starts an hour before the earliest filing ever measured (SAP 06:00 ET;
+TSMC and Honda 06:02) and runs past the latest (Novo 17:23).
 
 While a watch is armed, it checks that company's SEC filings **every 15
 seconds**. With nothing armed it exits within about 20 seconds rather than
@@ -89,20 +97,61 @@ Precision holds up: HSBC files daily buyback notices and produced exactly
 
 Two messages, deliberately.
 
-**Immediately on detection:**
+**Immediately on detection** — the fact, before anything is parsed:
 
 > 📊 **AMAT earnings just filed**
 > 8-K item 2.02, accepted 2026-08-13T20:03:36Z
 > https://www.sec.gov/Archives/edgar/data/6951/...
 
-**A few seconds later, once the document is parsed:**
+**A few seconds later**, once the release has been read:
 
-> **AMAT** — Revenue: 7.31 billion | EPS: 2.48
+> **EPS $2.48 (adj.) vs 2.41 expected — beat by 0.07**
+> Revenue rose 8% on record foundry demand.
+>
+> Period: Q3 2026
+> Revenue: $7.31 billion
+> Revenue YoY: +8%
+> EPS (adj.): $2.48
+> EPS (GAAP): $2.30
+> Gross margin: 48.1%
+> Operating income: $2.10 billion
+> Free cash flow: $1.42 billion
+>
+> **Guidance**: Q4 revenue of $7.4B ± $400M.
+>
+> _From the release:_
+> Applied Materials today reported results for its third quarter...
 
-You learn results are out at the earliest possible moment rather than waiting
-for parsing. The figures are extracted conservatively — press releases vary
-too much to parse reliably, and a confidently wrong revenue number is worse
-than none. The link is always included.
+The split exists so you learn results are out at the earliest possible moment
+rather than waiting on parsing.
+
+**Order is deliberate.** Beat/miss leads because it is the most price-relevant
+single line. Guidance follows, because it frequently moves the stock more than
+the quarter itself. The company's own words come last.
+
+**Consensus is fetched at arm time, not at alert time.** Finnhub's `epsActual`
+lags badly — it stayed empty all evening while Cerebras published minutes
+after the close, which is what started this whole rebuild — but `epsEstimate`
+is set *before* the company reports and doesn't lag at all. Storing it up
+front also means the beat/miss line costs nothing when latency matters.
+
+Only **EPS** is compared to consensus, never revenue. Revenue estimates and
+reported revenue are quoted on different bases often enough
+(constant-currency, segment splits, net vs gross) that a mechanical comparison
+would mislead more than it informs.
+
+**Extraction uses a model, and the verbatim quote is always included anyway.**
+An earnings release states the same metric several times over — current
+quarter, year-ago quarter, six months ended, GAAP beside non-GAAP, and again
+inside HTML tables. A regex like `revenue of \$X` frequently matches the
+*year-ago* figure with no signal that it did, and a confidently wrong revenue
+number is worse than none. A model reads the surrounding sentence and gets the
+period and the GAAP/non-GAAP distinction right. The quote is what the company
+actually wrote, and it costs a few lines to make the difference between the
+two visible rather than invisible.
+
+With no `GROQ_API_KEY` or `GEMINI_API_KEY` set, the first message is unchanged
+and the second falls back to the quote alone.
 
 ### Step 6: Expiry
 
@@ -134,6 +183,12 @@ You get:
 Sending the command also **starts a watcher**, so polling begins within
 seconds rather than waiting for the next hourly run.
 
+The dispatch happens **after** the new watch is committed and pushed, not
+before. The watcher reads `state.json` from a fresh checkout of `main`, so
+dispatching first was a race it could lose: the watcher would start, see no
+armed watch, exit — and the report would go uncovered until the next hourly
+run, or until the next morning outside watch hours.
+
 ### What's identical
 
 Steps 3 through 6 above — same polling, same 8-K item 2.02 and 6-K content
@@ -156,7 +211,7 @@ rules, same two-stage delivery, same 24-hour expiry.
 | When | 05:00 and 15:00 ET, for today/tomorrow | immediately |
 | Coverage | only what a calendar lists | anything you name |
 | Baseline set | at arm time | at first poll (~15s later) |
-| Watcher started | by the arm job | by the Telegram job |
+| Watcher started | by the arm job | by the Telegram listener, *after* the state push |
 | Detection | identical | identical |
 | Delivery | identical | identical |
 | Expiry | 24h | 24h |
@@ -201,5 +256,10 @@ Unavoidable on GitHub Actions; only a process that never restarts closes it.
 **Bare-cover foreign filings.** Sea Limited files 1,400-character 6-K covers
 with no exhibit. There is nothing to read, so no content rule can catch it.
 
-**Figures are approximate.** Extraction is deliberately shallow. Trust the
-link, not the parsed numbers.
+**Figures are a model's reading.** Extraction is careful and the prompt is
+strict about current-period and GAAP/non-GAAP, but it is still a machine
+reading a document. The verbatim quote and the filing link are in every alert
+for exactly that reason — check the figure against them before acting on it.
+
+**No model key means no figures.** The detection alert still arrives; the
+follow-up carries the company's opening paragraph instead of parsed metrics.
