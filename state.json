@@ -90,83 +90,78 @@
   },
   "hb::earnings_arm": "2026-08-25T06:04:18.864193-04:00",
   "hb::listener": "2026-08-25T13:01:27.707702-04:00",
-  "hb::monitor": "2026-08-25T13:05:53.619270-04:00",
+  "hb::monitor": "2026-08-25T13:06:38.904571-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-25",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::BAK": {
     "date": "2026-08-25",
-    "max_step_down": 2,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 2
   },
   "price_ref::CENX": {
     "date": "2026-08-25",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::EVH": {
     "date": "2026-08-25",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::FOUR": {
     "date": "2026-08-25",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::GENI": {
     "date": "2026-08-25",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::KEEL": {
     "date": "2026-08-25",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::META": {
     "date": "2026-08-25",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::QURE": {
     "date": "2026-08-25",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::RDDT": {
     "date": "2026-08-25",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::UAVS": {
     "date": "2026-08-25",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::WOLF": {
     "date": "2026-08-25",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::XPEV": {
     "date": "2026-08-25",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "seen_news::APP": [],
   "seen_news::BAK": [],
   "seen_news::CENX": [],
   "seen_news::EVH": [],
-  "seen_news::FOUR": [
-    [
-      "52e87895c13283a3",
-      29794415
-    ]
-  ],
+  "seen_news::FOUR": [],
   "seen_news::GENI": [],
   "seen_news::KEEL": [],
   "seen_news::META": [
