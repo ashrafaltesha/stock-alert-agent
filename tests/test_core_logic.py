@@ -838,3 +838,53 @@ def test_listener_writes_deltas_not_snapshots(monkeypatch, tmp_path=None):
     assert "ir_page::WOLF" not in merged, "a stale snapshot must not resurrect it"
     assert isinstance(merged["seen_news::AMAT"][0], list), "their rewrite survives"
     assert merged["tg_update_offset"] == 200, "our change is applied"
+
+
+def test_only_alertable_articles_are_remembered(monkeypatch):
+    """Both feeds return ~100 items per query regardless of age.
+
+    Remembering all of them put the whole feed in state.json: measured live,
+    seen_news_google::RDDT held 144 ids all stamped within four minutes and
+    the file reached 94 KB. The old [-100:] cap hid this by truncating;
+    time-based retention removed the cap and exposed it.
+
+    An article outside the lookback window cannot alert on this run or any
+    later one -- the age check rejects it first -- so recording it buys
+    nothing.
+    """
+    clock = {"m": 29_000_000}
+    monkeypatch.setattr(monitor, "_now_minutes", lambda: clock["m"])
+    monkeypatch.setattr(news_filter, "classify",
+                        lambda arts: [{"subject": True, "impact": "high",
+                                       "event": "contract", "why": "x"}] * len(arts))
+    sent = []
+    monkeypatch.setattr(monitor, "send_telegram_message", sent.append)
+
+    state, key = {}, "seen_news_google::RDDT"
+    feed = ([("fresh", 5, "Reddit signs $500 million cloud deal")]
+            + [(f"old{i}", 200 + i, f"Reddit older story {i}") for i in range(99)])
+
+    def run(items):
+        seen = monitor._load_seen(state, key)
+        known = set(seen)
+        candidates = []
+        for article_id, age, title in items:
+            if article_id in known:
+                continue
+            if age <= monitor.NEWS_LOOKBACK_MINUTES:
+                seen[article_id] = monitor._now_minutes()
+                candidates.append({"ticker": "RDDT", "title": title,
+                                   "source": "Reuters", "link": "http://x"})
+        monitor._save_seen(state, key, seen)
+        monitor.process_news_candidates(candidates, state)
+
+    run(feed)
+    assert len(state[key]) == 1, "only the in-window article is stored"
+    assert len(sent) == 1
+
+    # Re-reading the same feed must neither re-alert nor grow the list.
+    for _ in range(10):
+        clock["m"] += 1
+        run(feed)
+    assert len(state[key]) == 1
+    assert len(sent) == 1

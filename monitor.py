@@ -401,11 +401,22 @@ def check_yahoo_news(ticker: str, state: dict, candidates: list) -> None:
 
         age_minutes = (now - published).total_seconds() / 60
 
-        # Always remember we've seen it (so it's never re-evaluated), but
-        # only alert if it's fresh AND passes the material-news filter.
-        seen[article_id] = _now_minutes()
+        # Remember only what could still alert.
+        #
+        # This used to remember EVERY item in the feed. Both feeds return
+        # around a hundred items per query regardless of age, so state.json
+        # was carrying the whole feed: measured live, seen_news_google::RDDT
+        # held 144 ids all stamped within four minutes, and the file grew to
+        # 94 KB. The old [-100:] cap hid this by truncating; switching to
+        # time-based retention removed the cap and exposed it.
+        #
+        # An article outside the lookback window cannot alert, now or on any
+        # later run -- the age check below rejects it first -- so recording
+        # it buys nothing. Forgetting it costs one re-parse of data already
+        # in hand.
         title = content.get("title") or "New article"
         if age_minutes <= NEWS_LOOKBACK_MINUTES:
+            seen[article_id] = _now_minutes()
             link = (
                 content.get("canonicalUrl", {}).get("url")
                 or content.get("clickThroughUrl", {}).get("url")
@@ -460,9 +471,12 @@ def check_google_news(ticker: str, state: dict, candidates: list) -> None:
 
         age_minutes = (now - published).total_seconds() / 60
 
-        seen[article_id] = _now_minutes()
+        # Same rule as the Yahoo collector: only remember what could still
+        # alert. Google News is the worse offender -- it returns ~100 items
+        # per query however old they are.
         title = item.findtext("title") or "New article"
         if age_minutes <= NEWS_LOOKBACK_MINUTES:
+            seen[article_id] = _now_minutes()
             link = item.findtext("link") or ""
             source_el = item.find("source")
             publisher = source_el.text if source_el is not None else "Google News"
