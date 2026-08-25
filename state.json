@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-25T16:25:32.721757-04:00",
+  "alert::news": "2026-08-25T16:34:30.957707-04:00",
   "alert::price": "2026-08-25T11:14:24.406188-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -94,7 +94,7 @@
   },
   "hb::earnings_arm": "2026-08-25T06:04:18.864193-04:00",
   "hb::listener": "2026-08-25T16:27:39.990228-04:00",
-  "hb::monitor": "2026-08-25T16:33:32.895686-04:00",
+  "hb::monitor": "2026-08-25T16:34:31.187683-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-25",
@@ -270,7 +270,12 @@
     ]
   ],
   "seen_news_google::QURE": [],
-  "seen_news_google::RDDT": [],
+  "seen_news_google::RDDT": [
+    [
+      "4a21f1234ded33fa",
+      29794834
+    ]
+  ],
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [
     [
@@ -283,5 +288,8 @@
     ]
   ],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157276
+  "tg_update_offset": 785157276,
+  "alerted_titles::RDDT": [
+    "reddit (nyse: rddt) shares set for sale by sauerberg trust - stock titan"
+  ]
 }
