@@ -100,7 +100,7 @@ poll cost nothing.
 | `telegram_commands.yml` | `telegram_commands.py listen` | Hourly; each run listens for 62 min |
 | `earnings_watch.yml` (arm) | `earnings_watch.py arm` | 09:00 and 19:00 UTC, weekdays |
 | `earnings_watch.yml` (watch) | `earnings_watch.py poll` | Hourly 09:05–23:00 UTC weekdays, plus on demand |
-| `simulate.yml` | `simulate.py` | Manual only |
+| `simulate.yml` | `simulate.py replay` | Manual only |
 | `tests.yml` | `pytest` | On push to code, and manual |
 
 **Two long-running jobs, not many short ones.** The Telegram listener and the

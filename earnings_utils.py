@@ -15,13 +15,13 @@ Two earnings-calendar sources, used for different jobs:
     "earnings for X" not-reporting-today check.
 
 fetch_earnings_history_finnhub -- same Finnhub endpoint, filtered to one
-  symbol across a date range instead of one date across all symbols, which
-  also surfaces epsActual/revenueActual once Finnhub has them. Used by
-  earnings_summary.get_earnings_release() to detect a release (the
-  market-wide watcher and the backtester still do; per-holding watches
-  no longer do) --
-  switched from Yahoo Finance because Yahoo's earnings-dates table lagged
-  the real release by hours in practice.
+  symbol across a date range instead of one date across all symbols. It also
+  surfaces epsActual/revenueActual once Finnhub has them, but nothing relies
+  on those any more: detection is SEC filings. Its one live caller is
+  fetch_consensus() below, which reads epsEstimate -- a number that is set
+  BEFORE a company reports and therefore does not lag, unlike epsActual,
+  which stayed empty all evening while Cerebras published minutes after the
+  close.
 """
 
 import sys
@@ -143,12 +143,8 @@ def fetch_earnings_history_finnhub(ticker: str, from_date: str, to_date: str) ->
     fetch_earnings_calendar_finnhub but filtered to a single symbol so it
     also returns actuals -- epsActual/revenueActual -- once Finnhub has
     them, alongside epsEstimate/revenueEstimate. Used by
-    earnings_summary.get_earnings_release(): Finnhub
-    populates these actual fields as companies report, with much less lag
-    than Yahoo Finance's earnings-dates table (which is what this replaced,
-    after Yahoo's data for AST SpaceMobile's 2026-08-10 release still hadn't
-    backfilled hours after the release). Returns [] if FINNHUB_API_KEY isn't
-    set or the request fails."""
+    fetch_consensus() below. Returns [] if FINNHUB_API_KEY isn't set or the
+    request fails."""
     if not FINNHUB_API_KEY:
         print("FINNHUB_API_KEY not set; skipping Finnhub earnings history fetch.")
         return []
