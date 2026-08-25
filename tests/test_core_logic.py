@@ -43,6 +43,7 @@ import earnings_watch  # noqa: E402
 import llm_extract  # noqa: E402
 import llm_client  # noqa: E402
 import earnings_utils  # noqa: E402
+import earnings_watch  # noqa: E402
 import merge_state  # noqa: E402
 import monitor  # noqa: E402
 import news_filter  # noqa: E402
@@ -951,3 +952,86 @@ def test_status_command_routes(text, monkeypatch):
     monkeypatch.setattr(tc, "send_telegram_message", sent.append)
     tc.process_message(text, ["AMAT"], {}, [], {})
     assert sent and "*Status*" in sent[0]
+
+
+# --- Calendar-independent arming ------------------------------------------
+#
+# Arming is the single point of failure in the earnings path: no watch armed
+# means detection never runs, however good the detection is. Two calendars
+# make a miss less likely and not impossible, and their failures cluster on
+# exactly the companies worth watching -- recent IPOs and foreign issuers.
+
+def _stale_date(days):
+    from datetime import timedelta
+    return (earnings_utils.now_et().date() - timedelta(days=days)).strftime("%Y-%m-%d")
+
+
+def _prepare(monkeypatch, filings=None, score=(2, False, "routine")):
+    import sec_edgar
+    monkeypatch.setattr(earnings_watch, "TICKERS", ["GENI"])
+    monkeypatch.setattr(sec_edgar, "load_cik_map", lambda: {"GENI": "0001834489"})
+    monkeypatch.setattr(sec_edgar, "resolve_cik", lambda t, m: m.get(t.upper()))
+    monkeypatch.setattr(sec_edgar, "recent_filings",
+                        lambda cik, etag=None: (filings or [], None))
+    monkeypatch.setattr(sec_edgar, "score_filing",
+                        lambda cik, acc, max_docs=3: score)
+    monkeypatch.setattr(earnings_watch, "_set_baseline_now",
+                        lambda state, t, c=None: False)
+    sent = []
+    monkeypatch.setattr(earnings_watch, "send_telegram_message", sent.append)
+    return sent
+
+
+def test_overdue_holding_is_armed_without_any_calendar(monkeypatch):
+    sent = _prepare(monkeypatch)
+    state = {"ew_last_earnings::GENI": _stale_date(150)}
+    earnings_watch._arm_overdue_holdings(state)
+    assert "ew_watch::GENI" in state
+    assert sent and "Neither calendar" in sent[0]
+
+
+def test_recently_reported_holding_is_left_alone(monkeypatch):
+    sent = _prepare(monkeypatch)
+    state = {"ew_last_earnings::GENI": _stale_date(20)}
+    earnings_watch._arm_overdue_holdings(state)
+    assert "ew_watch::GENI" not in state
+    assert not sent
+
+
+def test_no_history_means_no_arming_on_a_guess(monkeypatch):
+    """Arming everything unknown would fire "nothing appeared" notices for
+    every holding, which is how a useful alert becomes noise."""
+    sent = _prepare(monkeypatch, filings=[{"form": "4", "accession": "x",
+                                           "filed": _stale_date(5), "items": "",
+                                           "doc": ""}])
+    state = {}
+    earnings_watch._arm_overdue_holdings(state)
+    assert "ew_watch::GENI" not in state
+    assert not sent
+
+
+def test_history_lookup_is_bounded(monkeypatch):
+    """6-K classification costs a document fetch each, so the bootstrap scan
+    must not walk a company's entire filing history."""
+    import sec_edgar
+    many = [{"form": "6-K", "accession": f"a{i}", "filed": _stale_date(300 + i),
+             "items": "", "doc": "d.htm"} for i in range(30)]
+    calls = []
+    _prepare(monkeypatch, filings=many)
+    monkeypatch.setattr(sec_edgar, "score_filing",
+                        lambda cik, acc, max_docs=3: (calls.append(acc), (2, False, ""))[1])
+    earnings_watch._last_earnings_date({}, "GENI", "0001834489")
+    assert len(calls) <= earnings_watch.BOOTSTRAP_SCORE_LIMIT
+
+
+def test_fetch_failure_arms_nothing(monkeypatch):
+    import sec_edgar
+    _prepare(monkeypatch)
+
+    def boom(cik, etag=None):
+        raise sec_edgar.FetchError("network")
+
+    monkeypatch.setattr(sec_edgar, "recent_filings", boom)
+    state = {}
+    earnings_watch._arm_overdue_holdings(state)
+    assert not [k for k in state if k.startswith("ew_watch")]

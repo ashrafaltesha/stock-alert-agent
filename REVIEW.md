@@ -53,16 +53,28 @@ against a repository that grows unboundedly.
 **Do not:** stop persisting dedupe state, or shorten the retention window
 below a day. Duplicate alerts were a real complaint earlier in this project.
 
-### 1.2 `pip install` on every run — HIGH value, ZERO risk
+### 1.2 `pip install` on every run — DONE, and it barely helped
 
-**What:** four workflows run `pip install -r requirements.txt` with no
-caching. yfinance pulls pandas and numpy; lxml is a compiled wheel.
+**What was done:** `cache: pip` added to every workflow that installs.
 
-**Cost:** ~13s per run. At ~290 monitor runs/day that is roughly **an hour of
-runner time per day** spent reinstalling identical packages.
+**Measured afterwards:** the cache *does* hit --
+`Cache hit for: setup-python-Linux-x64-...-pip-...` -- and the install step
+still takes 12s, against 11-13s before. No measurable saving.
 
-**Fix:** add `cache: pip` to `actions/setup-python`. One line per workflow, no
-code changes, no behaviour change.
+**Why:** `cache: pip` caches pip's DOWNLOAD cache, not the installed
+environment. The 12 seconds is spent unpacking wheels into site-packages,
+which happens either way. I asserted a win here before measuring one, and
+then asserted the opposite ("the cache is not working") from a single run
+that was populating the cache rather than restoring it. Both claims were
+made ahead of the evidence.
+
+**What would actually work,** if this is ever worth doing: cache the whole
+virtualenv with `actions/cache` keyed on a hash of requirements.txt, and skip
+`pip install` entirely on a hit. Saves perhaps 9s per run.
+
+**Whether it is worth doing:** probably not. Runner minutes are free on a
+public repo, and a 12-second delay is irrelevant at a 5-minute cadence. This
+is cosmetic next to anything touching missed alerts.
 
 **Note:** the earnings *watcher* already avoids this entirely by being
 stdlib-only. That was the right call and is worth preserving.

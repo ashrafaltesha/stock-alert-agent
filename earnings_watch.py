@@ -131,6 +131,10 @@ def arm() -> None:
                 if _set_baseline_now(state, ticker, consensus):
                     state[key]["hit"] = True
 
+    # Calendars are advisory; this is the backstop that needs none.
+    if _arm_overdue_holdings(state):
+        changed = True
+
     if not changed:
         print("No new watches to arm.")
         # Still alive: "nothing reports today" is a normal, healthy answer,
@@ -168,6 +172,108 @@ def arm() -> None:
     # watch armed means detection never runs, however good it is. This is the
     # thing most worth knowing has stopped.
     heartbeat.ping(heartbeat.EARNINGS_ARM)
+
+
+# A quarter is ~91 days. Past this a company is overdue and the calendars have
+# had every chance to say so.
+STALE_EARNINGS_DAYS = 100
+
+# How many recent filings to inspect when establishing the last earnings date.
+# Bounded because 6-K classification costs a document fetch each.
+BOOTSTRAP_SCAN = 12
+BOOTSTRAP_SCORE_LIMIT = 4
+
+LAST_EARNINGS_KEY = "ew_last_earnings::{ticker}"
+
+
+def _note_earnings_date(state, ticker, filed) -> None:
+    if filed:
+        state[LAST_EARNINGS_KEY.format(ticker=ticker.upper())] = filed
+
+
+def _last_earnings_date(state, ticker, cik):
+    """When this company last filed results, learning it once if unknown.
+
+    Kept in state so the staleness check below is free on every later run.
+    Bootstrapping costs a handful of document fetches per ticker, once.
+    """
+    key = LAST_EARNINGS_KEY.format(ticker=ticker.upper())
+    if key in state:
+        return state[key]
+
+    try:
+        filings, _ = sec_edgar.recent_filings(cik)
+    except sec_edgar.FetchError as e:
+        print(f"[{ticker}] could not read filing history: {e}")
+        return None
+
+    scored = 0
+    for filing in (filings or [])[:BOOTSTRAP_SCAN]:
+        if sec_edgar.is_domestic_earnings(filing):
+            state[key] = filing.get("filed")
+            return state[key]
+        if filing["form"] == "6-K" and scored < BOOTSTRAP_SCORE_LIMIT:
+            scored += 1
+            try:
+                score, period, _ = sec_edgar.score_filing(cik, filing["accession"])
+            except sec_edgar.FetchError:
+                continue
+            if sec_edgar.is_foreign_earnings(score, period):
+                state[key] = filing.get("filed")
+                return state[key]
+    return None
+
+
+def _arm_overdue_holdings(state) -> bool:
+    """Arm anything that has not reported in a quarter, whatever the calendars say.
+
+    Arming is the single point of failure in the earnings path: no watch armed
+    means detection never runs, however good it is. Two calendars make a miss
+    less likely and not impossible, and their failures cluster on exactly the
+    companies worth watching -- recent IPOs and foreign issuers.
+
+    This needs no calendar at all. A company that last reported more than a
+    hundred days ago is due, and arming it costs a watch that expires quietly
+    in 24 hours. That asymmetry is the whole argument: a wasted watch costs a
+    few hundred requests, a missed one costs the alert.
+    """
+    cik_map = sec_edgar.load_cik_map()
+    today = now_et().date()
+    changed = False
+
+    for ticker in TICKERS:
+        key = f"ew_watch::{ticker.upper()}"
+        if key in state:
+            continue                      # already armed by a calendar
+        cik = sec_edgar.resolve_cik(ticker, cik_map)
+        if not cik:
+            continue
+
+        last = _last_earnings_date(state, ticker, cik)
+        changed = True                    # the lookup itself may have written
+        if not last:
+            print(f"[{ticker}] no earnings filing found in recent history; "
+                  f"not arming on a guess.")
+            continue
+
+        try:
+            age = (today - datetime.strptime(last, "%Y-%m-%d").date()).days
+        except (TypeError, ValueError):
+            continue
+        if age < STALE_EARNINGS_DAYS:
+            continue
+
+        if arm_earnings_watch(state, ticker, ON_DEMAND_WATCH_HOURS):
+            print(f"[{ticker}] OVERDUE: last reported {last} ({age}d ago); "
+                  f"arming without a calendar.")
+            send_telegram_message(
+                f"\U0001F514 *{ticker}* last reported {last}, {age} days ago. "
+                f"Neither calendar lists it, so I'm watching its SEC filings "
+                f"anyway for the next {ON_DEMAND_WATCH_HOURS}h."
+            )
+            if _set_baseline_now(state, ticker, None):
+                state[key]["hit"] = True
+    return changed
 
 
 def _store_consensus(state, ticker, day):
@@ -481,6 +587,7 @@ def _process(state, key, watch, ticker, cik, filings, seen):
         watch["hit"] = True
         state[key] = watch
         health.record_alert(state, "earnings")
+        _note_earnings_date(state, ticker, filings[0].get("filed"))
     return True
 
 
