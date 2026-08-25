@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-25T04:55:30.354186-04:00",
+  "alert::news": "2026-08-25T05:20:40.331170-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
     "united asset strategies inc. acquires new shares in applovin corporation $app - marketbeat",
@@ -35,7 +35,8 @@
     "is meta platforms (nasdaq:meta) converting ai into advertising momentum? - kalkine media",
     "alibaba dilutes shares to feed its ai spending spree",
     "meta platforms stock edges higher as q2 revenue hit $60.8 billion - ad-hoc-news.de",
-    "meta targets early september for hatch, its consumer ai agent"
+    "meta targets early september for hatch, its consumer ai agent",
+    "routing is coming for the frontier ai labs"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -76,7 +77,7 @@
     "expires": "2026-08-25T07:56:55.596808-04:00"
   },
   "hb::listener": "2026-08-25T05:12:32.970544-04:00",
-  "hb::monitor": "2026-08-25T05:19:27.322951-04:00",
+  "hb::monitor": "2026-08-25T05:20:40.687309-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-24",
@@ -154,6 +155,10 @@
     [
       "ccef79c191518e62",
       29794110
+    ],
+    [
+      "a5e4232c144cc473",
+      29794160
     ]
   ],
   "seen_news::QURE": [],
