@@ -32,7 +32,8 @@
     "meta stock faces litigation pressure: why expert says it's worse than tobacco - meta platforms (nasdaq:me - benzinga",
     "alibaba announces share placement to raise money for ai efforts",
     "is meta platforms (nasdaq:meta) converting ai into advertising momentum? - kalkine media",
-    "alibaba dilutes shares to feed its ai spending spree"
+    "alibaba dilutes shares to feed its ai spending spree",
+    "meta platforms stock edges higher as q2 revenue hit $60.8 billion - ad-hoc-news.de"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -72,7 +73,7 @@
     "expires": "2026-08-25T07:56:55.596808-04:00"
   },
   "hb::listener": "2026-08-25T01:09:55.658432-04:00",
-  "hb::monitor": "2026-08-25T01:11:31.989804-04:00",
+  "hb::monitor": "2026-08-25T01:12:40.315571-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-24",
@@ -438,10 +439,6 @@
     ]
   ],
   "seen_news::META": [
-    [
-      "27e285d8029aaa7e",
-      29793701
-    ],
     [
       "24f20b1705b1084f",
       29793703
@@ -4107,6 +4104,10 @@
     [
       "e8e4d48e5258bc81",
       29793720
+    ],
+    [
+      "ca156d96ebab2b5c",
+      29793912
     ]
   ],
   "seen_news_google::QURE": [
@@ -4532,10 +4533,6 @@
     ]
   ],
   "seen_news_google::RDDT": [
-    [
-      "488cbf9569ef20cb",
-      29793701
-    ],
     [
       "00eed48a491eb22d",
       29793703
@@ -6355,5 +6352,6 @@
       29793721
     ]
   ],
-  "tg_update_offset": 785157272
+  "tg_update_offset": 785157272,
+  "alert::news": "2026-08-25T01:12:39.918594-04:00"
 }
