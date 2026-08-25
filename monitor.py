@@ -51,6 +51,7 @@ from config import (
 )
 from market_hours import is_market_hours
 from telegram_utils import send_telegram_message, escape_markdown
+import health
 import news_filter
 from state_utils import load_state, save_state
 from http_utils import get_with_retry, call_with_retry
@@ -114,6 +115,7 @@ def process_news_candidates(candidates, state):
         if article.get("link"):
             msg += f"\n{article['link']}"
         send_telegram_message(msg)
+        health.record_alert(state, "news")
         _record_headline(article["ticker"], article["title"], state)
 
 
@@ -173,6 +175,7 @@ def check_price_moves(ticker: str, state: dict) -> None:
             f"Now: ${last_price:.2f}  |  {pct_from_close:+.1f}% vs prev close (${prev_close:.2f})"
         )
         send_telegram_message(msg)
+        health.record_alert(state, "price")
 
     if direction_up:
         max_step_up = max_step
@@ -532,6 +535,10 @@ def main() -> None:
     # it earlier would report health for a run that later died.
     import heartbeat
     heartbeat.ping(heartbeat.MONITOR)
+
+    # Recorded last, so a timestamp means the whole run finished.
+    health.record(state, "monitor")
+    save_state(state)
 
 
 if __name__ == "__main__":

@@ -52,6 +52,9 @@ beat/miss against consensus. Full detail in [`EARNINGS.md`](EARNINGS.md).
 | `summary` | Full portfolio: shares, avg cost, live price, % up/down, totals |
 | `earnings today` | The day's biggest reporters by market cap and analyst attention |
 | `earnings for TICKER, ...` | Arms a 24-hour SEC filing watch on any ticker |
+| `set TICKER to N shares at $X` | Correction — overwrites the position, leaves cash alone |
+| `status` | Which components are alive, last alert sent, watches armed, model in use |
+| `help` | The command list |
 
 Case-insensitive; a leading `$` is optional. Only messages from
 `TELEGRAM_CHAT_ID` are processed — anything else is ignored and logged.

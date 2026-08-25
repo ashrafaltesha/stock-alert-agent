@@ -42,6 +42,7 @@ from datetime import datetime, timedelta, timezone
 
 import llm_extract
 import early_signal
+import health
 import heartbeat
 import sec_edgar
 from config import ON_DEMAND_WATCH_HOURS, TICKERS
@@ -135,8 +136,11 @@ def arm() -> None:
         # Still alive: "nothing reports today" is a normal, healthy answer,
         # and must not look the same as the job never running.
         heartbeat.ping(heartbeat.EARNINGS_ARM)
+        health.record(state, "earnings_arm")
+        save_state(state)
         return
 
+    health.record(state, "earnings_arm")
     save_state(state)
 
     # COMMIT BEFORE DISPATCH, and not only for the reason the listener has.
@@ -423,6 +427,7 @@ def _report(ticker, cik, filing, kind, consensus=None):
     if message:
         send_telegram_message(message)
 
+
     # The number that decides whether POLL_SECONDS is worth tightening. It
     # can only be measured against a real filing, so it is logged every time.
     try:
@@ -475,6 +480,7 @@ def _process(state, key, watch, ticker, cik, filings, seen):
     if sent:
         watch["hit"] = True
         state[key] = watch
+        health.record_alert(state, "earnings")
     return True
 
 
@@ -541,7 +547,10 @@ def poll() -> None:
             return
 
         now = now_et()
-        changed = False
+        # The watcher only reaches here with something armed, which is what
+        # makes this a meaningful signal rather than a clock tick.
+        health.record(state, "earnings_watch")
+        changed = True
 
         for key, watch in list(watches.items()):
             ticker = key.split("::", 1)[1]

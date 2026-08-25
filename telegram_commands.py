@@ -104,6 +104,7 @@ from datetime import datetime, timedelta
 import requests
 import yfinance as yf
 
+import health
 import heartbeat
 
 # Telegram holds the connection open this long when there is nothing to
@@ -209,6 +210,8 @@ WITHDRAW_RE = re.compile(
     rf"^\s*(?:withdrew|withdraw|withdrawn)\s+\$?({_NUM})\s*\.?\s*$", re.IGNORECASE)
 EARNINGS_TODAY_RE = re.compile(r"^\s*earnings\s+today\.?\s*$", re.IGNORECASE)
 EARNINGS_FOR_RE = re.compile(r"^\s*earnings\s+for\s+(.+?)\.?\s*$", re.IGNORECASE)
+STATUS_RE = re.compile(r"^\s*(?:status|health|are you (?:ok|alive|working))\??\s*$",
+                       re.IGNORECASE)
 HELP_RE = re.compile(r"^\s*(?:help|commands|\?|/help|/start|what can you do)\.?\s*$",
                      re.IGNORECASE)
 
@@ -229,6 +232,8 @@ HELP_TEXT = (
     "*Earnings*\n"
     "earnings today\n"
     "earnings for XPEV\n\n"
+    "*Diagnostics*\n"
+    "status\n\n"
     "_Tickers are case-insensitive and a leading $ is fine._"
 )
 
@@ -599,6 +604,49 @@ def handle_watchlist(watchlist: list[str]) -> None:
     send_telegram_message("\n".join(lines))
 
 
+def build_status(state: dict) -> str:
+    """One message answering "is it working?".
+
+    Reads state fresh from origin/main first. The listener holds its own copy
+    for hours, and the components reported on here -- the monitor, the arm
+    job, the watcher -- write their timestamps from other runners entirely.
+    Asking the in-memory copy would describe the listener's view of several
+    hours ago, which is exactly the mistake that made pruned keys reappear.
+    """
+    import health
+    import repo_commit
+
+    if repo_commit.refresh_from_origin("state.json"):
+        state = load_state()
+
+    lines = ["*Status*", ""]
+
+    tick, warn = "\u2705", "\u26a0\ufe0f"
+    ok_all = True
+    for name, age, ok in health.component_lines(state):
+        ok_all = ok_all and ok
+        lines.append(f"{tick if ok else warn} {name}: {age}")
+
+    lines.append("")
+    lines.append("*Last alert sent*")
+    for kind, age in health.alert_lines(state):
+        lines.append(f"  {kind}: {age}")
+
+    watches = sorted(k.split("::", 1)[1] for k in state if k.startswith("ew_watch::"))
+    lines.append("")
+    lines.append(f"*Earnings watches armed*: {', '.join(watches) if watches else 'none'}")
+
+    providers = [n for n, key in (("Groq", "GROQ_API_KEY"), ("Gemini", "GEMINI_API_KEY"))
+                 if os.environ.get(key)]
+    lines.append(f"*Model*: {', '.join(providers) if providers else 'NONE -- keyword fallback'}")
+
+    if not ok_all:
+        lines.append("")
+        lines.append("_A component is stale. If it stays that way, check "
+                     "Actions for that workflow._")
+    return "\n".join(lines)
+
+
 def process_message(
     text: str, tickers: list[str], holdings: dict, watchlist: list[str], state: dict
 ) -> tuple[bool, bool, bool]:
@@ -921,6 +969,10 @@ def process_message(
         )
         return tickers_changed, True, False
 
+    if STATUS_RE.match(text):
+        send_telegram_message(build_status(state))
+        return False, False, False
+
     if HELP_RE.match(text):
         send_telegram_message(HELP_TEXT)
         return False, False, False
@@ -1156,6 +1208,9 @@ def listen() -> None:
     cycles = 0
     session = _Session()
     heartbeat.ping(heartbeat.LISTENER)   # connected
+    health.record(session.state, "listener")
+    session.state_changed = True
+    session.flush()
     print(f"Listening for {LOOP_MINUTES} minutes "
           f"(long poll {POLL_TIMEOUT_SECONDS}s), offset={session.offset}.")
 
@@ -1186,6 +1241,9 @@ def listen() -> None:
         # indistinguishable from death.
         if cycles % UPDATE_CHECK_EVERY_N_CYCLES == 0:
             heartbeat.ping(heartbeat.LISTENER)
+            health.record(session.state, "listener")
+            session.state_changed = True
+            session.flush()
 
         # Roughly every ten minutes of idling.
         if cycles % UPDATE_CHECK_EVERY_N_CYCLES == 0 and _code_has_changed():

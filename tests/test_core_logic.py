@@ -33,6 +33,7 @@ os.environ.setdefault("FINNHUB_API_KEY", "test-key")
 import gzip  # noqa: E402
 import json  # noqa: E402
 
+import health  # noqa: E402
 import heartbeat  # noqa: E402
 import state_utils  # noqa: E402
 import zlib  # noqa: E402
@@ -41,6 +42,7 @@ import early_signal  # noqa: E402
 import earnings_watch  # noqa: E402
 import llm_extract  # noqa: E402
 import llm_client  # noqa: E402
+import earnings_utils  # noqa: E402
 import merge_state  # noqa: E402
 import monitor  # noqa: E402
 import news_filter  # noqa: E402
@@ -888,3 +890,64 @@ def test_only_alertable_articles_are_remembered(monkeypatch):
         run(feed)
     assert len(state[key]) == 1
     assert len(sent) == 1
+
+
+# --- status command -------------------------------------------------------
+
+def test_status_flags_stale_components_and_spares_the_idle_watcher():
+    """The watcher exits when nothing is armed, which is most days.
+
+    Reporting "never ran" as a fault would make the status message cry wolf
+    on every quiet day, and a status message that is usually wrong is worse
+    than none -- it trains you to ignore it.
+    """
+    from datetime import timedelta
+    now = earnings_utils.now_et()
+    state = {
+        "hb::monitor": now.isoformat(),
+        "hb::listener": (now - timedelta(minutes=5)).isoformat(),
+        "hb::earnings_arm": (now - timedelta(hours=40)).isoformat(),
+    }
+    rows = {name: ok for name, _age, ok in health.component_lines(state)}
+    assert rows["monitor"] is True
+    assert rows["listener"] is True
+    assert rows["earnings_arm"] is False, "40 hours without arming is stale"
+    assert rows["earnings_watch"] is True, "never-run watcher is not a fault"
+
+
+def test_status_handles_missing_and_malformed_timestamps():
+    assert health._age_minutes(None) is None
+    assert health._age_minutes("not-a-date") is None
+    assert health._human(None) == "never"
+
+
+def test_status_message_contains_what_it_should(monkeypatch):
+    from datetime import timedelta
+    import repo_commit
+    monkeypatch.setattr(repo_commit, "refresh_from_origin",
+                        lambda path, cwd=None: False)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    now = earnings_utils.now_et()
+    state = {
+        "hb::monitor": now.isoformat(),
+        "hb::earnings_arm": (now - timedelta(hours=40)).isoformat(),
+        "alert::earnings": (now - timedelta(hours=3)).isoformat(),
+        "ew_watch::XPEV": {"armed": "x"},
+    }
+    msg = tc.build_status(state)
+    assert "*Status*" in msg
+    assert "XPEV" in msg, "armed watches listed"
+    assert "keyword fallback" in msg, "missing model key is visible"
+    assert "A component is stale" in msg
+
+
+@pytest.mark.parametrize("text", ["status", "health", "are you ok", "Status?"])
+def test_status_command_routes(text, monkeypatch):
+    import repo_commit
+    monkeypatch.setattr(repo_commit, "refresh_from_origin",
+                        lambda path, cwd=None: False)
+    sent = []
+    monkeypatch.setattr(tc, "send_telegram_message", sent.append)
+    tc.process_message(text, ["AMAT"], {}, [], {})
+    assert sent and "*Status*" in sent[0]
