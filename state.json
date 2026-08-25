@@ -74,7 +74,7 @@
     "expires": "2026-08-25T07:56:55.596808-04:00"
   },
   "hb::listener": "2026-08-25T01:20:12.928191-04:00",
-  "hb::monitor": "2026-08-25T01:28:32.963377-04:00",
+  "hb::monitor": "2026-08-25T01:29:29.382726-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-24",
@@ -249,12 +249,7 @@
       29793721
     ]
   ],
-  "seen_news_google::WOLF": [
-    [
-      "7b9a003a0dcd3b8d",
-      29793718
-    ]
-  ],
+  "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [
     [
       "19215311490a49e7",
