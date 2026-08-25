@@ -97,7 +97,7 @@
   },
   "hb::earnings_arm": "2026-08-25T19:43:34.188545-04:00",
   "hb::listener": "2026-08-25T19:42:43.853687-04:00",
-  "hb::monitor": "2026-08-25T19:51:38.109664-04:00",
+  "hb::monitor": "2026-08-25T19:52:28.194093-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-25",
@@ -197,12 +197,7 @@
     ]
   ],
   "seen_news::UAVS": [],
-  "seen_news::WOLF": [
-    [
-      "b3db5cd57bb48d62",
-      29794821
-    ]
-  ],
+  "seen_news::WOLF": [],
   "seen_news::XPEV": [],
   "seen_news_google::APP": [
     [
