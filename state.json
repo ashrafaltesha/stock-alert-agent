@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-25T06:13:36.626695-04:00",
+  "alert::news": "2026-08-25T06:59:28.737834-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
     "united asset strategies inc. acquires new shares in applovin corporation $app - marketbeat",
@@ -16,7 +16,8 @@
     "braskem agrees to out-of-court restructuring of $10.9b in debt (bak:nyse) - seeking alpha",
     "braskem (nyse: bak) shields $10.9b debt, eyes equity steps - stock titan",
     "ftse braskem s.a. pn to be deleted from ftse rafi index series effective aug 27 - tradingview",
-    "braskem (nyse: bak) opens creditor talks data in debt revamp - stock titan"
+    "braskem (nyse: bak) opens creditor talks data in debt revamp - stock titan",
+    "braskem (nyse: bak) debt plan puts r$400m bank cash in focus - stock titan"
   ],
   "alerted_titles::CENX": [
     "freedom expects century aluminum shares to rise by more than a quarter - freedom broker"
@@ -87,7 +88,7 @@
   },
   "hb::earnings_arm": "2026-08-25T06:04:18.864193-04:00",
   "hb::listener": "2026-08-25T06:58:15.811280-04:00",
-  "hb::monitor": "2026-08-25T06:58:31.873533-04:00",
+  "hb::monitor": "2026-08-25T06:59:28.993911-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-24",
@@ -210,7 +211,12 @@
   "seen_news::WOLF": [],
   "seen_news::XPEV": [],
   "seen_news_google::APP": [],
-  "seen_news_google::BAK": [],
+  "seen_news_google::BAK": [
+    [
+      "5cbf02019c6b6858",
+      29794259
+    ]
+  ],
   "seen_news_google::CENX": [],
   "seen_news_google::EVH": [],
   "seen_news_google::FOUR": [],
