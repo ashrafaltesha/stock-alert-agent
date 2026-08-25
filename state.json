@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-25T15:34:44.796967-04:00",
+  "alert::news": "2026-08-25T16:25:32.721757-04:00",
   "alert::price": "2026-08-25T11:14:24.406188-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -91,7 +91,7 @@
   },
   "hb::earnings_arm": "2026-08-25T06:04:18.864193-04:00",
   "hb::listener": "2026-08-25T16:17:22.148767-04:00",
-  "hb::monitor": "2026-08-25T16:24:28.223929-04:00",
+  "hb::monitor": "2026-08-25T16:25:33.063749-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-25",
@@ -260,7 +260,15 @@
   "seen_news_google::QURE": [],
   "seen_news_google::RDDT": [],
   "seen_news_google::UAVS": [],
-  "seen_news_google::WOLF": [],
+  "seen_news_google::WOLF": [
+    [
+      "490cc9c33b738ad6",
+      29794825
+    ]
+  ],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157276
+  "tg_update_offset": 785157276,
+  "alerted_titles::WOLF": [
+    "wolfspeed (wolf) says ai data center revenue more than doubled. can it restore positive gross margins? - currently.com"
+  ]
 }
