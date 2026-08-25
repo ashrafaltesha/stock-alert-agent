@@ -45,6 +45,9 @@
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
   ],
+  "alerted_titles::RDDT": [
+    "reddit (nyse: rddt) shares set for sale by sauerberg trust - stock titan"
+  ],
   "alerted_titles::WOLF": [
     "wolfspeed (wolf) says ai data center revenue more than doubled. can it restore positive gross margins? - currently.com"
   ],
@@ -93,7 +96,7 @@
     "expires": "2026-08-25T07:56:55.596808-04:00"
   },
   "hb::earnings_arm": "2026-08-25T06:04:18.864193-04:00",
-  "hb::listener": "2026-08-25T16:27:39.990228-04:00",
+  "hb::listener": "2026-08-25T16:37:58.197846-04:00",
   "hb::monitor": "2026-08-25T16:37:28.694455-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
@@ -288,8 +291,5 @@
     ]
   ],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157276,
-  "alerted_titles::RDDT": [
-    "reddit (nyse: rddt) shares set for sale by sauerberg trust - stock titan"
-  ]
+  "tg_update_offset": 785157276
 }
