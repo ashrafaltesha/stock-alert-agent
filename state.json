@@ -74,7 +74,7 @@
     "expires": "2026-08-25T07:56:55.596808-04:00"
   },
   "hb::listener": "2026-08-25T01:20:12.928191-04:00",
-  "hb::monitor": "2026-08-25T01:25:31.176155-04:00",
+  "hb::monitor": "2026-08-25T01:26:30.726709-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-24",
@@ -160,24 +160,11 @@
     ]
   ],
   "seen_news::QURE": [],
-  "seen_news::RDDT": [
-    [
-      "f8ee9e5ff43be146",
-      29793715
-    ]
-  ],
+  "seen_news::RDDT": [],
   "seen_news::UAVS": [],
   "seen_news::WOLF": [],
   "seen_news::XPEV": [],
   "seen_news_google::APP": [
-    [
-      "0ae239bb9427cb82",
-      29793715
-    ],
-    [
-      "692acfbbc347c24b",
-      29793715
-    ],
     [
       "f9a040f8bbf7a91b",
       29793745
@@ -190,10 +177,6 @@
     ]
   ],
   "seen_news_google::CENX": [
-    [
-      "feaa04016b77badb",
-      29793715
-    ],
     [
       "c483718e17852fdb",
       29793716
@@ -275,24 +258,7 @@
       29793912
     ]
   ],
-  "seen_news_google::QURE": [
-    [
-      "40ad4d7a6c95aae2",
-      29793715
-    ],
-    [
-      "577f2d5be72342ba",
-      29793715
-    ],
-    [
-      "9bc811f8af3af2c7",
-      29793715
-    ],
-    [
-      "e777ae115ac64710",
-      29793715
-    ]
-  ],
+  "seen_news_google::QURE": [],
   "seen_news_google::RDDT": [
     [
       "3b106cbcadeb831b",
