@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T13:31:35.176404-04:00",
+  "alert::news": "2026-08-26T13:42:07.299858-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -39,7 +39,6 @@
     "why keel infrastructure corp. stock surged yesterday - wealth awesome"
   ],
   "alerted_titles::META": [
-    "meta agrees to pay $17bn to settle child safety lawsuit",
     "meta to pay $18 billion in federal settlement. stock rallies.",
     "meta reaches $16.68 billion settlement in social media case",
     "meta settles major us trial over teen social media addiction for up to $17bn",
@@ -78,7 +77,8 @@
     "meta platforms reaches $18b settlement over social media addiction, urges peers \"to join us\" (meta:nasdaq) - seeking alpha",
     "meta joins a list of corporations that have settled cases for billions of dollars",
     "meta reaches multi-billion-dollar settlement with us states over social media addiction allegations",
-    "meta erases nearly 5% settlement pop as product risk survives - yahoo! finance canada"
+    "meta erases nearly 5% settlement pop as product risk survives - yahoo! finance canada",
+    "meta reaches up to $17.1 billion multistate settlement over claims involving children, teens - wrnj radio"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -155,7 +155,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T13:39:00.718698-04:00",
-  "hb::monitor": "2026-08-26T13:41:18.813314-04:00",
+  "hb::monitor": "2026-08-26T13:42:07.758538-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -364,8 +364,12 @@
       29796090
     ],
     [
+      "4a8c9efc9c007053",
+      29796102
+    ],
+    [
       "a147f96c8b05c0e1",
-      29796098
+      29796102
     ]
   ],
   "seen_news::QURE": [],
@@ -404,14 +408,6 @@
   "seen_news_google::GENI": [],
   "seen_news_google::KEEL": [],
   "seen_news_google::META": [
-    [
-      "0406fb97f885f809",
-      29795884
-    ],
-    [
-      "aff2c53160818643",
-      29795891
-    ],
     [
       "363743fe5e9d57f4",
       29795892
@@ -535,6 +531,10 @@
     [
       "6ebf70d85910811d",
       29796091
+    ],
+    [
+      "b175005ade245e85",
+      29796102
     ]
   ],
   "seen_news_google::QURE": [],
