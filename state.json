@@ -99,7 +99,7 @@
   },
   "hb::earnings_arm": "2026-08-25T19:43:34.188545-04:00",
   "hb::listener": "2026-08-26T00:06:52.062847-04:00",
-  "hb::monitor": "2026-08-26T00:13:35.173147-04:00",
+  "hb::monitor": "2026-08-26T00:14:27.843195-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-25",
@@ -203,7 +203,12 @@
   "seen_news_google::EVH": [],
   "seen_news_google::FOUR": [],
   "seen_news_google::GENI": [],
-  "seen_news_google::KEEL": [],
+  "seen_news_google::KEEL": [
+    [
+      "7a1cb66d4f96f46c",
+      29795294
+    ]
+  ],
   "seen_news_google::META": [
     [
       "f868ec479a40d4c4",
