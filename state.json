@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T14:52:45.427316-04:00",
+  "alert::news": "2026-08-26T15:07:40.059688-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -40,7 +40,6 @@
     "why keel infrastructure corp. stock surged yesterday - wealth awesome"
   ],
   "alerted_titles::META": [
-    "meta reaches \u20ac142bn u.s. settlement over social media harms to children - lmfm",
     "meta settles social media trial, agreeing to pay up to $16.7b: reuters",
     "meta agrees to $16.7 billion settlement over claims its platforms harm children - le monde.fr",
     "meta settles lawsuit for $17 billion, must make changes to platforms to protect kids, ag says - fox13 memphis",
@@ -79,7 +78,8 @@
     "meta, under duress, finally does the right thing for teens - bloomberg.com",
     "arizona's ag kris mayes on the multistate $17 billion settlement with meta - 12news",
     "michigan secures $171 million in meta settlement over social media harm to children - detroit free press",
-    "katz statement on multi-state meta settlement - insider nj"
+    "katz statement on multi-state meta settlement - insider nj",
+    "meta\u2019s $18 billion settlement is a win\u2014but big questions remain"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -156,7 +156,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T15:01:02.758367-04:00",
-  "hb::monitor": "2026-08-26T15:06:37.769055-04:00",
+  "hb::monitor": "2026-08-26T15:07:40.416210-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -223,7 +223,12 @@
     "max_step_up": 0,
     "max_step_down": 0
   },
-  "seen_news::APP": [],
+  "seen_news::APP": [
+    [
+      "19ff953a40568c94",
+      29796187
+    ]
+  ],
   "seen_news::BAK": [],
   "seen_news::CENX": [],
   "seen_news::EVH": [],
@@ -346,6 +351,18 @@
     [
       "bd87762efcbfb822",
       29796186
+    ],
+    [
+      "7d36d1be4e60165c",
+      29796187
+    ],
+    [
+      "9572efaf30fbf7e3",
+      29796187
+    ],
+    [
+      "e7f86170bb7a883d",
+      29796187
     ]
   ],
   "seen_news::QURE": [],
@@ -515,6 +532,10 @@
     [
       "9e1d835e39abca69",
       29796172
+    ],
+    [
+      "5c7b3afc2081cb12",
+      29796187
     ]
   ],
   "seen_news_google::QURE": [],
