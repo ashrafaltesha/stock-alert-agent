@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T16:55:27.319381-04:00",
+  "alert::news": "2026-08-26T16:56:05.475642-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -80,7 +80,7 @@
     "tennessee to get $751,922,691 in meta settlement of suit on online harm to children - chattanoogan.com breaking news",
     "meta settles landmark child safety suit for more than $17 billion",
     "meta agrees to major changes to facebook and instagram as it settles us trial over teen addiction for up to $18bn",
-    "meta's $17.1b settlement would cap teen instagram and facebook use at two hours a day. - claim depot"
+    "meta stock rises as $18 billion teen social media settlement addresses 'major overhang'"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -157,7 +157,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T16:55:50.740013-04:00",
-  "hb::monitor": "2026-08-26T16:55:27.601460-04:00",
+  "hb::monitor": "2026-08-26T16:56:05.735464-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -312,6 +312,10 @@
     [
       "cdbbf1a1e9e6cd55",
       29796276
+    ],
+    [
+      "88abdbbd9aa97dc6",
+      29796295
     ]
   ],
   "seen_news::QURE": [],
