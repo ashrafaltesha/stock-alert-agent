@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T03:59:32.208821-04:00",
+  "alert::news": "2026-08-26T04:29:33.601021-04:00",
   "alert::price": "2026-08-25T11:14:24.406188-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -43,7 +43,8 @@
     "routing is coming for the frontier ai labs",
     "meta, states have discussed settling teen social media case \u2014 bloomberg - the edge malaysia",
     "meta platforms stock edges higher as q2 2026 spending and ai bets reshape the outlook - ad-hoc-news.de",
-    "meta and u.s. states discuss settlement in landmark social media trial: report - tech xplore"
+    "meta and u.s. states discuss settlement in landmark social media trial: report - tech xplore",
+    "meta platforms, states discuss settlement in teen abuse case - marketscreener.com"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -119,7 +120,7 @@
   },
   "hb::earnings_arm": "2026-08-25T19:43:34.188545-04:00",
   "hb::listener": "2026-08-26T04:21:21.683201-04:00",
-  "hb::monitor": "2026-08-26T04:28:32.471271-04:00",
+  "hb::monitor": "2026-08-26T04:29:34.010304-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-25",
@@ -231,6 +232,10 @@
     [
       "1a39d19f0a5a154e",
       29795519
+    ],
+    [
+      "432384756bd17b24",
+      29795549
     ]
   ],
   "seen_news_google::QURE": [],
