@@ -34,6 +34,9 @@
     "fintech, payments firms outperform expectations amid solid consumer spending, rbc says",
     "shift4 payments, inc. stock 12\u2011month price target cut to $52.1, implies 15% upside - tradingview"
   ],
+  "alerted_titles::KEEL": [
+    "why keel infrastructure corp. stock surged yesterday - wealth awesome"
+  ],
   "alerted_titles::META": [
     "meta stock faces litigation pressure: why expert says it's worse than tobacco - meta platforms (nasdaq:me - benzinga",
     "alibaba announces share placement to raise money for ai efforts",
@@ -125,7 +128,7 @@
     "expires": "2026-08-25T07:56:55.596808-04:00"
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
-  "hb::listener": "2026-08-26T09:13:54.250530-04:00",
+  "hb::listener": "2026-08-26T09:24:05.925952-04:00",
   "hb::monitor": "2026-08-26T09:23:33.137720-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
@@ -297,8 +300,5 @@
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157281,
-  "alerted_titles::KEEL": [
-    "why keel infrastructure corp. stock surged yesterday - wealth awesome"
-  ]
+  "tg_update_offset": 785157281
 }
