@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T10:46:11.446299-04:00",
+  "alert::news": "2026-08-26T10:56:30.068821-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -71,7 +71,8 @@
     "is meta a buy after its $16.68 billion social media case settlement?",
     "meta to pay $17bn in us teen social media addiction settlement - the whistler newspaper",
     "meta to pay $18 billion in mass social media settlement",
-    "meta agrees to set time limits for kids using instagram, facebook in major legal settlement - the hollywood reporter"
+    "meta agrees to set time limits for kids using instagram, facebook in major legal settlement - the hollywood reporter",
+    "attorney general marshall announces historic settlement with meta platforms inc. - alabama attorney general's office (.gov)"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -147,7 +148,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T10:46:24.539523-04:00",
-  "hb::monitor": "2026-08-26T10:53:43.112045-04:00",
+  "hb::monitor": "2026-08-26T10:56:30.450088-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -327,6 +328,10 @@
     [
       "4c32b1ca84fd89f8",
       29795931
+    ],
+    [
+      "536ba48baaebe3aa",
+      29795936
     ]
   ],
   "seen_news::QURE": [],
@@ -356,10 +361,6 @@
     ]
   ],
   "seen_news_google::META": [
-    [
-      "f72c16f5cdf48e9f",
-      29795725
-    ],
     [
       "dfa27cd19830f8cd",
       29795832
@@ -451,6 +452,10 @@
     [
       "d45733620378e467",
       29795926
+    ],
+    [
+      "a3433ce848acb373",
+      29795936
     ]
   ],
   "seen_news_google::QURE": [],
