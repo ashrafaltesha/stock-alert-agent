@@ -1,6 +1,6 @@
 {
-  "alert::news": "2026-08-26T09:51:40.953221-04:00",
-  "alert::price": "2026-08-26T09:36:24.866514-04:00",
+  "alert::news": "2026-08-26T09:57:38.729538-04:00",
+  "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
     "united asset strategies inc. acquires new shares in applovin corporation $app - marketbeat",
@@ -62,7 +62,8 @@
     "states reach multibillion-dollar settlement with meta over child harm - the news journal",
     "meta agrees to settle social media addiction suit with states for up to $16 billion - nbc news",
     "meta settles for $18 billion in lawsuit brought by 29 states over social media harms to children",
-    "meta reaches \u20ac142bn u.s. settlement over social media harms to children - lmfm"
+    "meta reaches \u20ac142bn u.s. settlement over social media harms to children - lmfm",
+    "meta settles social media trial, agreeing to pay up to $16.7b: reuters"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -138,7 +139,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T09:54:43.919986-04:00",
-  "hb::monitor": "2026-08-26T09:56:37.085188-04:00",
+  "hb::monitor": "2026-08-26T09:57:39.240552-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -197,7 +198,7 @@
   },
   "price_ref::WOLF": {
     "date": "2026-08-26",
-    "max_step_up": 0,
+    "max_step_up": 1,
     "max_step_down": 0
   },
   "price_ref::XPEV": {
@@ -281,6 +282,10 @@
     [
       "3a3163585a14f6bb",
       29795868
+    ],
+    [
+      "06cd1204f385f73b",
+      29795877
     ]
   ],
   "seen_news::QURE": [],
