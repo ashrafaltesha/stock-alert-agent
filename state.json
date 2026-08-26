@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T12:10:38.647073-04:00",
+  "alert::news": "2026-08-26T12:37:51.347624-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -21,7 +21,8 @@
     "braskem (nyse: bak) debt plan puts r$400m bank cash in focus - stock titan",
     "braskem (nyse: bak) seeks court backing for debt overhaul - stock titan",
     "braskem\u2019s $11 billion debt rework puts spotlight on petrobras - bloomberg",
-    "debt payments frozen as braskem (nyse: bak) pursues 90-day overhaul - stock titan"
+    "debt payments frozen as braskem (nyse: bak) pursues 90-day overhaul - stock titan",
+    "bak stock slides as braskem debt restructuring deepens - stockstotrade"
   ],
   "alerted_titles::CENX": [
     "freedom expects century aluminum shares to rise by more than a quarter - freedom broker"
@@ -38,7 +39,6 @@
     "why keel infrastructure corp. stock surged yesterday - wealth awesome"
   ],
   "alerted_titles::META": [
-    "meta settles with us states over social media harms - reuters",
     "meta, states agree to settle teen social media harm case - bloomberg.com",
     "meta stock climbs as ai \u2018hatch\u2019 launch and target hike fire up traders - stockstotrade",
     "meta to pay up to $16.68 billion to settle with us states on teen social media addiction - cnet",
@@ -77,7 +77,8 @@
     "meta reaches $17 bil. settlement with states in landmark trial over teen social media addiction - the korea times",
     "meta to pay up to $18 billion over social media claims - ad age",
     "paxton announces proposed $1 billion settlement with meta over child safety - texas scorecard",
-    "meta settles child exploitation for $17.1b, eyes on tiktok, youtube, snapchat"
+    "meta settles child exploitation for $17.1b, eyes on tiktok, youtube, snapchat",
+    "meta platforms reaches $18b settlement over social media addiction, urges peers \"to join us\" (meta:nasdaq) - seeking alpha"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -153,7 +154,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T12:37:42.282176-04:00",
-  "hb::monitor": "2026-08-26T12:37:12.660511-04:00",
+  "hb::monitor": "2026-08-26T12:37:51.612821-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -394,7 +395,12 @@
       29795854
     ]
   ],
-  "seen_news_google::BAK": [],
+  "seen_news_google::BAK": [
+    [
+      "0d8f9f43dcf81204",
+      29796037
+    ]
+  ],
   "seen_news_google::CENX": [],
   "seen_news_google::EVH": [],
   "seen_news_google::FOUR": [],
@@ -561,6 +567,10 @@
     [
       "e418e568ddbaa22e",
       29796027
+    ],
+    [
+      "dd743dc29ca463de",
+      29796037
     ]
   ],
   "seen_news_google::QURE": [],
