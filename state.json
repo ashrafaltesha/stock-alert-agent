@@ -93,8 +93,14 @@
   "ew_last_earnings::QURE": "2026-07-29",
   "ew_last_earnings::UAVS": "2026-08-14",
   "ew_last_earnings::WOLF": "2026-08-19",
+  "ew_mark::LI": "0001104659-26-099827",
   "ew_mark::NVDA": "0001347842-26-000015",
+  "ew_seen::LI": "0001104659-26-099827",
   "ew_seen::NVDA": "0001347842-26-000015",
+  "ew_watch::LI": {
+    "armed": "2026-08-26T00:40:47.782738-04:00",
+    "expires": "2026-08-27T00:40:47.782738-04:00"
+  },
   "ew_watch::NVDA": {
     "armed": "2026-08-26T00:40:02.100253-04:00",
     "expires": "2026-08-27T00:40:02.100253-04:00"
@@ -244,5 +250,5 @@
     ]
   ],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157279
+  "tg_update_offset": 785157280
 }
