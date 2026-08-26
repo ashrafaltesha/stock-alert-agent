@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T12:37:51.347624-04:00",
+  "alert::news": "2026-08-26T12:48:38.822754-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -39,7 +39,6 @@
     "why keel infrastructure corp. stock surged yesterday - wealth awesome"
   ],
   "alerted_titles::META": [
-    "meta, states agree to settle teen social media harm case - bloomberg.com",
     "meta stock climbs as ai \u2018hatch\u2019 launch and target hike fire up traders - stockstotrade",
     "meta to pay up to $16.68 billion to settle with us states on teen social media addiction - cnet",
     "meta agrees to pay $17bn to settle child safety lawsuit",
@@ -78,7 +77,8 @@
     "meta to pay up to $18 billion over social media claims - ad age",
     "paxton announces proposed $1 billion settlement with meta over child safety - texas scorecard",
     "meta settles child exploitation for $17.1b, eyes on tiktok, youtube, snapchat",
-    "meta platforms reaches $18b settlement over social media addiction, urges peers \"to join us\" (meta:nasdaq) - seeking alpha"
+    "meta platforms reaches $18b settlement over social media addiction, urges peers \"to join us\" (meta:nasdaq) - seeking alpha",
+    "meta joins a list of corporations that have settled cases for billions of dollars"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -154,7 +154,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T12:47:56.466011-04:00",
-  "hb::monitor": "2026-08-26T12:47:32.314244-04:00",
+  "hb::monitor": "2026-08-26T12:48:39.233452-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -377,6 +377,10 @@
     [
       "513e5ed0d99746c8",
       29796045
+    ],
+    [
+      "872d9e80bec146dd",
+      29796048
     ]
   ],
   "seen_news::QURE": [],
