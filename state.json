@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T16:06:31.221822-04:00",
+  "alert::news": "2026-08-26T16:07:34.077259-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -40,7 +40,6 @@
     "why keel infrastructure corp. stock surged yesterday - wealth awesome"
   ],
   "alerted_titles::META": [
-    "is meta a buy after its $16.68 billion social media case settlement?",
     "meta to pay $17bn in us teen social media addiction settlement - the whistler newspaper",
     "meta to pay $18 billion in mass social media settlement",
     "meta agrees to set time limits for kids using instagram, facebook in major legal settlement - the hollywood reporter",
@@ -79,7 +78,8 @@
     "how meta\u2019s $17.1 billion settlement will change social media",
     "meta says it\u2019ll pay up to $18 billion in social media claims (2) - bloomberg law news",
     "meta to pay texas over $1 billion \u2014 and that's not the only big change - the business journals",
-    "meta agrees to pay $18 billion to settle us lawsuits over children's social media addiction - reuters"
+    "meta agrees to pay $18 billion to settle us lawsuits over children's social media addiction - reuters",
+    "tennessee to get $751,922,691 in meta settlement of suit on online harm to children - chattanoogan.com breaking news"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -156,7 +156,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T16:02:44.231899-04:00",
-  "hb::monitor": "2026-08-26T16:06:31.469648-04:00",
+  "hb::monitor": "2026-08-26T16:07:34.344314-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -473,6 +473,10 @@
     [
       "9f11d96c07884d52",
       29796246
+    ],
+    [
+      "acb8c9f878e6117e",
+      29796247
     ]
   ],
   "seen_news_google::QURE": [],
