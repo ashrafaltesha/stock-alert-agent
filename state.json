@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T10:59:43.667588-04:00",
+  "alert::news": "2026-08-26T11:51:20.514426-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -38,17 +38,6 @@
     "why keel infrastructure corp. stock surged yesterday - wealth awesome"
   ],
   "alerted_titles::META": [
-    "meta stock faces litigation pressure: why expert says it's worse than tobacco - meta platforms (nasdaq:me - benzinga",
-    "alibaba announces share placement to raise money for ai efforts",
-    "is meta platforms (nasdaq:meta) converting ai into advertising momentum? - kalkine media",
-    "alibaba dilutes shares to feed its ai spending spree",
-    "meta platforms stock edges higher as q2 revenue hit $60.8 billion - ad-hoc-news.de",
-    "meta targets early september for hatch, its consumer ai agent",
-    "routing is coming for the frontier ai labs",
-    "meta, states have discussed settling teen social media case \u2014 bloomberg - the edge malaysia",
-    "meta platforms stock edges higher as q2 2026 spending and ai bets reshape the outlook - ad-hoc-news.de",
-    "meta and u.s. states discuss settlement in landmark social media trial: report - tech xplore",
-    "meta platforms, states discuss settlement in teen abuse case - marketscreener.com",
     "nvidia earnings could reveal its fastest-growing business isn't chips: chart of the day",
     "meta considered slashing teams up to 60% in ai push, report says (meta:nasdaq) - seeking alpha",
     "meta settles with us states over social media harms - reuters",
@@ -74,7 +63,21 @@
     "meta agrees to set time limits for kids using instagram, facebook in major legal settlement - the hollywood reporter",
     "attorney general marshall announces historic settlement with meta platforms inc. - alabama attorney general's office (.gov)",
     "meta reaches $18 billion settlement with 48 states over child-safety claims",
-    "meta's social media payout sets precedent for snap, google, roblox \u2014 and could be a 'negative'"
+    "meta's social media payout sets precedent for snap, google, roblox \u2014 and could be a 'negative'",
+    "meta settles teen safety claims with us states",
+    "meta reaches $18 billion of settlements over children's social media addiction",
+    "meta agrees to new protections for teenagers in us in 18bn dollar settlement",
+    "meta settles landmark state child harm claims for $18 billion and promises changes to its platforms",
+    "meta, us states agree $16.7 bn settlement in landmark teen safety case",
+    "meta settles teen safety claims with us states - yahoo! finance canada",
+    "indiana to receive at least $300m in settlement with meta - indiana capital chronicle",
+    "meta's $17.1 billion settlement is 12x the second largest big tech privacy settlement - fortune",
+    "alabama attorney general announces $117m meta platforms settlement - rocketcitynow.com",
+    "how much idaho could get in $17b meta settlement - ktvb",
+    "meta settles teen safety claims with us states - proactive investors",
+    "see how much nj may get in meta settlement, plus new safety measures - bergen record",
+    "mi ag praises landmark settlement with meta - whmi",
+    "meta agrees to pay up to $16.6bn to settle social media addiction trial - sky news"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -150,7 +153,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T11:49:07.560449-04:00",
-  "hb::monitor": "2026-08-26T11:00:55.509815-04:00",
+  "hb::monitor": "2026-08-26T11:51:20.846945-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -235,10 +238,6 @@
   "seen_news::GENI": [],
   "seen_news::KEEL": [],
   "seen_news::META": [
-    [
-      "28c21b6196687dc3",
-      29795732
-    ],
     [
       "9c9d1e83e7906f94",
       29795786
@@ -342,6 +341,30 @@
     [
       "9d0e44c6dc070e10",
       29795939
+    ],
+    [
+      "1873950049aae958",
+      29795991
+    ],
+    [
+      "6a712e7e8b60e698",
+      29795991
+    ],
+    [
+      "8a76e58a91066a21",
+      29795991
+    ],
+    [
+      "97aa34d0b02c29f9",
+      29795991
+    ],
+    [
+      "c8cacd759dcb4ea1",
+      29795991
+    ],
+    [
+      "d07585114a3f6f48",
+      29795991
     ]
   ],
   "seen_news::QURE": [],
@@ -470,6 +493,42 @@
     [
       "b7e6a0302d744e26",
       29795940
+    ],
+    [
+      "2eacaec4e112a531",
+      29795991
+    ],
+    [
+      "31474bb6cb3fe6f8",
+      29795991
+    ],
+    [
+      "4cd1680c14f10c98",
+      29795991
+    ],
+    [
+      "565876aee20c5455",
+      29795991
+    ],
+    [
+      "7649a7efd5a10dd8",
+      29795991
+    ],
+    [
+      "a4a066bad1041d86",
+      29795991
+    ],
+    [
+      "a68d1be3a49d996a",
+      29795991
+    ],
+    [
+      "bd40a333ff988bcc",
+      29795991
+    ],
+    [
+      "c12f3c27de157be2",
+      29795991
     ]
   ],
   "seen_news_google::QURE": [],
