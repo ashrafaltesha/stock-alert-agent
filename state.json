@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T16:36:37.822253-04:00",
+  "alert::news": "2026-08-26T16:55:27.319381-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -37,10 +37,10 @@
     "shift4 payments, inc. stock 12\u2011month price target cut to $52.1, implies 15% upside - tradingview"
   ],
   "alerted_titles::KEEL": [
-    "why keel infrastructure corp. stock surged yesterday - wealth awesome"
+    "why keel infrastructure corp. stock surged yesterday - wealth awesome",
+    "keel stock holds key range as traders eye next move - stockstotrade"
   ],
   "alerted_titles::META": [
-    "meta agrees to set time limits for kids using instagram, facebook in major legal settlement - the hollywood reporter",
     "attorney general marshall announces historic settlement with meta platforms inc. - alabama attorney general's office (.gov)",
     "meta reaches $18 billion settlement with 48 states over child-safety claims",
     "meta's social media payout sets precedent for snap, google, roblox \u2014 and could be a 'negative'",
@@ -79,7 +79,8 @@
     "meta agrees to pay $18 billion to settle us lawsuits over children's social media addiction - reuters",
     "tennessee to get $751,922,691 in meta settlement of suit on online harm to children - chattanoogan.com breaking news",
     "meta settles landmark child safety suit for more than $17 billion",
-    "meta agrees to major changes to facebook and instagram as it settles us trial over teen addiction for up to $18bn"
+    "meta agrees to major changes to facebook and instagram as it settles us trial over teen addiction for up to $18bn",
+    "meta's $17.1b settlement would cap teen instagram and facebook use at two hours a day. - claim depot"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -156,7 +157,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T16:45:30.197462-04:00",
-  "hb::monitor": "2026-08-26T16:54:56.795913-04:00",
+  "hb::monitor": "2026-08-26T16:55:27.601460-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -338,6 +339,10 @@
     [
       "ef40a151e9f26339",
       29796193
+    ],
+    [
+      "9f70ff7b7ec99c99",
+      29796295
     ]
   ],
   "seen_news_google::META": [
@@ -440,6 +445,14 @@
     [
       "e102993c29bfa0b8",
       29796282
+    ],
+    [
+      "040f3e7edfef2d05",
+      29796295
+    ],
+    [
+      "0eb8d6fa6f035bba",
+      29796295
     ]
   ],
   "seen_news_google::QURE": [],
