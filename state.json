@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T09:46:05.146284-04:00",
+  "alert::news": "2026-08-26T09:46:44.677366-04:00",
   "alert::price": "2026-08-26T09:36:24.866514-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -56,10 +56,10 @@
     "meta stock climbs as ai \u2018hatch\u2019 launch and target hike fire up traders - stockstotrade",
     "meta to pay up to $16.68 billion to settle with us states on teen social media addiction - cnet",
     "meta agrees to pay $17bn to settle child safety lawsuit",
-    "meta reaches $16.68 billion settlement in social media case",
     "meta to pay $18 billion in federal settlement. stock rallies.",
+    "meta reaches $16.68 billion settlement in social media case",
     "meta settles major us trial over teen social media addiction for up to $17bn",
-    "meta stock rises on social-media trial settlement",
+    "states reach multibillion-dollar settlement with meta over child harm - the news journal",
     "meta agrees to settle social media addiction suit with states for up to $16 billion - nbc news"
   ],
   "alerted_titles::QURE": [
@@ -136,7 +136,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T09:44:33.706577-04:00",
-  "hb::monitor": "2026-08-26T09:46:05.498858-04:00",
+  "hb::monitor": "2026-08-26T09:46:45.000412-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -257,24 +257,24 @@
       29795851
     ],
     [
-      "41104dcc124e647a",
-      29795865
-    ],
-    [
-      "7d36d1be4e60165c",
-      29795865
-    ],
-    [
       "88abdbbd9aa97dc6",
-      29795865
+      29795862
     ],
     [
       "9572efaf30fbf7e3",
-      29795865
+      29795862
+    ],
+    [
+      "41104dcc124e647a",
+      29795866
+    ],
+    [
+      "7d36d1be4e60165c",
+      29795866
     ],
     [
       "cdbbf1a1e9e6cd55",
-      29795865
+      29795866
     ]
   ],
   "seen_news::QURE": [],
@@ -334,15 +334,23 @@
     ],
     [
       "04c1f127ddd30a96",
-      29795865
+      29795866
     ],
     [
       "0eb983f0eb911231",
-      29795865
+      29795866
+    ],
+    [
+      "6a00746e7036709d",
+      29795866
+    ],
+    [
+      "aa371c457b47fe16",
+      29795866
     ],
     [
       "b35ec848a0a5cd74",
-      29795865
+      29795866
     ]
   ],
   "seen_news_google::QURE": [],
