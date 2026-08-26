@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T16:08:46.694297-04:00",
+  "alert::news": "2026-08-26T16:24:39.103897-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -40,7 +40,6 @@
     "why keel infrastructure corp. stock surged yesterday - wealth awesome"
   ],
   "alerted_titles::META": [
-    "meta to pay $17bn in us teen social media addiction settlement - the whistler newspaper",
     "meta to pay $18 billion in mass social media settlement",
     "meta agrees to set time limits for kids using instagram, facebook in major legal settlement - the hollywood reporter",
     "attorney general marshall announces historic settlement with meta platforms inc. - alabama attorney general's office (.gov)",
@@ -79,7 +78,8 @@
     "meta says it\u2019ll pay up to $18 billion in social media claims (2) - bloomberg law news",
     "meta to pay texas over $1 billion \u2014 and that's not the only big change - the business journals",
     "meta agrees to pay $18 billion to settle us lawsuits over children's social media addiction - reuters",
-    "tennessee to get $751,922,691 in meta settlement of suit on online harm to children - chattanoogan.com breaking news"
+    "tennessee to get $751,922,691 in meta settlement of suit on online harm to children - chattanoogan.com breaking news",
+    "meta settles landmark child safety suit for more than $17 billion"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -156,7 +156,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T16:13:04.929670-04:00",
-  "hb::monitor": "2026-08-26T16:20:40.761174-04:00",
+  "hb::monitor": "2026-08-26T16:24:39.352212-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -319,6 +319,10 @@
     [
       "bc0c974f407fba12",
       29796222
+    ],
+    [
+      "261e40daa881888d",
+      29796264
     ]
   ],
   "seen_news::QURE": [],
@@ -358,14 +362,6 @@
     ]
   ],
   "seen_news_google::META": [
-    [
-      "9ea5305ada261ea6",
-      29796050
-    ],
-    [
-      "ce3eb312de2d0a3c",
-      29796053
-    ],
     [
       "cbc0075826f5f552",
       29796061
@@ -460,7 +456,7 @@
     ],
     [
       "86761f8ffb8d9d4c",
-      29796260
+      29796257
     ]
   ],
   "seen_news_google::QURE": [],
