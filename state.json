@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T13:44:42.063174-04:00",
+  "alert::news": "2026-08-26T13:47:49.420737-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -39,7 +39,6 @@
     "why keel infrastructure corp. stock surged yesterday - wealth awesome"
   ],
   "alerted_titles::META": [
-    "meta reaches $16.68 billion settlement in social media case",
     "meta settles major us trial over teen social media addiction for up to $17bn",
     "states reach multibillion-dollar settlement with meta over child harm - the news journal",
     "meta agrees to settle social media addiction suit with states for up to $16 billion - nbc news",
@@ -78,7 +77,8 @@
     "meta reaches multi-billion-dollar settlement with us states over social media addiction allegations",
     "meta erases nearly 5% settlement pop as product risk survives - yahoo! finance canada",
     "meta reaches up to $17.1 billion multistate settlement over claims involving children, teens - wrnj radio",
-    "watch meta, states agree to settle teen social media case - bloomberg"
+    "watch meta, states agree to settle teen social media case - bloomberg",
+    "this is how much colorado will receive from massive meta child safety settlement - colorado politics"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -155,7 +155,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T13:39:00.718698-04:00",
-  "hb::monitor": "2026-08-26T13:46:37.803284-04:00",
+  "hb::monitor": "2026-08-26T13:47:49.846590-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -235,10 +235,6 @@
   "seen_news::GENI": [],
   "seen_news::KEEL": [],
   "seen_news::META": [
-    [
-      "a096650bbb8e93f9",
-      29795896
-    ],
     [
       "dab19c08849e788c",
       29795898
@@ -531,6 +527,10 @@
     [
       "cf42247e47d54bd9",
       29796104
+    ],
+    [
+      "26a847f5e7f8bfec",
+      29796107
     ]
   ],
   "seen_news_google::QURE": [],
