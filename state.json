@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T11:52:32.313482-04:00",
+  "alert::news": "2026-08-26T11:57:03.272320-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -38,7 +38,6 @@
     "why keel infrastructure corp. stock surged yesterday - wealth awesome"
   ],
   "alerted_titles::META": [
-    "meta and u.s. states discuss settlement in landmark social media trial: report - tech xplore",
     "meta platforms, states discuss settlement in teen abuse case - marketscreener.com",
     "nvidia earnings could reveal its fastest-growing business isn't chips: chart of the day",
     "meta considered slashing teams up to 60% in ai push, report says (meta:nasdaq) - seeking alpha",
@@ -77,7 +76,8 @@
     "meta settles teen safety claims with us states - proactive investors",
     "see how much nj may get in meta settlement, plus new safety measures - bergen record",
     "mi ag praises landmark settlement with meta - whmi",
-    "meta agrees to pay up to $16.6bn to settle social media addiction trial - sky news"
+    "meta agrees to pay up to $16.6bn to settle social media addiction trial - sky news",
+    "meta reaches $17 bil. settlement with states in landmark trial over teen social media addiction - the korea times"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -153,7 +153,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T11:49:07.560449-04:00",
-  "hb::monitor": "2026-08-26T11:56:10.330596-04:00",
+  "hb::monitor": "2026-08-26T11:57:03.593164-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -365,6 +365,10 @@
     [
       "d07585114a3f6f48",
       29795992
+    ],
+    [
+      "e5b34cfd7b3e65a0",
+      29795996
     ]
   ],
   "seen_news::QURE": [],
@@ -517,6 +521,10 @@
     [
       "c12f3c27de157be2",
       29795992
+    ],
+    [
+      "860d6c720612abcc",
+      29795996
     ]
   ],
   "seen_news_google::QURE": [],
