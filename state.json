@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T10:18:42.095606-04:00",
+  "alert::news": "2026-08-26T10:20:48.637227-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -66,7 +66,8 @@
     "meta settles social media trial, agreeing to pay up to $16.7b: reuters",
     "meta agrees to $16.7 billion settlement over claims its platforms harm children - le monde.fr",
     "meta settles lawsuit for $17 billion, must make changes to platforms to protect kids, ag says - fox13 memphis",
-    "update: meta to pay up to $16.68 billion to settle teen harm case with states"
+    "update: meta to pay up to $16.68 billion to settle teen harm case with states",
+    "meta reaches $21.2b settlement over social media harms to children - the straits times"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -142,7 +143,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T10:15:14.529624-04:00",
-  "hb::monitor": "2026-08-26T10:19:38.156289-04:00",
+  "hb::monitor": "2026-08-26T10:20:49.034798-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -401,6 +402,10 @@
     [
       "406d87d1f183f753",
       29795897
+    ],
+    [
+      "cd09962dd1ae20f6",
+      29795900
     ]
   ],
   "seen_news_google::QURE": [],
