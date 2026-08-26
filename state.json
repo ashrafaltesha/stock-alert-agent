@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T14:14:13.469562-04:00",
+  "alert::news": "2026-08-26T14:26:08.925211-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -22,7 +22,8 @@
     "braskem (nyse: bak) seeks court backing for debt overhaul - stock titan",
     "braskem\u2019s $11 billion debt rework puts spotlight on petrobras - bloomberg",
     "debt payments frozen as braskem (nyse: bak) pursues 90-day overhaul - stock titan",
-    "bak stock slides as braskem debt restructuring deepens - stockstotrade"
+    "bak stock slides as braskem debt restructuring deepens - stockstotrade",
+    "offshore bondholders emerge as main backers of braskem\u2019s rework - bloomberg"
   ],
   "alerted_titles::CENX": [
     "freedom expects century aluminum shares to rise by more than a quarter - freedom broker"
@@ -155,7 +156,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T14:20:01.212474-04:00",
-  "hb::monitor": "2026-08-26T14:24:38.025148-04:00",
+  "hb::monitor": "2026-08-26T14:26:09.563038-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -375,6 +376,10 @@
     [
       "0d8f9f43dcf81204",
       29796037
+    ],
+    [
+      "4b8948d741010b17",
+      29796145
     ]
   ],
   "seen_news_google::CENX": [],
