@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T17:39:30.474389-04:00",
+  "alert::news": "2026-08-26T18:03:34.254119-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -41,7 +41,6 @@
     "keel stock holds key range as traders eye next move - stockstotrade"
   ],
   "alerted_titles::META": [
-    "meta settles teen safety claims with us states",
     "meta reaches $18 billion of settlements over children's social media addiction",
     "meta agrees to new protections for teenagers in us in 18bn dollar settlement",
     "meta settles landmark state child harm claims for $18 billion and promises changes to its platforms",
@@ -80,7 +79,8 @@
     "meta's $17.1b settlement would cap teen instagram and facebook use at two hours a day. - claim depot",
     "meta agrees to $17b child-safety settlement. sc to receive nearly $247 million - the state",
     "meta doesn\u2019t want to be a social media company anymore - mother jones",
-    "meta settles for $18 billion"
+    "meta settles for $18 billion",
+    "meta\u2019s $18 billion social media settlement by the numbers - bloomberg.com"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -157,7 +157,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T17:57:26.146717-04:00",
-  "hb::monitor": "2026-08-26T18:02:32.818952-04:00",
+  "hb::monitor": "2026-08-26T18:03:34.748036-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -237,10 +237,6 @@
   "seen_news::GENI": [],
   "seen_news::KEEL": [],
   "seen_news::META": [
-    [
-      "4240aea707fca918",
-      29796152
-    ],
     [
       "574fde1deac6bdf2",
       29796175
@@ -443,6 +439,10 @@
     [
       "e46251bcabf8a5f7",
       29796352
+    ],
+    [
+      "9787fb50e94b621d",
+      29796363
     ]
   ],
   "seen_news_google::QURE": [],
