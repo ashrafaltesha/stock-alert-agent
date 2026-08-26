@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T09:22:32.282732-04:00",
+  "alert::news": "2026-08-26T09:23:32.767938-04:00",
   "alert::price": "2026-08-25T11:14:24.406188-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -126,7 +126,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T09:13:54.250530-04:00",
-  "hb::monitor": "2026-08-26T09:22:32.721820-04:00",
+  "hb::monitor": "2026-08-26T09:23:33.137720-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-25",
@@ -237,6 +237,10 @@
     [
       "4a5f249e150d1fb0",
       29795829
+    ],
+    [
+      "3b3d39a55bcd2db4",
+      29795843
     ]
   ],
   "seen_news::QURE": [],
@@ -260,7 +264,12 @@
   "seen_news_google::EVH": [],
   "seen_news_google::FOUR": [],
   "seen_news_google::GENI": [],
-  "seen_news_google::KEEL": [],
+  "seen_news_google::KEEL": [
+    [
+      "5888cff36c7e03cc",
+      29795843
+    ]
+  ],
   "seen_news_google::META": [
     [
       "f72c16f5cdf48e9f",
@@ -288,5 +297,8 @@
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157281
+  "tg_update_offset": 785157281,
+  "alerted_titles::KEEL": [
+    "why keel infrastructure corp. stock surged yesterday - wealth awesome"
+  ]
 }
