@@ -250,5 +250,11 @@
     ]
   ],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157280
+  "tg_update_offset": 785157281,
+  "ew_watch::CRWD": {
+    "armed": "2026-08-26T00:41:10.487517-04:00",
+    "expires": "2026-08-27T00:41:10.487517-04:00"
+  },
+  "ew_mark::CRWD": "0000950103-26-012856",
+  "ew_seen::CRWD": "0000950103-26-012856"
 }
