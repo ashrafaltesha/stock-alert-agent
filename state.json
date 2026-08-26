@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T16:24:39.103897-04:00",
+  "alert::news": "2026-08-26T16:36:37.822253-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -40,7 +40,6 @@
     "why keel infrastructure corp. stock surged yesterday - wealth awesome"
   ],
   "alerted_titles::META": [
-    "meta to pay $18 billion in mass social media settlement",
     "meta agrees to set time limits for kids using instagram, facebook in major legal settlement - the hollywood reporter",
     "attorney general marshall announces historic settlement with meta platforms inc. - alabama attorney general's office (.gov)",
     "meta reaches $18 billion settlement with 48 states over child-safety claims",
@@ -79,7 +78,8 @@
     "meta to pay texas over $1 billion \u2014 and that's not the only big change - the business journals",
     "meta agrees to pay $18 billion to settle us lawsuits over children's social media addiction - reuters",
     "tennessee to get $751,922,691 in meta settlement of suit on online harm to children - chattanoogan.com breaking news",
-    "meta settles landmark child safety suit for more than $17 billion"
+    "meta settles landmark child safety suit for more than $17 billion",
+    "meta agrees to major changes to facebook and instagram as it settles us trial over teen addiction for up to $18bn"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -156,7 +156,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T16:35:14.800388-04:00",
-  "hb::monitor": "2026-08-26T16:35:38.340392-04:00",
+  "hb::monitor": "2026-08-26T16:36:38.328573-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -311,6 +311,10 @@
     [
       "261e40daa881888d",
       29796264
+    ],
+    [
+      "cdbbf1a1e9e6cd55",
+      29796276
     ]
   ],
   "seen_news::QURE": [],
