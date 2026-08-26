@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T09:23:32.767938-04:00",
+  "alert::news": "2026-08-26T09:27:33.739856-04:00",
   "alert::price": "2026-08-25T11:14:24.406188-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -53,7 +53,8 @@
     "meta considered slashing teams up to 60% in ai push, report says (meta:nasdaq) - seeking alpha",
     "meta settles with us states over social media harms - reuters",
     "meta, states agree to settle teen social media harm case - bloomberg.com",
-    "meta stock climbs as ai \u2018hatch\u2019 launch and target hike fire up traders - stockstotrade"
+    "meta stock climbs as ai \u2018hatch\u2019 launch and target hike fire up traders - stockstotrade",
+    "meta to pay up to $16.68 billion to settle with us states on teen social media addiction - cnet"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -129,7 +130,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T09:24:05.925952-04:00",
-  "hb::monitor": "2026-08-26T09:26:37.302332-04:00",
+  "hb::monitor": "2026-08-26T09:27:34.139117-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-25",
@@ -293,6 +294,10 @@
     [
       "cf7ab718a65b7cc8",
       29795842
+    ],
+    [
+      "75c57c64260669f8",
+      29795847
     ]
   ],
   "seen_news_google::QURE": [],
