@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-26T12:48:38.822754-04:00",
+  "alert::news": "2026-08-26T13:02:45.115988-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -39,7 +39,6 @@
     "why keel infrastructure corp. stock surged yesterday - wealth awesome"
   ],
   "alerted_titles::META": [
-    "meta stock climbs as ai \u2018hatch\u2019 launch and target hike fire up traders - stockstotrade",
     "meta to pay up to $16.68 billion to settle with us states on teen social media addiction - cnet",
     "meta agrees to pay $17bn to settle child safety lawsuit",
     "meta to pay $18 billion in federal settlement. stock rallies.",
@@ -78,7 +77,8 @@
     "paxton announces proposed $1 billion settlement with meta over child safety - texas scorecard",
     "meta settles child exploitation for $17.1b, eyes on tiktok, youtube, snapchat",
     "meta platforms reaches $18b settlement over social media addiction, urges peers \"to join us\" (meta:nasdaq) - seeking alpha",
-    "meta joins a list of corporations that have settled cases for billions of dollars"
+    "meta joins a list of corporations that have settled cases for billions of dollars",
+    "meta reaches multi-billion-dollar settlement with us states over social media addiction allegations"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -154,7 +154,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-26T12:57:57.376758-04:00",
-  "hb::monitor": "2026-08-26T13:01:43.091431-04:00",
+  "hb::monitor": "2026-08-26T13:02:45.514728-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -234,10 +234,6 @@
   "seen_news::GENI": [],
   "seen_news::KEEL": [],
   "seen_news::META": [
-    [
-      "1e796354dcf998d9",
-      29795851
-    ],
     [
       "88abdbbd9aa97dc6",
       29795862
@@ -381,6 +377,10 @@
     [
       "3348337a509cc8e5",
       29796058
+    ],
+    [
+      "797e3c8840126d30",
+      29796062
     ]
   ],
   "seen_news::QURE": [],
