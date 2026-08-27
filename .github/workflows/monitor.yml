@@ -66,6 +66,10 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Reachable through the import graph (health -> earnings_utils ->
+          # config). Not called today, but "not called today" is exactly what
+          # was true of the listener's model key until the catch-up was added.
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           # Dead-man's switch. Absent secret = silently disabled.
           HEALTHCHECK_PING_KEY: ${{ secrets.HEALTHCHECK_PING_KEY }}
           # News screening. One batched call per run -- a handful a day, well

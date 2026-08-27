@@ -1108,30 +1108,82 @@ def test_watchdog_does_not_dispatch_when_the_lookup_fails(monkeypatch):
 
 # --- Model key must reach every workflow that can send an earnings alert ---
 
-def test_every_earnings_capable_workflow_has_a_model_key():
-    """The NVDA catch-up ran in the LISTENER workflow, which had no model key.
+def test_workflows_provide_every_env_var_their_code_can_read():
+    """Derived from the IMPORT GRAPH, not from a list I maintain by hand.
 
-    Extraction failed there while the identical code worked in the watcher.
-    The capability travelled with the code; the configuration did not. This
-    asserts they stay together, because the symptom -- "figures could not be
-    extracted" -- points at the document rather than at a missing secret.
+    The NVDA extraction failed because the listener workflow had no
+    GROQ_API_KEY, while the identical code worked in three other workflows.
+    Adding the catch-up gave the Telegram path the ability to send a full
+    earnings alert; nothing gave its workflow the ability to parse one.
+
+    My first attempt at guarding this hardcoded which scripts were
+    "earnings-capable" -- the same stale-list pattern that caused the bug.
+    Walking imports from each workflow's entrypoint and collecting every
+    os.environ read is not a list anyone has to remember to update, and when
+    written it immediately found two more gaps (monitor missing
+    FINNHUB_API_KEY, simulate missing GITHUB_TOKEN) that a hand list never
+    would have.
+
+    Latent rather than live is not a defence: "not called today" was exactly
+    true of the listener's model key until the day it was.
     """
+    import ast
     import glob
     import os
     import re
 
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # Scripts that can reach build_metrics_message, directly or indirectly.
-    earnings_capable = ("earnings_watch.py", "telegram_commands.py",
-                        "simulate.py")
-    missing = []
-    for path in glob.glob(os.path.join(root, ".github", "workflows", "*.yml")):
+    local = {os.path.splitext(os.path.basename(f))[0]
+             for f in glob.glob(os.path.join(root, "*.py"))}
+
+    def imports_of(mod):
+        try:
+            tree = ast.parse(open(os.path.join(root, f"{mod}.py")).read())
+        except OSError:
+            return set()
+        found = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                found |= {a.name.split(".")[0] for a in node.names}
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                found.add(node.module.split(".")[0])
+        return found & local
+
+    def reachable(entry):
+        seen, stack = set(), [entry]
+        while stack:
+            mod = stack.pop()
+            if mod in seen:
+                continue
+            seen.add(mod)
+            stack.extend(imports_of(mod) - seen)
+        return seen
+
+    env_re = re.compile(
+        r'os\.environ(?:\.get)?\(\s*["\']([A-Z_][A-Z0-9_]*)["\']'
+        r'|os\.environ\[\s*["\']([A-Z_][A-Z0-9_]*)["\']')
+
+    def env_used(mod):
+        try:
+            src = open(os.path.join(root, f"{mod}.py")).read()
+        except OSError:
+            return set()
+        return {a or b for a, b in env_re.findall(src)}
+
+    # Injected by Actions, or genuinely optional with a documented fallback.
+    auto = {"GITHUB_REPOSITORY", "GITHUB_REF_NAME", "GITHUB_SHA", "GITHUB_RUN_ID", "CI"}
+    optional = {"GEMINI_API_KEY", "HEALTHCHECK_PING_KEY", "GROQ_MODEL"}
+
+    problems = []
+    for path in sorted(glob.glob(os.path.join(root, ".github", "workflows", "*.yml"))):
         text = open(path).read()
-        runs_earnings = any(re.search(rf"run:.*{re.escape(script)}", text)
-                            for script in earnings_capable)
-        if runs_earnings and "GROQ_API_KEY" not in text:
-            missing.append(os.path.basename(path))
-    assert not missing, f"workflows can send earnings alerts with no model key: {missing}"
+        for entry in sorted(set(re.findall(r"run:\s*.*?python3?\s+(\w+)\.py", text))):
+            needed = set().union(*(env_used(m) for m in reachable(entry))) or set()
+            missing = sorted(n for n in needed - auto - optional if n not in text)
+            if missing:
+                problems.append(f"{os.path.basename(path)} ({entry}.py): {missing}")
+
+    assert not problems, "workflow env does not cover what the code can read:\n" + "\n".join(problems)
 
 
 def test_missing_key_and_failed_call_are_reported_differently(monkeypatch):

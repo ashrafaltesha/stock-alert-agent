@@ -42,4 +42,6 @@ jobs:
           # and the replay proves less than it looks like it does.
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # simulate -> earnings_watch -> workflow_trigger can dispatch.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python simulate.py replay "${{ github.event.inputs.ticker }}" "${{ github.event.inputs.accession }}"
