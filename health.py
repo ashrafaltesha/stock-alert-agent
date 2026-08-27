@@ -36,8 +36,30 @@ EXPECTED_INTERVAL = {
     "monitor": 20,        # external cron every ~5 min, generous margin
     "listener": 25,       # pings itself roughly every 10 min while idle
     "earnings_arm": 60 * 26,   # twice daily; a full day plus slack
-    "earnings_watch": 90,      # only while something is armed
+    # See EXIT_PERSISTED. 330-minute loop plus a margin for the runner and
+    # the commit, used only when the platform cannot be asked.
+    "earnings_watch": 350,
 }
+
+# Components whose heartbeat reaches state.json only when their run ENDS.
+#
+# The watcher records a heartbeat every 15-second cycle, but `save_state`
+# writes a local file and earnings_watch.yml commits it in a single step
+# after the loop -- deliberately, because a git push inside a 15-second poll
+# would cost more than the poll interval. So the recorded timestamp measures
+# time since the last run EXITED, not time since the last poll, and a
+# perfectly healthy watcher looks 330 minutes stale for most of its life.
+#
+# The old limit of 90 minutes therefore reported a working watcher as broken
+# for four hours out of every five and a half. I used that same number to
+# judge liveness during today's incident and nearly called a healthy run
+# dead.
+#
+# The rule, which is not specific to this component: a value that is only
+# persisted at exit cannot measure liveness. Ask the platform that owns the
+# process instead, and keep the timestamp as a fallback for when it cannot
+# be reached.
+EXIT_PERSISTED = {"earnings_watch": "earnings_watch.yml"}
 
 
 def record(state: dict, component: str) -> None:
@@ -62,6 +84,17 @@ def _age_minutes(stamp: str):
     return (now_et() - when).total_seconds() / 60
 
 
+def _duration(minutes) -> str:
+    """An elapsed span, as opposed to _human's "how long ago"."""
+    if minutes is None:
+        return "an unknown time"
+    if minutes < 1:
+        return "under a minute"
+    if minutes < 60:
+        return f"{int(minutes)}m"
+    return f"{minutes / 60:.1f}h"
+
+
 def _human(minutes) -> str:
     if minutes is None:
         return "never"
@@ -74,15 +107,62 @@ def _human(minutes) -> str:
     return f"{minutes / 1440:.1f}d ago"
 
 
-def component_lines(state: dict):
-    """[(name, human_age, ok)] for each component we track."""
+def live_status(component: str, state: dict, latest_run):
+    """(text, ok) for an EXIT_PERSISTED component, or None to fall through.
+
+    `latest_run` is a callable taking a workflow filename and returning
+    (status, age_minutes), or None when the platform cannot be asked --
+    workflow_trigger._latest_run has exactly that shape. It is injected
+    rather than imported so this module stays free of the dispatch code and
+    so tests can drive every branch without a network.
+
+    What matters is not whether the watcher is running, but whether it is
+    running WHEN SOMETHING IS ARMED. Idle is the correct state on the ~215
+    trading days a year with nothing to watch; the fault is a watch armed
+    with nothing polling, which is what cost the NVDA report.
+    """
+    workflow = EXIT_PERSISTED.get(component)
+    if workflow is None or latest_run is None:
+        return None
+    try:
+        latest = latest_run(workflow)
+    except Exception:
+        return None
+    if latest is None:
+        return None                       # cannot tell; use the heartbeat
+
+    status, age = latest
+    armed = sum(1 for k in state if k.startswith("ew_watch::"))
+
+    if status in ("in_progress", "queued", "waiting", "requested", "pending"):
+        return f"polling, up {_duration(age)}", True
+    if armed:
+        plural = "es" if armed != 1 else ""
+        return f"NOT RUNNING, {armed} watch{plural} armed", False
+    return "idle (nothing armed)", True
+
+
+def component_lines(state: dict, latest_run=None):
+    """[(name, human_age, ok)] for each component we track.
+
+    `latest_run` is optional: callers that can reach the Actions API pass
+    workflow_trigger._latest_run so EXIT_PERSISTED components are judged on
+    what the platform reports rather than on a timestamp that only moves
+    when the run ends.
+    """
     out = []
     for component, limit in EXPECTED_INTERVAL.items():
+        live = live_status(component, state, latest_run)
+        if live is not None:
+            detail, ok = live
+            out.append((component, detail, ok))
+            continue
+
         age = _age_minutes(state.get(f"{HB_PREFIX}{component}"))
         # A watcher that has never run is not a fault: it exits when nothing
         # is armed, which is most days.
         ok = age is not None and age <= limit
-        if component == "earnings_watch" and age is None:
+        if component in EXIT_PERSISTED and age is None:
             ok = True
         out.append((component, _human(age), ok))
     return out

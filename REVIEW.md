@@ -167,6 +167,26 @@ message says when extraction failed; unmatched commands reply.
 
 **Still missing:** nothing tells you when the *whole chain* stops. See 3.1.
 
+**The inverse, found 2026-08-27: success that looks like failure.** The
+watcher records a heartbeat every 15-second cycle, but `earnings_watch.yml`
+commits `state.json` in one step *after* the loop — deliberately, since a git
+push inside the poll costs more than the poll interval. So the recorded
+timestamp measures time since the last run *ended*. Against a 90-minute
+staleness limit and a 330-minute loop, a perfectly healthy watcher read as
+broken for four hours out of every five and a half. I used that number to
+judge a live run and nearly declared it dead.
+
+**Rule:** *a value persisted only at exit cannot measure liveness.* Ask the
+platform that owns the process; keep the timestamp as the fallback for when
+it cannot be reached. `health.EXIT_PERSISTED` names the components this
+applies to, and a test asserts their fallback limit can never drift below
+the loop length it is measuring.
+
+The corollary is what `status` now reports: not "the watcher is quiet", but
+"a watch is armed and nothing is polling" — which is the condition that
+actually costs an alert. Idle with nothing armed is correct on the ~215
+trading days a year with nothing to watch.
+
 ### Trap 3 — Pinned external assumption
 
 **Seen three times.** `llama-3.3-70b-versatile` was retired by Groq.

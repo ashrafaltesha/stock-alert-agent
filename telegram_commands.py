@@ -615,6 +615,7 @@ def build_status(state: dict) -> str:
     """
     import health
     import repo_commit
+    import workflow_trigger
 
     if repo_commit.refresh_from_origin("state.json"):
         state = load_state()
@@ -623,9 +624,13 @@ def build_status(state: dict) -> str:
 
     tick, warn = "\u2705", "\u26a0\ufe0f"
     ok_all = True
-    for name, age, ok in health.component_lines(state):
+    # The watcher's heartbeat is only committed when its run ends, so for
+    # that component the Actions API is the truthful source and the
+    # timestamp is the fallback. See health.EXIT_PERSISTED.
+    for name, detail, ok in health.component_lines(
+            state, latest_run=workflow_trigger._latest_run):
         ok_all = ok_all and ok
-        lines.append(f"{tick if ok else warn} {name}: {age}")
+        lines.append(f"{tick if ok else warn} {name}: {detail}")
 
     lines.append("")
     lines.append("*Last alert sent*")

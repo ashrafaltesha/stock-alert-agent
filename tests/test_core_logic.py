@@ -923,6 +923,104 @@ def test_status_handles_missing_and_malformed_timestamps():
     assert health._human(None) == "never"
 
 
+# --- A heartbeat written only at exit cannot measure liveness -------------
+#
+# The watcher records a heartbeat every 15-second cycle, but the workflow
+# commits state.json in one step AFTER the loop -- on purpose, because a git
+# push inside the poll would cost more than the poll interval. So the
+# recorded timestamp measures time since the last run ENDED.
+#
+# With a 330-minute loop and a 90-minute limit, a perfectly healthy watcher
+# read as stale for four hours out of every five and a half. On 2026-08-27 I
+# used that number to judge whether a live run was dead, and nearly acted on
+# it.
+
+WATCHER_ARMED = {"ew_watch::RBRK": {"armed": "x", "expires": "y"},
+                 "ew_watch::NVDA": {"armed": "x", "expires": "y"}}
+
+
+def _rows(state, latest_run=None):
+    return {name: (detail, ok)
+            for name, detail, ok in health.component_lines(state, latest_run)}
+
+
+def test_a_healthy_long_running_watcher_is_not_reported_as_stale():
+    """The false alarm this closes: heartbeat hours old, run very much alive."""
+    from datetime import timedelta
+    old = (earnings_utils.now_et() - timedelta(minutes=200)).isoformat()
+    state = dict(WATCHER_ARMED, **{"hb::earnings_watch": old})
+
+    detail, ok = _rows(state, lambda wf: ("in_progress", 200.0))["earnings_watch"]
+    assert ok is True, "a run the platform reports as in_progress is not stale"
+    assert "polling" in detail and "3.3h" in detail
+
+
+def test_a_watch_armed_with_no_watcher_is_the_actual_fault():
+    """Not "the watcher is quiet" -- "nothing is polling while something is
+    armed". That is the condition that cost the NVDA report."""
+    detail, ok = _rows(WATCHER_ARMED,
+                       lambda wf: ("completed", 12.0))["earnings_watch"]
+    assert ok is False
+    assert "NOT RUNNING" in detail and "2 watches armed" in detail
+
+
+def test_an_idle_watcher_with_nothing_armed_is_healthy():
+    """Idle is correct on the ~215 trading days a year with nothing to watch.
+    A status message that cries wolf daily trains you to ignore it."""
+    detail, ok = _rows({}, lambda wf: ("completed", 900.0))["earnings_watch"]
+    assert ok is True
+    assert "idle" in detail
+
+
+def test_singular_and_plural_watch_counts_read_correctly():
+    one = {"ew_watch::RBRK": {}}
+    detail, _ = _rows(one, lambda wf: ("completed", 12.0))["earnings_watch"]
+    assert "1 watch armed" in detail
+
+
+@pytest.mark.parametrize("broken", [
+    lambda wf: None,                                  # lookup returned nothing
+    lambda wf: (_ for _ in ()).throw(RuntimeError()),  # lookup raised
+])
+def test_status_falls_back_to_the_heartbeat_when_the_api_cannot_be_asked(broken):
+    """Unknown must degrade to the timestamp, not to a false verdict either
+    way. The fallback limit is the loop length plus margin, not 90 minutes."""
+    from datetime import timedelta
+    now = earnings_utils.now_et()
+    fresh = dict(WATCHER_ARMED,
+                 **{"hb::earnings_watch": (now - timedelta(minutes=200)).isoformat()})
+    detail, ok = _rows(fresh, broken)["earnings_watch"]
+    assert ok is True, "200 min is inside a 330-minute loop"
+    assert "ago" in detail
+
+    dead = dict(WATCHER_ARMED,
+                **{"hb::earnings_watch": (now - timedelta(hours=20)).isoformat()})
+    assert _rows(dead, broken)["earnings_watch"][1] is False
+
+
+def test_the_fallback_limit_cannot_drift_below_the_loop_it_measures():
+    """The original bug as a rule: any component whose heartbeat is written
+    only at exit must tolerate a full run before being called stale."""
+    import earnings_watch
+    for component in health.EXIT_PERSISTED:
+        assert health.EXPECTED_INTERVAL[component] > earnings_watch.LOOP_MINUTES, (
+            f"{component} is called stale before one loop of "
+            f"{earnings_watch.LOOP_MINUTES} min can finish")
+
+
+def test_components_that_commit_as_they_go_are_unaffected():
+    """The listener and monitor push state mid-run, so their timestamps do
+    measure liveness and must keep their tight limits."""
+    from datetime import timedelta
+    now = earnings_utils.now_et()
+    state = {"hb::monitor": (now - timedelta(minutes=45)).isoformat(),
+             "hb::listener": (now - timedelta(minutes=45)).isoformat()}
+    rows = _rows(state, lambda wf: ("in_progress", 5.0))
+    assert rows["monitor"][1] is False
+    assert rows["listener"][1] is False
+    assert "monitor" not in health.EXIT_PERSISTED
+
+
 def test_status_message_contains_what_it_should(monkeypatch):
     from datetime import timedelta
     import repo_commit
