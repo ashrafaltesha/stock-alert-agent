@@ -136,10 +136,10 @@
   "ew_last_earnings::WOLF": "2026-08-19",
   "ew_mark::CRWD": "0000950103-26-012856",
   "ew_mark::LI": "0001104659-26-099827",
-  "ew_mark::NVDA": "0001347842-26-000015",
+  "ew_mark::NVDA": "0001045810-26-000075",
   "ew_seen::CRWD": "0000950103-26-012856",
   "ew_seen::LI": "0001104659-26-099827",
-  "ew_seen::NVDA": "0001347842-26-000015",
+  "ew_seen::NVDA": "0001045810-26-000075",
   "ew_watch::CRWD": {
     "armed": "2026-08-26T00:41:10.487517-04:00",
     "expires": "2026-08-27T00:41:10.487517-04:00"
@@ -150,7 +150,8 @@
   },
   "ew_watch::NVDA": {
     "armed": "2026-08-26T00:40:02.100253-04:00",
-    "expires": "2026-08-27T00:40:02.100253-04:00"
+    "expires": "2026-08-27T00:40:02.100253-04:00",
+    "hit": true
   },
   "ew_watch::XPEV": {
     "armed": "2026-08-24T07:56:55.596808-04:00",
@@ -162,68 +163,68 @@
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-27",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::BAK": {
     "date": "2026-08-27",
-    "max_step_up": 2,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 2
   },
   "price_ref::CENX": {
     "date": "2026-08-27",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::EVH": {
     "date": "2026-08-27",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::FOUR": {
     "date": "2026-08-27",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::GENI": {
     "date": "2026-08-27",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::KEEL": {
     "date": "2026-08-27",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::META": {
     "date": "2026-08-27",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::QURE": {
     "date": "2026-08-27",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::RDDT": {
     "date": "2026-08-27",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::UAVS": {
     "date": "2026-08-27",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::WOLF": {
     "date": "2026-08-27",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::XPEV": {
     "date": "2026-08-27",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "seen_news::APP": [],
   "seen_news::BAK": [],
@@ -337,5 +338,5 @@
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157290
+  "tg_update_offset": 785157291
 }
