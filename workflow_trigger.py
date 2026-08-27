@@ -15,6 +15,7 @@ exists to avoid, which is a nuisance rather than a lost alert.
 
 import json
 import os
+from datetime import datetime, timezone
 import urllib.error
 import urllib.request
 
@@ -91,8 +92,7 @@ def ensure_watcher_running(state: dict) -> bool:
     if not armed:
         return False
 
-    active = _run_is_active(WORKFLOW)
-    if active is None or active:
+    if not _should_dispatch(WORKFLOW):
         return False
 
     tickers = ", ".join(sorted(k.split("::", 1)[1] for k in armed))
@@ -110,26 +110,74 @@ def restart_listener() -> bool:
     return _dispatch(LISTENER_WORKFLOW, "Telegram listener (code updated)")
 
 
-def _run_is_active(workflow: str):
-    """True/False if known, None if the question could not be answered.
+# A dispatch CANCELS the run it is meant to protect, because both watch and
+# listener workflows use cancel-in-progress. So a watchdog that dispatches too
+# eagerly does not heal the system, it holds it down: every minute a fresh run
+# starts and kills the one before, and nothing ever polls for longer than the
+# gap between checks.
+#
+# Observed live on 2026-08-27: watcher runs at 14:16, 14:17, 14:18, 14:19,
+# 14:20 and 14:20:50, two of them "running" at once. The status check was
+# returning "nothing running" while a run was in fact starting.
+#
+# Two API statuses are not enough to know. A run waiting on a concurrency
+# lock reports neither in_progress nor queued, and the API is eventually
+# consistent, so a run created seconds ago can still read as absent.
+#
+# The cooldown is what makes this safe rather than clever: whatever the API
+# says, a workflow that was STARTED very recently is left alone. Being slow
+# to restart costs one interval; restarting too often costs everything.
+DISPATCH_COOLDOWN_MINUTES = 8
 
-    None matters: dispatching on a failed lookup would cancel a healthy
-    listener, since that workflow cancels in progress.
+ACTIVE_STATUSES = {"in_progress", "queued", "waiting", "requested", "pending"}
+
+
+def _latest_run(workflow: str):
+    """(status, age_minutes) of the most recent run, or None if unknown.
+
+    One request, no status filter -- so a run in a state the filters do not
+    name still counts. Unknown is not the same as absent: the caller must not
+    dispatch when it cannot tell.
     """
     token, repo = _credentials()
     if not token:
         return None
-    base = (f"https://api.github.com/repos/{repo}/actions/workflows/"
-            f"{workflow}/runs?per_page=1&status=")
+    url = (f"https://api.github.com/repos/{repo}/actions/workflows/"
+           f"{workflow}/runs?per_page=1")
     try:
-        for status in ("in_progress", "queued"):
-            _, data = _api(base + status)
-            if (data.get("total_count") or 0) > 0:
-                return True
-        return False
+        _, data = _api(url)
+        runs = data.get("workflow_runs") or []
+        if not runs:
+            return ("none", None)
+        run = runs[0]
+        created = run.get("created_at") or ""
+        age = None
+        if created:
+            try:
+                started = datetime.strptime(created, "%Y-%m-%dT%H:%M:%SZ").replace(
+                    tzinfo=timezone.utc)
+                age = (datetime.now(timezone.utc) - started).total_seconds() / 60
+            except ValueError:
+                age = None
+        return (str(run.get("status") or ""), age)
     except Exception as e:
         print(f"Could not check {workflow} runs: {type(e).__name__}: {e}")
         return None
+
+
+def _should_dispatch(workflow: str) -> bool:
+    """Only when we are confident nothing is running AND nothing just started."""
+    latest = _latest_run(workflow)
+    if latest is None:
+        return False                      # cannot tell -- never guess
+    status, age = latest
+    if status in ACTIVE_STATUSES:
+        return False
+    if age is not None and age < DISPATCH_COOLDOWN_MINUTES:
+        print(f"{workflow}: last run started {age:.1f} min ago; "
+              f"inside the {DISPATCH_COOLDOWN_MINUTES} min cooldown.")
+        return False
+    return True
 
 
 def ensure_listener_running() -> bool:
@@ -145,8 +193,7 @@ def ensure_listener_running() -> bool:
     every five minutes and is therefore punctual. It only dispatches when
     nothing is running, so it cannot interrupt a healthy listener.
     """
-    active = _run_is_active(LISTENER_WORKFLOW)
-    if active is None or active:
+    if not _should_dispatch(LISTENER_WORKFLOW):
         return False
     print("No Telegram listener running -- starting one.")
     return _dispatch(LISTENER_WORKFLOW, "Telegram listener")

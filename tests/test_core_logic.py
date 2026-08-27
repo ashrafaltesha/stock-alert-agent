@@ -19,7 +19,7 @@ Run locally with:  python -m pytest tests/ -q
 
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import sys
 
 import pytest
@@ -1052,15 +1052,25 @@ ARMED_STATE = {"ew_watch::NVDA": {"armed": "2026-08-26T00:40:02-04:00",
                                   "expires": "2026-08-27T00:40:02-04:00"}}
 
 
-def _fake_api(monkeypatch, in_progress):
+def _fake_api(monkeypatch, status="completed", age_minutes=999):
+    """Present the most recent run as `status`, started `age_minutes` ago.
+
+    Mirrors the real payload shape: /runs?per_page=1 returns a workflow_runs
+    list whose first element carries `status` and `created_at`. An empty list
+    means the workflow has never run.
+    """
     import workflow_trigger
     calls = []
+    when = (datetime.now(timezone.utc)
+            - timedelta(minutes=age_minutes)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def api(url, method="GET", body=None):
         calls.append((method, url))
         if method == "POST":
             return 204, {}
-        return 200, {"total_count": 1 if in_progress else 0}
+        if status is None:
+            return 200, {"workflow_runs": []}
+        return 200, {"workflow_runs": [{"status": status, "created_at": when}]}
 
     monkeypatch.setattr(workflow_trigger, "_api", api)
     monkeypatch.setenv("GITHUB_TOKEN", "tok")
@@ -1070,25 +1080,97 @@ def _fake_api(monkeypatch, in_progress):
 
 def test_watchdog_starts_the_watcher_when_armed_and_nothing_polling(monkeypatch):
     import workflow_trigger
-    calls = _fake_api(monkeypatch, in_progress=False)
+    calls = _fake_api(monkeypatch, status="completed", age_minutes=120)
     assert workflow_trigger.ensure_watcher_running(ARMED_STATE) is True
     assert any(m == "POST" and "earnings_watch.yml" in u for m, u in calls)
 
 
-def test_watchdog_leaves_a_running_watcher_alone(monkeypatch):
-    """That workflow cancels in progress, so dispatching at the wrong moment
-    would kill the watcher this exists to protect."""
+def test_watchdog_starts_a_workflow_that_has_never_run(monkeypatch):
     import workflow_trigger
-    calls = _fake_api(monkeypatch, in_progress=True)
+    calls = _fake_api(monkeypatch, status=None)
+    assert workflow_trigger.ensure_watcher_running(ARMED_STATE) is True
+    assert any(m == "POST" for m, _ in calls)
+
+
+@pytest.mark.parametrize("status", sorted(
+    __import__("workflow_trigger").ACTIVE_STATUSES))
+def test_watchdog_leaves_a_live_watcher_alone_in_every_active_status(
+        status, monkeypatch):
+    """That workflow cancels in progress, so dispatching at the wrong moment
+    would kill the watcher this exists to protect.
+
+    Checking only in_progress and queued was not enough: a run waiting on a
+    concurrency lock reports neither, and the watchdog read that as "nothing
+    is running" and dispatched over it.
+    """
+    import workflow_trigger
+    calls = _fake_api(monkeypatch, status=status, age_minutes=120)
     assert workflow_trigger.ensure_watcher_running(ARMED_STATE) is False
     assert not any(m == "POST" for m, _ in calls)
+
+
+@pytest.mark.parametrize("age", [0, 0.5, 3, 7.9])
+def test_a_run_that_just_started_is_never_dispatched_over(age, monkeypatch):
+    """The bug of 2026-08-27, and the only guard that actually closes it.
+
+    Watcher runs started at 14:16, 14:17, 14:18, 14:19, 14:20 and 14:20:50 --
+    each dispatch killing the one before, so nothing ever polled for more than
+    a minute. The API had reported the just-created run as absent, because it
+    is eventually consistent.
+
+    So status is not trusted on its own: whatever the API says, a workflow
+    started seconds ago is left alone. Being slow to restart costs one
+    interval; restarting too often costs everything.
+    """
+    import workflow_trigger
+    calls = _fake_api(monkeypatch, status="completed", age_minutes=age)
+    assert workflow_trigger.ensure_watcher_running(ARMED_STATE) is False
+    assert not any(m == "POST" for m, _ in calls)
+
+
+def test_repeated_checks_over_an_hour_cannot_thrash(monkeypatch):
+    """The property that matters, stated as a rate rather than a case.
+
+    The monitor calls this every five minutes and the watcher may keep dying;
+    no combination of the two may produce a dispatch per check.
+    """
+    import workflow_trigger
+    monkeypatch.setenv("GITHUB_TOKEN", "tok")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "a/b")
+    dispatched = []
+    clock = {"now": 0.0, "last_start": None}
+
+    def api(url, method="GET", body=None):
+        if method == "POST":
+            dispatched.append(clock["now"])
+            clock["last_start"] = clock["now"]
+            return 204, {}
+        if clock["last_start"] is None:
+            return 200, {"workflow_runs": []}
+        started = (datetime.now(timezone.utc)
+                   - timedelta(minutes=clock["now"] - clock["last_start"]))
+        # Worst case: every run dies at once, so it always reads completed.
+        return 200, {"workflow_runs": [
+            {"status": "completed",
+             "created_at": started.strftime("%Y-%m-%dT%H:%M:%SZ")}]}
+
+    monkeypatch.setattr(workflow_trigger, "_api", api)
+    for minute in range(60):
+        clock["now"] = float(minute)
+        workflow_trigger.ensure_watcher_running(ARMED_STATE)
+
+    ceiling = 60 / workflow_trigger.DISPATCH_COOLDOWN_MINUTES + 1
+    assert len(dispatched) <= ceiling, (
+        f"{len(dispatched)} dispatches in an hour; the cooldown is not holding")
+    gaps = [b - a for a, b in zip(dispatched, dispatched[1:])]
+    assert all(g >= workflow_trigger.DISPATCH_COOLDOWN_MINUTES for g in gaps)
 
 
 def test_watchdog_does_nothing_when_no_watch_is_armed(monkeypatch):
     """The watcher exits when idle. Dispatching on an empty state would start
     a runner to do nothing, every minute, forever."""
     import workflow_trigger
-    calls = _fake_api(monkeypatch, in_progress=False)
+    calls = _fake_api(monkeypatch, status="completed", age_minutes=999)
     assert workflow_trigger.ensure_watcher_running({}) is False
     assert workflow_trigger.ensure_watcher_running({"price_ref::AMAT": {}}) is False
     assert not calls
@@ -1105,6 +1187,23 @@ def test_watchdog_does_not_dispatch_when_the_lookup_fails(monkeypatch):
 
     monkeypatch.setattr(workflow_trigger, "_api", boom)
     assert workflow_trigger.ensure_watcher_running(ARMED_STATE) is False
+
+
+def test_the_listener_watchdog_is_guarded_identically(monkeypatch):
+    """Both watchdogs drive cancel-in-progress workflows, so both need the
+    same restraint. The listener path was written first and must not drift."""
+    import workflow_trigger
+    calls = _fake_api(monkeypatch, status="in_progress", age_minutes=120)
+    assert workflow_trigger.ensure_listener_running() is False
+    assert not any(m == "POST" for m, _ in calls)
+
+    calls = _fake_api(monkeypatch, status="completed", age_minutes=1)
+    assert workflow_trigger.ensure_listener_running() is False
+    assert not any(m == "POST" for m, _ in calls)
+
+    calls = _fake_api(monkeypatch, status="completed", age_minutes=120)
+    assert workflow_trigger.ensure_listener_running() is True
+    assert any(m == "POST" and "telegram_commands.yml" in u for m, u in calls)
 
 
 # --- Model key must reach every workflow that can send an earnings alert ---
