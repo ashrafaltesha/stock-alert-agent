@@ -1035,3 +1035,72 @@ def test_fetch_failure_arms_nothing(monkeypatch):
     state = {}
     earnings_watch._arm_overdue_holdings(state)
     assert not [k for k in state if k.startswith("ew_watch")]
+
+
+# --- Earnings watcher watchdog --------------------------------------------
+#
+# On 2026-08-26 NVDA was armed correctly, its baseline was correct, and both
+# of its 8-Ks were newer than that baseline -- fully detectable. The last
+# watcher run ended at 15:59, NVDA filed at 16:21, and no scheduled run
+# followed. Missed by 22 minutes because nothing was polling.
+#
+# The listener had a watchdog. The watcher did not, despite depending on the
+# same unreliable scheduler.
+
+ARMED_STATE = {"ew_watch::NVDA": {"armed": "2026-08-26T00:40:02-04:00",
+                                  "expires": "2026-08-27T00:40:02-04:00"}}
+
+
+def _fake_api(monkeypatch, in_progress):
+    import workflow_trigger
+    calls = []
+
+    def api(url, method="GET", body=None):
+        calls.append((method, url))
+        if method == "POST":
+            return 204, {}
+        return 200, {"total_count": 1 if in_progress else 0}
+
+    monkeypatch.setattr(workflow_trigger, "_api", api)
+    monkeypatch.setenv("GITHUB_TOKEN", "tok")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "a/b")
+    return calls
+
+
+def test_watchdog_starts_the_watcher_when_armed_and_nothing_polling(monkeypatch):
+    import workflow_trigger
+    calls = _fake_api(monkeypatch, in_progress=False)
+    assert workflow_trigger.ensure_watcher_running(ARMED_STATE) is True
+    assert any(m == "POST" and "earnings_watch.yml" in u for m, u in calls)
+
+
+def test_watchdog_leaves_a_running_watcher_alone(monkeypatch):
+    """That workflow cancels in progress, so dispatching at the wrong moment
+    would kill the watcher this exists to protect."""
+    import workflow_trigger
+    calls = _fake_api(monkeypatch, in_progress=True)
+    assert workflow_trigger.ensure_watcher_running(ARMED_STATE) is False
+    assert not any(m == "POST" for m, _ in calls)
+
+
+def test_watchdog_does_nothing_when_no_watch_is_armed(monkeypatch):
+    """The watcher exits when idle. Dispatching on an empty state would start
+    a runner to do nothing, every minute, forever."""
+    import workflow_trigger
+    calls = _fake_api(monkeypatch, in_progress=False)
+    assert workflow_trigger.ensure_watcher_running({}) is False
+    assert workflow_trigger.ensure_watcher_running({"price_ref::AMAT": {}}) is False
+    assert not calls
+
+
+def test_watchdog_does_not_dispatch_when_the_lookup_fails(monkeypatch):
+    import urllib.error
+    import workflow_trigger
+    monkeypatch.setenv("GITHUB_TOKEN", "tok")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "a/b")
+
+    def boom(url, method="GET", body=None):
+        raise urllib.error.URLError("down")
+
+    monkeypatch.setattr(workflow_trigger, "_api", boom)
+    assert workflow_trigger.ensure_watcher_running(ARMED_STATE) is False

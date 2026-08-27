@@ -69,6 +69,37 @@ def start_earnings_watcher() -> bool:
     return _dispatch(WORKFLOW, "Earnings watcher")
 
 
+def ensure_watcher_running(state: dict) -> bool:
+    """Start the earnings watcher if something is armed and nothing is polling.
+
+    This gap cost a real report. On 2026-08-26 NVDA was armed correctly, its
+    baseline was set correctly, and both of its 8-Ks were newer than that
+    baseline -- fully detectable. But the last watcher run started at 10:29
+    and its 330-minute loop ended at 15:59, NVDA filed at 16:21, and no
+    scheduled run followed. Nothing was polling. Missed by 22 minutes.
+
+    The listener already had this protection; the watcher did not. The same
+    unreliable scheduler drives both, and raising LOOP_MINUTES to 330 made
+    each run cover a fixed block -- so a missed cron stops coverage outright
+    rather than merely delaying it.
+
+    Gated on `ew_watch::` because the watcher exits when nothing is armed:
+    dispatching on an empty state would start a runner to do nothing, every
+    minute, forever.
+    """
+    armed = [k for k in state if k.startswith("ew_watch::")]
+    if not armed:
+        return False
+
+    active = _run_is_active(WORKFLOW)
+    if active is None or active:
+        return False
+
+    tickers = ", ".join(sorted(k.split("::", 1)[1] for k in armed))
+    print(f"Watches armed ({tickers}) but no watcher running -- starting one.")
+    return _dispatch(WORKFLOW, "Earnings watcher (watchdog)")
+
+
 def restart_listener() -> bool:
     """Start a fresh listener, for when the running one is on stale code.
 

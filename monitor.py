@@ -525,11 +525,14 @@ def main() -> None:
     # This workflow is driven by an external cron every five minutes and is
     # therefore punctual, which the listener's own hourly schedule is not.
     # Cheapest reliable place to notice the bot has stopped answering.
+    # Two watchdogs, on the workflow that is actually punctual. This one runs
+    # every minute via the external cron; the schedules these protect do not.
     try:
-        from workflow_trigger import ensure_listener_running
+        from workflow_trigger import ensure_listener_running, ensure_watcher_running
         ensure_listener_running()
+        ensure_watcher_running(state)
     except Exception as e:
-        print(f"Listener check failed (non-fatal): {type(e).__name__}: {e}")
+        print(f"Watchdog check failed (non-fatal): {type(e).__name__}: {e}")
 
     # Last thing in the run, so a ping means the whole run completed. Placing
     # it earlier would report health for a run that later died.
