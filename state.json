@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-27T14:44:35.337370-04:00",
+  "alert::news": "2026-08-27T14:45:37.428535-04:00",
   "alert::price": "2026-08-27T11:05:34.083964-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -9,7 +9,8 @@
     "citigroup adjusts applovin price target to $600 from $650, maintains buy rating - marketscreener.com",
     "loop capital adjusts price target on applovin to $600 from $860, maintains buy rating - marketscreener.com",
     "app stock dips below $300 for first time in over a year \u2014 analyst cuts target by $60, but believes business remains high quality",
-    "applovin (app) stock plunges 54% ytd as wall street slashes price targets - blockonomi"
+    "applovin (app) stock plunges 54% ytd as wall street slashes price targets - blockonomi",
+    "applovin stock has already taken a shock-sized fall without a shock"
   ],
   "alerted_titles::BAK": [
     "braskem (nyse: bak) prepares court-led process for $10.9b unsecured debt - stock titan",
@@ -151,7 +152,7 @@
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::earnings_watch": "2026-08-27T14:20:50.837366-04:00",
   "hb::listener": "2026-08-27T14:38:55.024763-04:00",
-  "hb::monitor": "2026-08-27T14:44:35.679365-04:00",
+  "hb::monitor": "2026-08-27T14:45:37.956062-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-27",
@@ -222,6 +223,10 @@
     [
       "c1524327ed54409a",
       29797584
+    ],
+    [
+      "6cb7065a79643f94",
+      29797605
     ]
   ],
   "seen_news::BAK": [],
