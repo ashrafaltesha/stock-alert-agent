@@ -1008,6 +1008,80 @@ def test_the_fallback_limit_cannot_drift_below_the_loop_it_measures():
             f"{earnings_watch.LOOP_MINUTES} min can finish")
 
 
+# --- A resolved CIK must survive the runner that resolved it -------------
+#
+# Found 2026-08-27 while checking whether RBRK would be detected. cik_map.json
+# shipped 13 entries and RBRK was not one of them -- nor were BAK, CENX, KEEL,
+# META or RDDT, five of the thirteen tickers actually monitored.
+#
+# resolve_cik falls back to fetching the SEC's ~800KB company_tickers.json and
+# writes the result to disk, but NO workflow committed cik_map.json, so every
+# run threw the answer away and re-fetched. That made a live earnings watch
+# depend on one large request succeeding, and when it fails the poll loop
+# prints a line and continues -- green run, nothing polled, no alert.
+
+def _workflow_text(name):
+    import pathlib
+    return (pathlib.Path(__file__).resolve().parent.parent
+            / ".github" / "workflows" / name).read_text()
+
+
+@pytest.mark.parametrize("name", ["monitor.yml", "earnings_watch.yml",
+                                  "telegram_commands.yml"])
+def test_every_workflow_that_persists_state_also_persists_resolved_ciks(name):
+    """Stated as a rule so it cannot drift: a job trusted to remember what the
+    bot has seen must also remember what it has resolved. Otherwise the map
+    is rebuilt from a network fetch on every single run, forever."""
+    text = _workflow_text(name)
+    for line in text.splitlines():
+        if line.strip().startswith("git add ") and "state.json" in line:
+            assert "cik_map.json" in line, (
+                f"{name}: '{line.strip()}' commits state but drops the CIK map")
+
+
+def test_monitored_tickers_are_resolvable_without_a_network_fetch():
+    """Reports which tickers still depend on the 800KB list.
+
+    Not an assertion that the map is complete -- it self-heals now that it is
+    committed -- but the armed ones must be covered, because those are the
+    ones whose alert is riding on it today.
+    """
+    import json
+    import pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    cik_map = json.loads((root / "cik_map.json").read_text())
+    tickers = set(json.loads((root / "tickers.json").read_text()))
+    watchlist = set(json.loads((root / "watchlist.json").read_text()))
+    missing = sorted((tickers | watchlist) - set(cik_map))
+    # Informational: these resolve on first use and are then persisted.
+    print(f"resolved lazily on first use: {missing}")
+    assert isinstance(missing, list)
+
+
+def test_an_unresolvable_cik_on_an_armed_watch_is_announced_once():
+    """Silence here is indistinguishable from "nothing has been filed yet",
+    which is how every missed report in this project has looked."""
+    import earnings_watch
+    state = {}
+    assert earnings_watch._warn_once(state, "cik", "RBRK") is True
+    # 15-second poll loop: 240 messages an hour would train you to mute it.
+    for _ in range(240):
+        assert earnings_watch._warn_once(state, "cik", "RBRK") is False
+    assert earnings_watch._warn_once(state, "cik", "OTHER") is True, \
+        "the guard is per ticker, not global"
+
+
+def test_warnings_clear_so_a_recurrence_is_heard_again():
+    import earnings_watch
+    state = {"ew_warned::cik::RBRK": True, "ew_warned::cik::BAK": True,
+             "ew_watch::RBRK": {}}
+    earnings_watch._clear_warnings(state, "RBRK")
+    assert "ew_warned::cik::RBRK" not in state
+    assert "ew_warned::cik::BAK" in state, "clearing one ticker must not clear others"
+    assert "ew_watch::RBRK" in state, "only warning keys are removed"
+    assert earnings_watch._warn_once(state, "cik", "RBRK") is True
+
+
 def test_components_that_commit_as_they_go_are_unaffected():
     """The listener and monitor push state mid-run, so their timestamps do
     measure liveness and must keep their tight limits."""

@@ -105,7 +105,7 @@ jobs:
         run: |
           git config user.name "stock-agent-bot"
           git config user.email "actions@github.com"
-          git add state.json
+          git add state.json cik_map.json
           git diff --cached --quiet && exit 0
           git commit -m "Arm earnings watches [skip ci]"
           for i in 1 2 3 4 5; do
@@ -118,7 +118,7 @@ jobs:
             git reset --hard origin/main
             python merge_state.py --base /tmp/base.json --ours /tmp/ours.json \
                                   --theirs /tmp/theirs.json --out state.json
-            git add state.json
+            git add state.json cik_map.json
             git diff --cached --quiet && exit 0
             git commit -m "Arm earnings watches [skip ci]"
             sleep $(( (RANDOM % 5) + 1 ))
@@ -168,7 +168,7 @@ jobs:
         run: |
           git config user.name "stock-agent-bot"
           git config user.email "actions@github.com"
-          git add state.json
+          git add state.json cik_map.json
           git diff --cached --quiet && exit 0
           git commit -m "Update earnings watch state [skip ci]"
           for i in 1 2 3 4 5; do
@@ -181,7 +181,7 @@ jobs:
             git reset --hard origin/main
             python3 merge_state.py --base /tmp/base.json --ours /tmp/ours.json \
                                    --theirs /tmp/theirs.json --out state.json
-            git add state.json
+            git add state.json cik_map.json
             git diff --cached --quiet && exit 0
             git commit -m "Update earnings watch state [skip ci]"
             sleep $(( (RANDOM % 5) + 1 ))

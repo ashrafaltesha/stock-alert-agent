@@ -87,6 +87,27 @@ def _watches(state):
     return {k: v for k, v in state.items() if k.startswith("ew_watch::")}
 
 
+def _warn_once(state: dict, kind: str, ticker: str) -> bool:
+    """True the first time a given fault is seen for a ticker.
+
+    The poll loop runs every 15 seconds, so an unguarded warning would send
+    240 messages an hour and train you to mute the bot -- which costs more
+    than the fault it was reporting. The key is cleared when the watch is
+    resolved or expires, so a recurrence next quarter is reported again.
+    """
+    key = f"ew_warned::{kind}::{ticker.upper()}"
+    if state.get(key):
+        return False
+    state[key] = True
+    return True
+
+
+def _clear_warnings(state: dict, ticker: str) -> None:
+    for key in [k for k in state
+                if k.startswith("ew_warned::") and k.endswith(f"::{ticker.upper()}")]:
+        del state[key]
+
+
 def arm() -> None:
     """Arm watches for holdings EITHER calendar says report today or tomorrow.
 
@@ -684,13 +705,36 @@ def poll() -> None:
                     )
                 del state[key]
                 state.pop(f"ew_seen::{ticker}", None)
+                _clear_warnings(state, ticker)
                 changed = True
                 continue
 
             cik = sec_edgar.resolve_cik(ticker, cik_map)
             if not cik:
+                # A watch armed against a ticker we cannot resolve polls
+                # nothing, for as long as the watch lasts, and the run stays
+                # green while it happens. That is the shape of every missed
+                # report this project has had, so it has to be audible.
+                #
+                # Only five of the thirteen monitored tickers ship in
+                # cik_map.json; the rest are resolved by fetching the SEC's
+                # 800KB list, and if that one request fails the whole watch
+                # is silently inert.
                 print(f"[{ticker}] no CIK; cannot watch filings.")
+                if _warn_once(state, "cik", ticker):
+                    send_telegram_message(
+                        f"⚠️ *{ticker}*: cannot resolve its SEC CIK, so the "
+                        f"earnings watch is not polling. The filing will be "
+                        f"picked up by the next arm, but not live."
+                    )
+                    changed = True
                 continue
+
+            # Resolution recovered, so a future failure is worth hearing about
+            # again rather than being suppressed by a flag set weeks ago.
+            if state.get(f"ew_warned::cik::{ticker}"):
+                _clear_warnings(state, ticker)
+                changed = True
 
             seen = _baseline(state, ticker, cik)
             if seen is None:

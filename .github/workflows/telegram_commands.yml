@@ -103,7 +103,7 @@ jobs:
         run: |
           git config user.name "stock-agent-bot"
           git config user.email "actions@github.com"
-          git add tickers.json watchlist.json state.json
+          git add tickers.json watchlist.json state.json cik_map.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
@@ -137,7 +137,7 @@ jobs:
             cp /tmp/watchlist.json watchlist.json
             python merge_state.py --base /tmp/base.json --ours /tmp/ours.json \
                                   --theirs /tmp/theirs.json --out state.json
-            git add tickers.json watchlist.json state.json
+            git add tickers.json watchlist.json state.json cik_map.json
             if git diff --cached --quiet; then
               echo "Nothing left to commit after merge -- the other run covered it."
               exit 0
