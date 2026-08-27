@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-27T16:21:38.144969-04:00",
+  "alert::news": "2026-08-27T16:26:35.660642-04:00",
   "alert::price": "2026-08-27T15:59:31.821583-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -91,7 +91,8 @@
     "reddit (nyse: rddt) shares set for sale by sauerberg trust - stock titan"
   ],
   "alerted_titles::WOLF": [
-    "wolfspeed (wolf) says ai data center revenue more than doubled. can it restore positive gross margins? - currently.com"
+    "wolfspeed (wolf) says ai data center revenue more than doubled. can it restore positive gross margins? - currently.com",
+    "investor alert: pomerantz law firm investigates claims on behalf of investors of wolfspeed, inc. - wolf - pr newswire"
   ],
   "alerted_titles::XPEV": [
     "xpeng inc. provides operating and revenue guidance for the third quarter of 2026 - marketscreener.com",
@@ -152,7 +153,7 @@
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::earnings_watch": "2026-08-27T14:20:50.837366-04:00",
   "hb::listener": "2026-08-27T16:23:15.464942-04:00",
-  "hb::monitor": "2026-08-27T16:25:34.182132-04:00",
+  "hb::monitor": "2026-08-27T16:26:36.318137-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-27",
@@ -334,7 +335,12 @@
   ],
   "seen_news_google::RDDT": [],
   "seen_news_google::UAVS": [],
-  "seen_news_google::WOLF": [],
+  "seen_news_google::WOLF": [
+    [
+      "82a0801f85b01125",
+      29797706
+    ]
+  ],
   "seen_news_google::XPEV": [],
   "tg_update_offset": 785157295
 }
