@@ -137,6 +137,12 @@
   "ew_mark::CRWD": "0000950103-26-012856",
   "ew_mark::LI": "0001104659-26-099827",
   "ew_mark::NVDA": "0001045810-26-000075",
+  "ew_mark::RBRK": "0002020220-26-000020",
+  "ew_seen::RBRK": "0002020220-26-000020",
+  "ew_watch::RBRK": {
+    "armed": "2026-08-27T14:20:04.256743-04:00",
+    "expires": "2026-08-28T14:20:04.256743-04:00"
+  },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::earnings_watch": "2026-08-27T14:18:47.089576-04:00",
   "hb::listener": "2026-08-27T14:18:21.320028-04:00",
@@ -305,5 +311,5 @@
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157292
+  "tg_update_offset": 785157293
 }
