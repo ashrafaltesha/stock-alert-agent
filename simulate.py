@@ -75,7 +75,10 @@ def replay_filing(ticker: str, accession: str = "") -> None:
         # Newest filing that classifies as results, so the common case is
         # just `replay TICKER`.
         target = None
-        for f in filings[:15]:
+        # Candidates, not raw rows. Replaying RBRK on 2026-08-27 reported "no
+        # recent filing classifies as earnings" while its 8-K sat on EDGAR at
+        # index 28, behind a wall of Form 4s and 144s.
+        for f in sec_edgar.earnings_candidates(filings, 15):
             if sec_edgar.is_domestic_earnings(f):
                 target = f
                 break

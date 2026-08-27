@@ -1082,6 +1082,91 @@ def test_warnings_clear_so_a_recurrence_is_heard_again():
     assert earnings_watch._warn_once(state, "cik", "RBRK") is True
 
 
+# --- Bound a search by what you seek, not by rows in front of it ---------
+#
+# Replaying RBRK on 2026-08-27 printed "No recent RBRK filing classifies as
+# earnings" while the 8-K was plainly on EDGAR. The scan took the 15 newest
+# filings; RBRK's newest 8-K was at index 28.
+#
+# The exact sequence, read from data.sec.gov that day. A 2024 IPO with vesting
+# equity files Form 4s and 144s constantly, and they crowd out everything.
+RBRK_FORMS = (["4", "SCHEDULE 13G/A", "SCHEDULE 13G", "4", "4", "4", "144",
+               "144", "SCHEDULE 13G", "4", "144", "4", "144", "144", "144",
+               "4", "4", "4", "4", "144", "144", "144", "4", "4", "4", "4",
+               "4", "4"] + ["8-K"])
+
+
+def _rbrk_filings():
+    return [{"form": f, "accession": f"acc-{i}", "filed": "2026-06-05",
+             "items": "2.02" if f == "8-K" else "", "doc": "d.htm"}
+            for i, f in enumerate(RBRK_FORMS)]
+
+
+def test_the_earnings_filing_is_found_behind_a_wall_of_insider_filings():
+    filings = _rbrk_filings()
+    assert filings[28]["form"] == "8-K", "fixture guard: the 8-K is at index 28"
+    assert not any(f["form"] == "8-K" for f in filings[:15]), \
+        "fixture guard: a raw 15-row scan cannot see it"
+
+    found = sec_edgar.earnings_candidates(filings, 15)
+    assert found and found[0]["form"] == "8-K"
+    assert sec_edgar.is_domestic_earnings(found[0])
+
+
+def test_candidate_scan_is_still_bounded():
+    """The bound exists because 6-K classification costs a document fetch."""
+    many = [{"form": "6-K", "accession": f"a{i}", "items": ""} for i in range(50)]
+    assert len(sec_edgar.earnings_candidates(many, 15)) == 15
+    assert len(sec_edgar.earnings_candidates(many, 3)) == 3
+
+
+def test_candidate_scan_keeps_order_and_drops_non_candidates():
+    filings = [{"form": "4"}, {"form": "8-K", "n": 1}, {"form": "144"},
+               {"form": "6-K", "n": 2}, {"form": "10-Q"}, {"form": "8-K", "n": 3}]
+    got = sec_edgar.earnings_candidates(filings, 10)
+    assert [f["n"] for f in got] == [1, 2, 3], "newest-first order must survive"
+    assert all(f["form"] in ("8-K", "6-K") for f in got)
+
+
+def test_candidate_scan_survives_junk():
+    assert sec_edgar.earnings_candidates(None, 5) == []
+    assert sec_edgar.earnings_candidates([], 5) == []
+    assert sec_edgar.earnings_candidates([{}, {"form": None}], 5) == []
+
+
+def test_a_foreign_issuer_is_not_misread_as_domestic_by_insider_volume():
+    """Same root cause, different victim: a full lookback of Form 4s would
+    hide the 6-Ks and silently disable the wire early-signal path."""
+    noise = [{"form": "4"} for _ in range(60)]
+    assert sec_edgar.is_foreign_issuer(noise + [{"form": "6-K"}]) is True
+    # A genuinely domestic filer is still domestic.
+    assert sec_edgar.is_foreign_issuer(noise + [{"form": "8-K"}] * 50) is False
+
+
+def test_last_earnings_bootstrap_sees_past_insider_filings(monkeypatch):
+    """The calendar-independent safety net was inert for this whole class of
+    company: with no earnings date learned, nothing could look overdue."""
+    import earnings_watch
+    monkeypatch.setattr(sec_edgar, "recent_filings",
+                        lambda cik, etag=None: (_rbrk_filings(), None))
+    state = {}
+    assert earnings_watch._last_earnings_date(state, "RBRK", "0001943896") \
+        == "2026-06-05"
+    assert state["ew_last_earnings::RBRK"] == "2026-06-05"
+
+
+def test_live_detection_never_used_a_row_budget():
+    """Why tonight's alert was never at risk: _process walks until it reaches
+    the stored baseline, with no cap. Pinned so an optimisation cannot
+    quietly introduce one."""
+    import inspect
+    import earnings_watch
+    src = inspect.getsource(earnings_watch._process)
+    assert "for f in filings:" in src
+    assert "[:" not in src.split("if not fresh")[0], \
+        "_process must not slice the filing list"
+
+
 def test_components_that_commit_as_they_go_are_unaffected():
     """The listener and monitor push state mid-run, so their timestamps do
     measure liveness and must keep their tight limits."""

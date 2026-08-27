@@ -316,15 +316,64 @@ def score_filing(cik: str, accession: str, max_docs: int = 3):
 FOREIGN_FORMS = ("6-K", "20-F", "40-F")
 
 
+# Forms that can never be a results release but routinely dominate a filing
+# list. Insider transactions and ownership disclosures are filed constantly by
+# recently-IPO'd companies with vesting equity.
+#
+# This exists because of a measured failure, not a hunch. On 2026-08-27 a
+# replay of RBRK reported "no recent filing classifies as earnings" while its
+# results 8-K sat plainly on EDGAR: the scan looked at the 15 newest filings
+# and RBRK's newest 8-K was at index 28, behind 28 consecutive Form 4s, Form
+# 144s and 13Gs.
+#
+# The lesson generalises past this one list: bound a search by the thing you
+# are looking for, not by rows of whatever happens to be in front of it.
+NOISE_FORMS = frozenset({
+    "3", "4", "5", "144",
+    "SC 13G", "SC 13G/A", "SC 13D", "SC 13D/A",
+    "SCHEDULE 13G", "SCHEDULE 13G/A", "SCHEDULE 13D", "SCHEDULE 13D/A",
+})
+
+# Forms that can carry a results release. 8-K for domestic filers, 6-K for
+# foreign private issuers.
+CANDIDATE_FORMS = frozenset({"8-K", "6-K"})
+
+
+def earnings_candidates(filings, limit: int = 15):
+    """The recent filings that could be a results release, newest first.
+
+    Filtering by form before taking `limit` is the whole point: a count over
+    raw rows measures insider-filing volume, not filing history.
+    """
+    out = []
+    for filing in filings or []:
+        if str(filing.get("form", "")).upper() in CANDIDATE_FORMS:
+            out.append(filing)
+            if len(out) >= limit:
+                break
+    return out
+
+
 def is_foreign_issuer(filings, lookback: int = 40) -> bool:
     """True if this company files as a foreign private issuer.
 
     `lookback` bounds it to recent history so a company that converted to
-    domestic filing status years ago is not classified on ancient forms.
+    domestic filing status years ago is not classified on ancient forms. It
+    counts only substantive forms, because otherwise a run of insider filings
+    consumes the whole window and a foreign issuer reads as domestic --
+    which would silently disable the wire-headline early signal for exactly
+    the companies it was built for.
     """
-    for filing in (filings or [])[:lookback]:
-        if str(filing.get("form", "")).upper() in FOREIGN_FORMS:
+    seen = 0
+    for filing in filings or []:
+        form = str(filing.get("form", "")).upper()
+        if form in NOISE_FORMS:
+            continue
+        if form in FOREIGN_FORMS:
             return True
+        seen += 1
+        if seen >= lookback:
+            break
     return False
 
 

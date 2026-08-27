@@ -200,8 +200,11 @@ def arm() -> None:
 # had every chance to say so.
 STALE_EARNINGS_DAYS = 100
 
-# How many recent filings to inspect when establishing the last earnings date.
-# Bounded because 6-K classification costs a document fetch each.
+# How many recent CANDIDATE filings (8-K/6-K) to inspect when establishing the
+# last earnings date. Counted over candidates, never over raw rows: RBRK had 28
+# consecutive Form 4s, 144s and 13Gs in front of its newest 8-K, so a raw-row
+# budget of 12 saw no results filing at all and this safety net never armed.
+# Still bounded because 6-K classification costs a document fetch each.
 BOOTSTRAP_SCAN = 12
 BOOTSTRAP_SCORE_LIMIT = 4
 
@@ -230,7 +233,7 @@ def _last_earnings_date(state, ticker, cik):
         return None
 
     scored = 0
-    for filing in (filings or [])[:BOOTSTRAP_SCAN]:
+    for filing in sec_edgar.earnings_candidates(filings, BOOTSTRAP_SCAN):
         if sec_edgar.is_domestic_earnings(filing):
             state[key] = filing.get("filed")
             return state[key]
