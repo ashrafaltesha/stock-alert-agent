@@ -159,7 +159,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-27T14:08:05.865738-04:00",
-  "hb::monitor": "2026-08-27T14:12:40.709989-04:00",
+  "hb::monitor": "2026-08-27T14:13:38.093667-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-27",
@@ -230,12 +230,7 @@
   "seen_news::BAK": [],
   "seen_news::CENX": [],
   "seen_news::EVH": [],
-  "seen_news::FOUR": [
-    [
-      "619b2060ffaab35a",
-      29797362
-    ]
-  ],
+  "seen_news::FOUR": [],
   "seen_news::GENI": [],
   "seen_news::KEEL": [
     [
