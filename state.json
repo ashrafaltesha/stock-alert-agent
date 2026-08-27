@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-27T06:46:39.835041-04:00",
+  "alert::news": "2026-08-27T06:55:34.284686-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -42,7 +42,6 @@
     "keel stock holds key range as traders eye next move - stockstotrade"
   ],
   "alerted_titles::META": [
-    "mi ag praises landmark settlement with meta - whmi",
     "meta agrees to pay up to $16.6bn to settle social media addiction trial - sky news",
     "meta reaches $17 bil. settlement with states in landmark trial over teen social media addiction - the korea times",
     "meta to pay up to $18 billion over social media claims - ad age",
@@ -81,7 +80,8 @@
     "meta platforms faces demand for $291.4 million fine over alleged scams - marketscreener.com",
     "meta says to pay up to $18b over social media claims - jefferson city news tribune",
     "meta settlement puts fresh focus on global efforts to protect young social media users",
-    "meta settlement opens new front in global fight over social media harm"
+    "meta settlement opens new front in global fight over social media harm",
+    "the morning risk report: meta reaches $18 billion settlement over child-safety claims"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -158,7 +158,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-27T06:53:46.912445-04:00",
-  "hb::monitor": "2026-08-27T06:54:30.384643-04:00",
+  "hb::monitor": "2026-08-27T06:55:34.552425-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -280,6 +280,10 @@
     [
       "558b94b4f8622515",
       29797127
+    ],
+    [
+      "871b9b107aad9f87",
+      29797135
     ]
   ],
   "seen_news::QURE": [],
