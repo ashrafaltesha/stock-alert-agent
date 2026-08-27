@@ -156,6 +156,12 @@ jobs:
           # neither, the alert still goes out -- it just quotes the company's
           # own highlights instead of listing parsed metrics.
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          # Without this, a 5.5-hour job's stdout sits in a block buffer and
+          # the log stays EMPTY until the process exits. On 2026-08-27 the
+          # watcher ran 3h14m and had printed 10 lines -- all of them the env
+          # header -- which made it impossible to see what it was doing while
+          # it mattered.
+          PYTHONUNBUFFERED: "1"
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           HEALTHCHECK_PING_KEY: ${{ secrets.HEALTHCHECK_PING_KEY }}
         run: python3 earnings_watch.py poll

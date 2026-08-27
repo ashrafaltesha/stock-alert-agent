@@ -260,6 +260,35 @@ def is_domestic_earnings(filing: dict) -> bool:
     return EARNINGS_ITEM in codes
 
 
+# Exhibits are .htm or .html. The extension filter used to accept only
+# ".htm", which silently excluded any exhibit filed as ".html" -- and
+# "x.html".endswith(".htm") is False, so the omission was invisible.
+# EDGAR's own generated index pages are excluded by name.
+_INDEX_PAGE_RE = re.compile(r"-index(-headers)?\.html?$", re.I)
+
+
+def _is_exhibit(name: str) -> bool:
+    lowered = name.lower()
+    if not (lowered.endswith(".htm") or lowered.endswith(".html")):
+        return False
+    if _INDEX_PAGE_RE.search(lowered):
+        return False
+    return not _XBRL_RENDER_RE.match(name)
+
+
+def _score_complete_submission(base: str, accession: str):
+    """Score the complete submission text file: every document, inline.
+
+    Bigger than one exhibit, but it is one request and it cannot be
+    incomplete -- EDGAR assembles it from the filing itself.
+    """
+    _, body, _ = _get(f"{base}/{accession}.txt", timeout=30)
+    text = strip_html(body.decode("utf-8", "replace"))
+    lowered = text.lower()
+    score = sum(1 for term in FINANCIAL_TERMS if term in lowered)
+    return score, bool(PERIOD_RE.search(text)), text
+
+
 def score_filing(cik: str, accession: str, max_docs: int = 3):
     """Count distinct financial terms in a filing's exhibits.
 
@@ -280,12 +309,34 @@ def score_filing(cik: str, accession: str, max_docs: int = 3):
 
     docs = [
         item for item in (index.get("directory", {}).get("item") or [])
-        if str(item.get("name", "")).lower().endswith(".htm")
-        and not _XBRL_RENDER_RE.match(str(item.get("name", "")))
+        if _is_exhibit(str(item.get("name", "")))
     ]
     # Largest first: the press release is usually the biggest real document,
     # so the answer is normally found on the first fetch.
     docs.sort(key=lambda d: int(d.get("size") or 0), reverse=True)
+
+    if not docs:
+        # index.json does not always list the filing's documents.
+        #
+        # RBRK's Q2 8-K on 2026-08-27 is the case that found this. Its
+        # index.json returned four entries -- two index pages, the complete
+        # submission, and an XBRL zip -- and not one .htm, while
+        # rubrikinc-991pressrelease7.htm sat at the very same path, 302KB,
+        # fetchable, containing every figure in its first 3,000 characters.
+        #
+        # With no documents to score, this returned ("") and the model was
+        # handed an empty release. It answered, correctly, that there was
+        # nothing there. You got "the model call failed" and no quote, for a
+        # filing that was complete and public.
+        #
+        # The complete submission text file is the durable answer: EDGAR
+        # builds it for every filing, it embeds every document inline, and it
+        # is named from the accession rather than discovered. Deriving the
+        # source instead of listing it cannot be defeated by an index that
+        # omits things.
+        print(f"index.json listed no exhibits for {accession}; "
+              f"falling back to the complete submission text.")
+        return _score_complete_submission(base, accession)
 
     best_score, best_period, best_text = 0, False, ""
     for doc in docs[:max_docs]:

@@ -1167,6 +1167,103 @@ def test_live_detection_never_used_a_row_budget():
         "_process must not slice the filing list"
 
 
+# --- An index that omits documents must not read as an empty filing ------
+#
+# RBRK filed its Q2 8-K at 16:06:19 on 2026-08-27. Detection worked, the
+# alert went out, and the follow-up said "the model call failed, so no
+# figures were parsed" -- with no quote from the release either.
+#
+# The model had not failed. index.json for that accession returned four
+# entries (two index pages, the complete submission, an XBRL zip) and NOT ONE
+# .htm, while rubrikinc-991pressrelease7.htm sat at the same path, 302KB,
+# with every figure in its first 3,000 characters. score_filing found no
+# documents to score, returned "", and the model was asked to extract figures
+# from an empty string. It correctly answered that there were none.
+
+def test_exhibit_filter_accepts_html_and_rejects_generated_index_pages():
+    """`"x.html".endswith(".htm")` is False, so an exhibit filed as .html was
+    silently skipped and nothing said so."""
+    assert sec_edgar._is_exhibit("rubrikinc-991pressrelease7.htm")
+    assert sec_edgar._is_exhibit("ex99-1.html")
+    assert not sec_edgar._is_exhibit("0001943896-26-000055-index.html")
+    assert not sec_edgar._is_exhibit("0001943896-26-000055-index-headers.html")
+    assert not sec_edgar._is_exhibit("0001943896-26-000055.txt")
+    assert not sec_edgar._is_exhibit("0001943896-26-000055-xbrl.zip")
+
+
+# The exact payload EDGAR returned for RBRK's Q2 8-K.
+RBRK_INDEX_JSON = {"directory": {"item": [
+    {"name": "0001943896-26-000055-index-headers.html", "size": ""},
+    {"name": "0001943896-26-000055-index.html", "size": ""},
+    {"name": "0001943896-26-000055.txt", "size": ""},
+    {"name": "0001943896-26-000055-xbrl.zip", "size": "28832"},
+]}}
+
+RELEASE_TEXT = (b"<html><body><p>Rubrik Reports Second Quarter Fiscal Year 2027 "
+                b"Financial Results. Total revenue was $427.3 million, a 38% "
+                b"increase. Subscription ARR grew 33% to $1.66 billion. Net loss "
+                b"per share and gross margin for the quarter ended July 31, 2026."
+                b"</p></body></html>")
+
+
+def test_a_filing_whose_index_lists_no_exhibits_still_yields_its_text(monkeypatch):
+    """The regression: this returned "" and the alert said the model failed."""
+    fetched = []
+
+    def fake_get_json(url, etag=None, timeout=20):
+        return RBRK_INDEX_JSON, None
+
+    def fake_get(url, etag=None, timeout=20):
+        fetched.append(url)
+        return 200, RELEASE_TEXT, None
+
+    monkeypatch.setattr(sec_edgar, "_get_json", fake_get_json)
+    monkeypatch.setattr(sec_edgar, "_get", fake_get)
+
+    score, period, text = sec_edgar.score_filing("0001943896", "0001943896-26-000055")
+    assert text, "an empty release is what produced the false 'model call failed'"
+    assert "427.3" in text and "Rubrik Reports" in text
+    assert score > 0 and period is True
+    assert fetched and fetched[0].endswith("0001943896-26-000055.txt"), \
+        "must derive the complete submission from the accession, not discover it"
+
+
+def test_the_normal_path_is_unchanged_when_the_index_is_complete(monkeypatch):
+    """The fallback must be a fallback. A filing that lists its exhibits
+    should still fetch the exhibit, not the whole submission."""
+    index = {"directory": {"item": [
+        {"name": "ex99-1.htm", "size": "302493"},
+        {"name": "rbrk-20260826.htm", "size": "31421"},
+        {"name": "0001943896-26-000055.txt", "size": "475114"},
+    ]}}
+    fetched = []
+    monkeypatch.setattr(sec_edgar, "_get_json", lambda *a, **k: (index, None))
+
+    def fake_get(url, etag=None, timeout=20):
+        fetched.append(url.rsplit("/", 1)[-1])
+        return 200, RELEASE_TEXT, None
+
+    monkeypatch.setattr(sec_edgar, "_get", fake_get)
+    sec_edgar.score_filing("0001943896", "0001943896-26-000055")
+    assert fetched[0] == "ex99-1.htm", "largest real exhibit first"
+    assert not any(f.endswith(".txt") for f in fetched)
+
+
+def test_long_running_jobs_do_not_block_buffer_their_logs():
+    """The watcher ran 3h14m and had printed 10 lines, all env header.
+
+    Python block-buffers stdout when it is a pipe, so a 5.5-hour job's log is
+    empty until it exits -- which is precisely when the log stops being
+    useful. Any job that runs a loop for hours must set this.
+    """
+    import pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent / ".github" / "workflows"
+    for name in ("earnings_watch.yml", "telegram_commands.yml"):
+        assert "PYTHONUNBUFFERED" in (root / name).read_text(), (
+            f"{name} runs a long loop; without PYTHONUNBUFFERED its log is "
+            f"blank while it runs")
+
+
 def test_components_that_commit_as_they_go_are_unaffected():
     """The listener and monitor push state mid-run, so their timestamps do
     measure liveness and must keep their tight limits."""
