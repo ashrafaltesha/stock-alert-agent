@@ -129,6 +129,13 @@ def _parse(raw):
     return out
 
 
+# Distinguishable from None so the alert can say WHICH thing went wrong.
+# "Figures could not be extracted" sent you looking at a document; the real
+# answer was a missing secret in one workflow, which no amount of staring at
+# the filing would have revealed.
+NO_PROVIDER = "no-provider"
+
+
 def extract_metrics(text: str, ticker: str):
     """Returns a dict of figures, or None if no provider is configured or the
     call fails. None means "fall back to quoting the release", never "there
@@ -136,7 +143,7 @@ def extract_metrics(text: str, ticker: str):
     providers = llm_client.providers()
     if not providers:
         print("No GROQ_API_KEY or GEMINI_API_KEY; using verbatim highlights.")
-        return None
+        return NO_PROVIDER
 
     prompt = build_prompt(ticker, text)
     for name, call, key in providers:

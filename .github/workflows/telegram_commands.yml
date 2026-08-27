@@ -88,6 +88,12 @@ jobs:
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HEALTHCHECK_PING_KEY: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          # "earnings for TICKER" runs the CATCH-UP in this workflow, which
+          # can send a full earnings alert. Without these the figures could
+          # not be extracted here even though the same code works elsewhere:
+          # the capability travelled with the code, the configuration did not.
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         # "listen" loops on a long-poll connection. Without the argument
         # this still runs the old one-shot path, which is what a manual
         # `python telegram_commands.py` does locally.

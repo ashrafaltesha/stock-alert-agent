@@ -475,7 +475,7 @@ def build_metrics_message(ticker, text, consensus):
     metrics = llm_extract.extract_metrics(text, ticker)
     lines = []
 
-    if metrics:
+    if metrics and metrics is not llm_extract.NO_PROVIDER:
         verdict = llm_extract.compare_to_consensus(metrics, consensus or {})
         if verdict:
             lines.append(f"*{escape_markdown(verdict)}*")
@@ -497,11 +497,14 @@ def build_metrics_message(ticker, text, consensus):
             lines.append("*Guidance*")
             lines.append(escape_markdown(metrics["guidance"]))
     else:
-        # Say why it looks like this. Silently degrading to a wall of raw
-        # prose reads as a bad summary rather than as a missing one, and
-        # sends you looking for a formatting problem instead of a 403.
-        lines.append("_Figures could not be extracted -- quoting the release "
-                     "itself. Check the log for the reason._")
+        # Say WHICH failure this was. Naming it turns a shrug into an action:
+        # a missing key is a one-line workflow fix, a provider error is not.
+        if metrics is llm_extract.NO_PROVIDER:
+            lines.append("_No model key configured in this workflow, so no "
+                         "figures were parsed. Quoting the release instead._")
+        else:
+            lines.append("_The model call failed, so no figures were parsed. "
+                         "Quoting the release instead._")
 
     quote = llm_extract.highlights(text)
     if quote:

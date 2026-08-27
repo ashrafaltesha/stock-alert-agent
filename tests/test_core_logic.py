@@ -1104,3 +1104,49 @@ def test_watchdog_does_not_dispatch_when_the_lookup_fails(monkeypatch):
 
     monkeypatch.setattr(workflow_trigger, "_api", boom)
     assert workflow_trigger.ensure_watcher_running(ARMED_STATE) is False
+
+
+# --- Model key must reach every workflow that can send an earnings alert ---
+
+def test_every_earnings_capable_workflow_has_a_model_key():
+    """The NVDA catch-up ran in the LISTENER workflow, which had no model key.
+
+    Extraction failed there while the identical code worked in the watcher.
+    The capability travelled with the code; the configuration did not. This
+    asserts they stay together, because the symptom -- "figures could not be
+    extracted" -- points at the document rather than at a missing secret.
+    """
+    import glob
+    import os
+    import re
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # Scripts that can reach build_metrics_message, directly or indirectly.
+    earnings_capable = ("earnings_watch.py", "telegram_commands.py",
+                        "simulate.py")
+    missing = []
+    for path in glob.glob(os.path.join(root, ".github", "workflows", "*.yml")):
+        text = open(path).read()
+        runs_earnings = any(re.search(rf"run:.*{re.escape(script)}", text)
+                            for script in earnings_capable)
+        if runs_earnings and "GROQ_API_KEY" not in text:
+            missing.append(os.path.basename(path))
+    assert not missing, f"workflows can send earnings alerts with no model key: {missing}"
+
+
+def test_missing_key_and_failed_call_are_reported_differently(monkeypatch):
+    """"Figures could not be extracted" sent me looking at the filing. The
+    real answer was a missing secret, which staring at a document cannot
+    reveal."""
+    import llm_extract
+
+    monkeypatch.setattr(llm_extract, "highlights", lambda text, limit=700: "the release text")
+
+    monkeypatch.setattr(llm_extract, "extract_metrics",
+                        lambda text, ticker: llm_extract.NO_PROVIDER)
+    msg = earnings_watch.build_metrics_message("NVDA", "body", {})
+    assert "No model key configured" in msg
+
+    monkeypatch.setattr(llm_extract, "extract_metrics", lambda text, ticker: None)
+    msg = earnings_watch.build_metrics_message("NVDA", "body", {})
+    assert "model call failed" in msg
