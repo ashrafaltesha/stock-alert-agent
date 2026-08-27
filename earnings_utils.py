@@ -26,14 +26,15 @@ fetch_earnings_history_finnhub -- same Finnhub endpoint, filtered to one
 
 import sys
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 
 import requests
 import yfinance as yf
 
 from config import FINNHUB_API_KEY
-
-EASTERN = ZoneInfo("America/New_York")
+# Re-exported, not redefined. These are stdlib-only and live in timeutil so
+# the earnings watcher can import them without dragging requests and yfinance
+# into a job that installs neither.
+from timeutil import EASTERN, arm_earnings_watch, date_str_et, now_et  # noqa: F401
 
 NASDAQ_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
@@ -50,13 +51,6 @@ AMC_LABEL = "time-after-hours"
 UNSUPPLIED_LABEL = "time-not-supplied"
 
 
-def now_et() -> datetime:
-    return datetime.now(EASTERN)
-
-
-def date_str_et(offset_days: int = 0) -> str:
-    """YYYY-MM-DD for today (offset=0) or a future/past day, in America/New_York."""
-    return (now_et() + timedelta(days=offset_days)).strftime("%Y-%m-%d")
 
 
 def fetch_earnings_calendar(date_str: str) -> list[dict]:
@@ -222,35 +216,6 @@ def classify_holdings_for_date(date_str: str, tickers: list[str]) -> dict:
               f"-> {result[symbol]}")
 
     return result
-
-
-def arm_earnings_watch(state: dict, ticker: str, hours: int) -> bool:
-    """Create the watch record that earnings_watch.py's poll loop acts on.
-
-    This is the single point where a watch is armed, whether it came from you
-    texting "earnings for X" or from a holding turning up on the calendar.
-    Detection then runs through one code path -- the company's own IR feed or
-    page, falling back to news headlines -- rather than the holdings path
-    quietly using a weaker source.
-
-    That split was a real bug rather than a tidiness issue. The automatic
-    watch used to poll Finnhub's epsActual, which stayed empty all evening on
-    2026-08-12 while Cerebras published its results minutes after the close.
-    The stocks you actually own were on the least reliable detector.
-
-    Returns True if a NEW watch was created. An existing watch is left alone
-    rather than refreshed, because its record carries the list of articles
-    already sent -- resetting that would re-send everything.
-    """
-    key = f"ew_watch::{ticker.upper()}"
-    if key in state:
-        return False
-    now = now_et()
-    state[key] = {
-        "armed": now.isoformat(),
-        "expires": (now + timedelta(hours=hours)).isoformat(),
-    }
-    return True
 
 
 def fetch_consensus(ticker: str, date_str: str) -> dict:

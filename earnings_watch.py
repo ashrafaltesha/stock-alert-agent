@@ -46,14 +46,11 @@ import health
 import heartbeat
 import sec_edgar
 from config import ON_DEMAND_WATCH_HOURS, TICKERS
-from earnings_utils import (
-    EASTERN,
-    arm_earnings_watch,
-    classify_holdings_for_date,
-    date_str_et,
-    fetch_consensus,
-    now_et,
-)
+# STDLIB ONLY at module level. classify_holdings_for_date and
+# fetch_consensus live in earnings_utils, which imports requests and
+# yfinance; they are imported inside arm(), which runs in the job that
+# installs them. The poll loop must never reach them -- see timeutil.
+from timeutil import EASTERN, arm_earnings_watch, date_str_et, now_et
 from state_utils import load_state, save_state
 from telegram_utils import escape_markdown, send_telegram_message
 
@@ -102,6 +99,10 @@ def arm() -> None:
     Nothing here detects a company neither calendar lists, and the "earnings
     for <ticker>" command remains the manual override for that.
     """
+    # Imported here, not at module scope: these reach requests and yfinance,
+    # and arm() only ever runs in the job that installs them.
+    from earnings_utils import classify_holdings_for_date
+
     state = load_state()
     changed = False
 
@@ -285,6 +286,8 @@ def _store_consensus(state, ticker, day):
     keeps a slow calendar API out of the moment that matters.
     """
     try:
+        # Local import: _store_consensus is only reached from arm().
+        from earnings_utils import fetch_consensus
         consensus = fetch_consensus(ticker, day)
     except Exception as e:
         print(f"[{ticker}] consensus lookup failed: {type(e).__name__}: {e}")

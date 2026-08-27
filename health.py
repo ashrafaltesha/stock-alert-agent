@@ -25,7 +25,7 @@ then dies would otherwise look healthy.
 
 from datetime import datetime
 
-from earnings_utils import EASTERN, now_et
+from timeutil import EASTERN, now_et
 
 HB_PREFIX = "hb::"
 ALERT_PREFIX = "alert::"

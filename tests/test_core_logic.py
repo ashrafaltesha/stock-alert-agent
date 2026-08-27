@@ -18,6 +18,7 @@ Run locally with:  python -m pytest tests/ -q
 """
 
 import os
+import sys
 from datetime import datetime
 import sys
 
@@ -1202,3 +1203,51 @@ def test_missing_key_and_failed_call_are_reported_differently(monkeypatch):
     monkeypatch.setattr(llm_extract, "extract_metrics", lambda text, ticker: None)
     msg = earnings_watch.build_metrics_message("NVDA", "body", {})
     assert "model call failed" in msg
+
+
+# --- The watcher must import with no third-party packages -----------------
+
+def test_earnings_watcher_imports_with_zero_third_party_packages():
+    """The watch job does a checkout and runs python3 directly -- no
+    setup-python, no pip install. That is where its latency advantage comes
+    from, and it only holds if NOTHING on its import path reaches a package
+    the runner does not install.
+
+    It did not hold. earnings_watch imported earnings_utils for four small
+    stdlib-only helpers, and earnings_utils imports requests and yfinance at
+    module level for calendar functions the watcher never calls. telegram_utils
+    imported requests too. The job started only because the runner image
+    happened to ship those packages -- a constraint holding by luck.
+
+    On 2026-08-27 the watch step began exiting in 0 seconds while state.json
+    still listed four armed watches, and the watchdog re-dispatched it every
+    minute. Had RBRK reported that evening, nothing would have been polling.
+
+    This test runs the import the way the runner does.
+    """
+    import subprocess
+    import sys
+    import textwrap
+
+    probe = textwrap.dedent("""
+        import sys
+        BLOCKED = {"yfinance", "requests", "pandas", "numpy", "lxml",
+                   "bs4", "curl_cffi"}
+
+        class Blocker:
+            def find_module(self, name, path=None):
+                return self if name.split(".")[0] in BLOCKED else None
+
+            def load_module(self, name):
+                raise ImportError(name + " is not installed on the watcher")
+
+        sys.meta_path.insert(0, Blocker())
+        import earnings_watch
+        assert callable(earnings_watch.poll)
+        print("OK")
+    """)
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    result = subprocess.run([sys.executable, "-c", probe],
+                            capture_output=True, text=True, cwd=root)
+    assert "OK" in result.stdout, (
+        "the watcher cannot start without pip install:\n" + result.stderr[-1500:])
