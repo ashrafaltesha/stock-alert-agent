@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-27T13:37:42.754556-04:00",
+  "alert::news": "2026-08-27T14:44:35.337370-04:00",
   "alert::price": "2026-08-27T11:05:34.083964-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -42,7 +42,6 @@
     "keel stock holds key range as traders eye next move - stockstotrade"
   ],
   "alerted_titles::META": [
-    "meta joins a list of corporations that have settled cases for billions of dollars",
     "meta reaches multi-billion-dollar settlement with us states over social media addiction allegations",
     "meta erases nearly 5% settlement pop as product risk survives - yahoo! finance canada",
     "meta reaches up to $17.1 billion multistate settlement over claims involving children, teens - wrnj radio",
@@ -81,7 +80,8 @@
     "3 reasons the ai stock boom is very much back",
     "here\u2019s what meta\u2019s $18 billion multistate settlement could mean for kids \u2014 and for its bottom line",
     "meta settlement draws global calls for curbs - taipei times",
-    "states reach landmark settlement with meta platforms, inc - big island video news"
+    "states reach landmark settlement with meta platforms, inc - big island video news",
+    "applovin stock has already taken a shock-sized fall without a shock"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -151,7 +151,7 @@
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::earnings_watch": "2026-08-27T14:20:50.837366-04:00",
   "hb::listener": "2026-08-27T14:38:55.024763-04:00",
-  "hb::monitor": "2026-08-27T14:43:39.295174-04:00",
+  "hb::monitor": "2026-08-27T14:44:35.679365-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-27",
@@ -263,6 +263,10 @@
     [
       "8642b92ee10fbec1",
       29797597
+    ],
+    [
+      "6cb7065a79643f94",
+      29797604
     ]
   ],
   "seen_news::QURE": [],
