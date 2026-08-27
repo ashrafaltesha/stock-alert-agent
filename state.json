@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-27T06:23:29.496415-04:00",
+  "alert::news": "2026-08-27T06:46:39.835041-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -42,8 +42,6 @@
     "keel stock holds key range as traders eye next move - stockstotrade"
   ],
   "alerted_titles::META": [
-    "meta settles teen safety claims with us states - proactive investors",
-    "see how much nj may get in meta settlement, plus new safety measures - bergen record",
     "mi ag praises landmark settlement with meta - whmi",
     "meta agrees to pay up to $16.6bn to settle social media addiction trial - sky news",
     "meta reaches $17 bil. settlement with states in landmark trial over teen social media addiction - the korea times",
@@ -81,7 +79,9 @@
     "meta says it\u2019ll pay up to $18b in social media claims - chinadailyasia.com",
     "meta to pay up to $17bn in us settlement over child safety claims",
     "meta platforms faces demand for $291.4 million fine over alleged scams - marketscreener.com",
-    "meta says to pay up to $18b over social media claims - jefferson city news tribune"
+    "meta says to pay up to $18b over social media claims - jefferson city news tribune",
+    "meta settlement puts fresh focus on global efforts to protect young social media users",
+    "meta settlement opens new front in global fight over social media harm"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -158,7 +158,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-27T06:43:28.954302-04:00",
-  "hb::monitor": "2026-08-27T06:45:35.057475-04:00",
+  "hb::monitor": "2026-08-27T06:46:40.208823-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -234,10 +234,6 @@
   "seen_news::KEEL": [],
   "seen_news::META": [
     [
-      "1696ae4e4776ea80",
-      29796915
-    ],
-    [
       "bc07abe306a23621",
       29796936
     ],
@@ -272,6 +268,14 @@
     [
       "5e0879f476d26940",
       29797117
+    ],
+    [
+      "1696ae4e4776ea80",
+      29797126
+    ],
+    [
+      "e88e41d824e51810",
+      29797126
     ]
   ],
   "seen_news::QURE": [],
