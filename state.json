@@ -138,7 +138,12 @@
   "ew_mark::LI": "0001104659-26-099827",
   "ew_mark::NVDA": "0001045810-26-000075",
   "ew_mark::RBRK": "0002020220-26-000020",
+  "ew_seen::NVDA": "0001045810-26-000075",
   "ew_seen::RBRK": "0002020220-26-000020",
+  "ew_watch::NVDA": {
+    "armed": "2026-08-27T14:20:38.972691-04:00",
+    "expires": "2026-08-28T14:20:38.972691-04:00"
+  },
   "ew_watch::RBRK": {
     "armed": "2026-08-27T14:20:04.256743-04:00",
     "expires": "2026-08-28T14:20:04.256743-04:00"
@@ -311,5 +316,5 @@
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157293
+  "tg_update_offset": 785157294
 }
