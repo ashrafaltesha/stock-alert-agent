@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-27T10:43:38.615589-04:00",
+  "alert::news": "2026-08-27T12:51:09.618259-04:00",
   "alert::price": "2026-08-27T11:05:34.083964-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -42,7 +42,6 @@
     "keel stock holds key range as traders eye next move - stockstotrade"
   ],
   "alerted_titles::META": [
-    "meta settles child exploitation for $17.1b, eyes on tiktok, youtube, snapchat",
     "meta platforms reaches $18b settlement over social media addiction, urges peers \"to join us\" (meta:nasdaq) - seeking alpha",
     "meta joins a list of corporations that have settled cases for billions of dollars",
     "meta reaches multi-billion-dollar settlement with us states over social media addiction allegations",
@@ -81,7 +80,8 @@
     "3 big questions after meta\u2019s $18 billion teen safety settlement - time magazine",
     "could meta\u2019s teen settlement be less painful than feared? citi weighs in",
     "3 reasons the ai stock boom is very much back",
-    "here\u2019s what meta\u2019s $18 billion multistate settlement could mean for kids \u2014 and for its bottom line"
+    "here\u2019s what meta\u2019s $18 billion multistate settlement could mean for kids \u2014 and for its bottom line",
+    "meta settlement draws global calls for curbs - taipei times"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -158,7 +158,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-27T12:45:43.943590-04:00",
-  "hb::monitor": "2026-08-27T12:50:29.411002-04:00",
+  "hb::monitor": "2026-08-27T12:51:09.943194-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-27",
@@ -243,10 +243,6 @@
     ]
   ],
   "seen_news::META": [
-    [
-      "1e12c13ab4f85c5e",
-      29797277
-    ],
     [
       "65e6f817ab38eda3",
       29797299
@@ -341,6 +337,10 @@
     [
       "60fe1df891260238",
       29797335
+    ],
+    [
+      "af15efca1aa54c6c",
+      29797491
     ]
   ],
   "seen_news_google::QURE": [
