@@ -1,5 +1,5 @@
 {
-  "alert::news": "2026-08-27T07:11:22.502210-04:00",
+  "alert::news": "2026-08-27T08:59:28.951452-04:00",
   "alert::price": "2026-08-26T09:57:35.680552-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -42,7 +42,6 @@
     "keel stock holds key range as traders eye next move - stockstotrade"
   ],
   "alerted_titles::META": [
-    "meta reaches $17 bil. settlement with states in landmark trial over teen social media addiction - the korea times",
     "meta to pay up to $18 billion over social media claims - ad age",
     "paxton announces proposed $1 billion settlement with meta over child safety - texas scorecard",
     "meta settles child exploitation for $17.1b, eyes on tiktok, youtube, snapchat",
@@ -81,7 +80,8 @@
     "meta settlement puts fresh focus on global efforts to protect young social media users",
     "meta settlement opens new front in global fight over social media harm",
     "the morning risk report: meta reaches $18 billion settlement over child-safety claims",
-    "3 big questions after meta\u2019s $18 billion teen safety settlement - time magazine"
+    "3 big questions after meta\u2019s $18 billion teen safety settlement - time magazine",
+    "could meta\u2019s teen settlement be less painful than feared? citi weighs in"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -158,7 +158,7 @@
   },
   "hb::earnings_arm": "2026-08-26T06:20:28.155043-04:00",
   "hb::listener": "2026-08-27T08:57:24.190815-04:00",
-  "hb::monitor": "2026-08-27T08:58:30.480899-04:00",
+  "hb::monitor": "2026-08-27T08:59:29.239454-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-26",
@@ -234,10 +234,6 @@
   "seen_news::KEEL": [],
   "seen_news::META": [
     [
-      "b9edd201b13aa0ca",
-      29797048
-    ],
-    [
       "0c9e04506cded3d7",
       29797051
     ],
@@ -288,6 +284,10 @@
     [
       "75363b7551c485f8",
       29797248
+    ],
+    [
+      "e946ea58a2eefd59",
+      29797259
     ]
   ],
   "seen_news::QURE": [],
