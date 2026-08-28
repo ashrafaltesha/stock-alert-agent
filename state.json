@@ -1,7 +1,7 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
   "alert::news": "2026-08-28T11:53:33.313953-04:00",
-  "alert::price": "2026-08-28T12:01:35.439369-04:00",
+  "alert::price": "2026-08-28T12:02:45.007632-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
     "united asset strategies inc. acquires new shares in applovin corporation $app - marketbeat",
@@ -160,42 +160,42 @@
   "hb::earnings_arm": "2026-08-28T02:05:05.880320-04:00",
   "hb::earnings_watch": "2026-08-28T07:35:27.399445-04:00",
   "hb::listener": "2026-08-28T11:59:51.824550-04:00",
-  "hb::monitor": "2026-08-28T12:01:37.595609-04:00",
+  "hb::monitor": "2026-08-28T12:02:47.146489-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-28",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::BAK": {
     "date": "2026-08-28",
-    "max_step_up": 2,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 2
   },
   "price_ref::CENX": {
     "date": "2026-08-28",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::EVH": {
     "date": "2026-08-28",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::FOUR": {
     "date": "2026-08-28",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::GENI": {
     "date": "2026-08-28",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::KEEL": {
     "date": "2026-08-28",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -204,28 +204,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-08-28",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::RDDT": {
     "date": "2026-08-28",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::UAVS": {
     "date": "2026-08-28",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::WOLF": {
     "date": "2026-08-28",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::XPEV": {
     "date": "2026-08-28",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "seen_news::APP": [
     [
