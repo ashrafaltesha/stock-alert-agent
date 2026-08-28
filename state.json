@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-08-28T09:51:29.365790-04:00",
+  "alert::news": "2026-08-28T11:53:33.313953-04:00",
   "alert::price": "2026-08-28T10:22:27.878999-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -88,7 +88,8 @@
     "meta's $18 billion settlement could reshape social media stocks - yahoo finance uk"
   ],
   "alerted_titles::QURE": [
-    "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
+    "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat",
+    "why is uniqure (qure) up 17.5% since last earnings report? - yahoo finance"
   ],
   "alerted_titles::RDDT": [
     "reddit (nyse: rddt) shares set for sale by sauerberg trust - stock titan"
@@ -159,7 +160,7 @@
   "hb::earnings_arm": "2026-08-28T02:05:05.880320-04:00",
   "hb::earnings_watch": "2026-08-28T07:35:27.399445-04:00",
   "hb::listener": "2026-08-28T11:49:30.537050-04:00",
-  "hb::monitor": "2026-08-28T11:52:40.384799-04:00",
+  "hb::monitor": "2026-08-28T11:53:33.688065-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-28",
@@ -332,7 +333,12 @@
       29798668
     ]
   ],
-  "seen_news_google::QURE": [],
+  "seen_news_google::QURE": [
+    [
+      "85eae7ab0c4edea6",
+      29798873
+    ]
+  ],
   "seen_news_google::RDDT": [],
   "seen_news_google::UAVS": [
     [
