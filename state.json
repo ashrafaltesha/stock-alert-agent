@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-08-27T21:31:39.183683-04:00",
+  "alert::news": "2026-08-28T08:28:32.984611-04:00",
   "alert::price": "2026-08-27T15:59:31.821583-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -45,7 +45,6 @@
     "keel stock holds key range as traders eye next move - stockstotrade"
   ],
   "alerted_titles::META": [
-    "meta erases nearly 5% settlement pop as product risk survives - yahoo! finance canada",
     "meta reaches up to $17.1 billion multistate settlement over claims involving children, teens - wrnj radio",
     "watch meta, states agree to settle teen social media case - bloomberg",
     "this is how much colorado will receive from massive meta child safety settlement - colorado politics",
@@ -84,7 +83,8 @@
     "meta settlement draws global calls for curbs - taipei times",
     "states reach landmark settlement with meta platforms, inc - big island video news",
     "applovin stock has already taken a shock-sized fall without a shock",
-    "buried in meta\u2019s $18b settlement is a legal pass on kids\u2019 data"
+    "buried in meta\u2019s $18b settlement is a legal pass on kids\u2019 data",
+    "meta's $18 billion settlement could reshape social media stocks - yahoo finance uk"
   ],
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat"
@@ -158,7 +158,7 @@
   "hb::earnings_arm": "2026-08-28T02:05:05.880320-04:00",
   "hb::earnings_watch": "2026-08-28T07:35:27.399445-04:00",
   "hb::listener": "2026-08-28T08:20:36.024106-04:00",
-  "hb::monitor": "2026-08-28T08:27:33.916009-04:00",
+  "hb::monitor": "2026-08-28T08:28:33.582962-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-27",
@@ -252,6 +252,10 @@
     [
       "0f0ecf35e8e685c1",
       29798602
+    ],
+    [
+      "1ec7e9b29af42272",
+      29798668
     ]
   ],
   "seen_news::QURE": [],
@@ -274,6 +278,10 @@
     [
       "52576c47234ecf4b",
       29798666
+    ],
+    [
+      "b6d73b2c119af75d",
+      29798668
     ]
   ],
   "seen_news_google::QURE": [],
