@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-08-31T10:16:33.126734-04:00",
+  "alert::news": "2026-08-31T11:22:34.347091-04:00",
   "alert::price": "2026-08-31T09:52:29.364232-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -151,7 +151,7 @@
   "hb::earnings_arm": "2026-08-31T04:43:36.470309-04:00",
   "hb::earnings_watch": "2026-08-28T14:20:41.363379-04:00",
   "hb::listener": "2026-08-31T11:16:56.745195-04:00",
-  "hb::monitor": "2026-08-31T11:21:31.670846-04:00",
+  "hb::monitor": "2026-08-31T11:22:34.557842-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-31",
@@ -327,8 +327,16 @@
       29803087
     ]
   ],
-  "seen_news_google::UAVS": [],
+  "seen_news_google::UAVS": [
+    [
+      "4152eefd406452b6",
+      29803162
+    ]
+  ],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157305
+  "tg_update_offset": 785157305,
+  "alerted_titles::UAVS": [
+    "uavs q2 loss narrows y/y, revenues fall 36% on drone sales slide - yahoo finance"
+  ]
 }
