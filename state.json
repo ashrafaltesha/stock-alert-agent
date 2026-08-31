@@ -150,7 +150,7 @@
   "hb::earnings_arm": "2026-08-31T04:43:36.470309-04:00",
   "hb::earnings_watch": "2026-08-28T14:20:41.363379-04:00",
   "hb::listener": "2026-08-31T07:57:22.308611-04:00",
-  "hb::monitor": "2026-08-31T07:56:28.284144-04:00",
+  "hb::monitor": "2026-08-31T07:57:37.020149-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-28",
@@ -270,7 +270,12 @@
   "seen_news_google::CENX": [],
   "seen_news_google::EVH": [],
   "seen_news_google::FOUR": [],
-  "seen_news_google::GENI": [],
+  "seen_news_google::GENI": [
+    [
+      "57e6daf261104484",
+      29802957
+    ]
+  ],
   "seen_news_google::KEEL": [],
   "seen_news_google::META": [
     [
