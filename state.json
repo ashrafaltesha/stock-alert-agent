@@ -95,6 +95,9 @@
   "alerted_titles::RDDT": [
     "reddit (nyse: rddt) shares set for sale by sauerberg trust - stock titan"
   ],
+  "alerted_titles::UAVS": [
+    "uavs q2 loss narrows y/y, revenues fall 36% on drone sales slide - yahoo finance"
+  ],
   "alerted_titles::WOLF": [
     "wolfspeed (wolf) says ai data center revenue more than doubled. can it restore positive gross margins? - currently.com",
     "investor alert: pomerantz law firm investigates claims on behalf of investors of wolfspeed, inc. - wolf - pr newswire"
@@ -151,42 +154,42 @@
   "hb::earnings_arm": "2026-08-31T04:43:36.470309-04:00",
   "hb::earnings_watch": "2026-08-28T14:20:41.363379-04:00",
   "hb::listener": "2026-08-31T11:16:56.745195-04:00",
-  "hb::monitor": "2026-08-31T11:22:34.557842-04:00",
+  "hb::monitor": "2026-08-31T11:23:11.537172-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-31",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::BAK": {
     "date": "2026-08-31",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::CENX": {
     "date": "2026-08-31",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::EVH": {
     "date": "2026-08-31",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::FOUR": {
     "date": "2026-08-31",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::GENI": {
     "date": "2026-08-31",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::KEEL": {
     "date": "2026-08-31",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -195,28 +198,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-08-31",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::RDDT": {
     "date": "2026-08-31",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::UAVS": {
     "date": "2026-08-31",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::WOLF": {
     "date": "2026-08-31",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::XPEV": {
     "date": "2026-08-31",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "seen_news::APP": [
     [
@@ -335,8 +338,5 @@
   ],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157305,
-  "alerted_titles::UAVS": [
-    "uavs q2 loss narrows y/y, revenues fall 36% on drone sales slide - yahoo finance"
-  ]
+  "tg_update_offset": 785157305
 }
