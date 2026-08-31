@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-08-31T16:01:54.337207-04:00",
+  "alert::news": "2026-08-31T16:38:45.678122-04:00",
   "alert::price": "2026-08-31T14:24:29.673477-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -94,7 +94,8 @@
     "why is uniqure (qure) up 17.5% since last earnings report? - yahoo finance"
   ],
   "alerted_titles::RDDT": [
-    "reddit (nyse: rddt) shares set for sale by sauerberg trust - stock titan"
+    "reddit (nyse: rddt) shares set for sale by sauerberg trust - stock titan",
+    "reddit (nyse: rddt) trustee readies new share sale after 5 recent trades - stock titan"
   ],
   "alerted_titles::UAVS": [
     "uavs q2 loss narrows y/y, revenues fall 36% on drone sales slide - yahoo finance"
@@ -155,7 +156,7 @@
   "hb::earnings_arm": "2026-08-31T04:43:36.470309-04:00",
   "hb::earnings_watch": "2026-08-28T14:20:41.363379-04:00",
   "hb::listener": "2026-08-31T16:37:53.606430-04:00",
-  "hb::monitor": "2026-08-31T16:38:07.908841-04:00",
+  "hb::monitor": "2026-08-31T16:38:45.920408-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-31",
@@ -309,7 +310,12 @@
     ]
   ],
   "seen_news_google::QURE": [],
-  "seen_news_google::RDDT": [],
+  "seen_news_google::RDDT": [
+    [
+      "057dbd60422b46f7",
+      29803478
+    ]
+  ],
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
