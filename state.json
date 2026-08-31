@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-08-28T11:53:33.313953-04:00",
+  "alert::news": "2026-08-31T10:16:33.126734-04:00",
   "alert::price": "2026-08-31T09:52:29.364232-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -43,7 +43,8 @@
   ],
   "alerted_titles::KEEL": [
     "why keel infrastructure corp. stock surged yesterday - wealth awesome",
-    "keel stock holds key range as traders eye next move - stockstotrade"
+    "keel stock holds key range as traders eye next move - stockstotrade",
+    "should you invest in nvmi stock following healthy q2 results? - yahoo! finance canada"
   ],
   "alerted_titles::META": [
     "meta reaches up to $17.1 billion multistate settlement over claims involving children, teens - wrnj radio",
@@ -150,7 +151,7 @@
   "hb::earnings_arm": "2026-08-31T04:43:36.470309-04:00",
   "hb::earnings_watch": "2026-08-28T14:20:41.363379-04:00",
   "hb::listener": "2026-08-31T10:06:53.819824-04:00",
-  "hb::monitor": "2026-08-31T10:15:38.614121-04:00",
+  "hb::monitor": "2026-08-31T10:16:33.304549-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-31",
@@ -289,6 +290,10 @@
     [
       "508c51cf2826ed5f",
       29803089
+    ],
+    [
+      "425da7b25f555820",
+      29803096
     ]
   ],
   "seen_news_google::META": [
