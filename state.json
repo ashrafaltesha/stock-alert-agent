@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-08-31T23:32:32.405933-04:00",
+  "alert::news": "2026-09-01T00:35:32.301600-04:00",
   "alert::price": "2026-08-31T14:24:29.673477-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -124,7 +124,8 @@
     "xpeng to raise $900 million for robotics unit - caixin global",
     "xpeng (nyse: xpev) q2 rebound brings more sales, bigger loss - stock titan",
     "xpeng bets robots will be more profitable than its cars",
-    "xpeng posts huge funding round for robotics unit"
+    "xpeng posts huge funding round for robotics unit",
+    "xpeng announces vehicle delivery results for august 2026 - stock titan"
   ],
   "company_name::APP": "Applovin Corporation",
   "company_name::BAK": "Braskem SA",
@@ -157,7 +158,7 @@
   "hb::earnings_arm": "2026-08-31T18:41:01.684802-04:00",
   "hb::earnings_watch": "2026-08-28T14:20:41.363379-04:00",
   "hb::listener": "2026-09-01T00:31:41.798413-04:00",
-  "hb::monitor": "2026-09-01T00:34:30.117657-04:00",
+  "hb::monitor": "2026-09-01T00:35:32.595725-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-31",
@@ -300,6 +301,11 @@
   "seen_news_google::RDDT": [],
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [],
-  "seen_news_google::XPEV": [],
+  "seen_news_google::XPEV": [
+    [
+      "b392c7d1e4b747fc",
+      29803955
+    ]
+  ],
   "tg_update_offset": 785157306
 }
