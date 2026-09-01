@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-09-01T13:51:06.057942-04:00",
+  "alert::news": "2026-09-01T13:51:54.313652-04:00",
   "alert::price": "2026-09-01T09:39:17.765069-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -106,7 +106,7 @@
   "alerted_titles::WOLF": [
     "wolfspeed (wolf) says ai data center revenue more than doubled. can it restore positive gross margins? - currently.com",
     "investor alert: pomerantz law firm investigates claims on behalf of investors of wolfspeed, inc. - wolf - pr newswire",
-    "wolfspeed: ai data-centre growth and improved liquidity offset persistent losses and revenue weakness - kalkine.com.au"
+    "wolfspeed: ai data-centre growth and improved liquidity offset persistent losses and revenue weakness - kalkine"
   ],
   "alerted_titles::XPEV": [
     "xpeng inc. provides operating and revenue guidance for the third quarter of 2026 - marketscreener.com",
@@ -162,7 +162,7 @@
   "hb::earnings_arm": "2026-09-01T04:48:05.193185-04:00",
   "hb::earnings_watch": "2026-08-28T14:20:41.363379-04:00",
   "hb::listener": "2026-09-01T13:41:58.545277-04:00",
-  "hb::monitor": "2026-09-01T13:51:06.244101-04:00",
+  "hb::monitor": "2026-09-01T13:51:54.567823-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-01",
