@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-09-01T01:23:01.506897-04:00",
+  "alert::news": "2026-09-01T05:39:35.639277-04:00",
   "alert::price": "2026-08-31T14:24:29.673477-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -100,7 +100,8 @@
     "reddit (nyse: rddt) trustee readies new share sale after 5 recent trades - stock titan"
   ],
   "alerted_titles::UAVS": [
-    "uavs q2 loss narrows y/y, revenues fall 36% on drone sales slide - yahoo finance"
+    "uavs q2 loss narrows y/y, revenues fall 36% on drone sales slide - yahoo finance",
+    "can ageagle aerial systems stock sustain rebound as buyer support drives gains? - traders union"
   ],
   "alerted_titles::WOLF": [
     "wolfspeed (wolf) says ai data center revenue more than doubled. can it restore positive gross margins? - currently.com",
@@ -159,7 +160,7 @@
   "hb::earnings_arm": "2026-09-01T04:48:05.193185-04:00",
   "hb::earnings_watch": "2026-08-28T14:20:41.363379-04:00",
   "hb::listener": "2026-09-01T05:32:33.700804-04:00",
-  "hb::monitor": "2026-09-01T05:38:35.834879-04:00",
+  "hb::monitor": "2026-09-01T05:39:35.986692-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-08-31",
@@ -292,7 +293,12 @@
   ],
   "seen_news_google::QURE": [],
   "seen_news_google::RDDT": [],
-  "seen_news_google::UAVS": [],
+  "seen_news_google::UAVS": [
+    [
+      "e364c747a605c4e5",
+      29804259
+    ]
+  ],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
   "tg_update_offset": 785157306
