@@ -312,5 +312,11 @@
     ]
   ],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157312
+  "tg_update_offset": 785157313,
+  "ew_watch::GTLB": {
+    "armed": "2026-09-01T16:43:50.617309-04:00",
+    "expires": "2026-09-02T16:43:50.617309-04:00"
+  },
+  "ew_mark::GTLB": "0001628280-26-059820",
+  "ew_seen::GTLB": "0001628280-26-059820"
 }
