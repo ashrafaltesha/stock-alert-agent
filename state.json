@@ -1,7 +1,7 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
   "alert::news": "2026-09-01T09:30:53.449784-04:00",
-  "alert::price": "2026-09-01T09:37:43.004253-04:00",
+  "alert::price": "2026-09-01T09:39:17.765069-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
     "united asset strategies inc. acquires new shares in applovin corporation $app - marketbeat",
@@ -161,7 +161,7 @@
   "hb::earnings_arm": "2026-09-01T04:48:05.193185-04:00",
   "hb::earnings_watch": "2026-08-28T14:20:41.363379-04:00",
   "hb::listener": "2026-09-01T09:33:06.803373-04:00",
-  "hb::monitor": "2026-09-01T09:37:45.043700-04:00",
+  "hb::monitor": "2026-09-01T09:39:20.492035-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-01",
