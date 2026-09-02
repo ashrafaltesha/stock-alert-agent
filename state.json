@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-09-02T12:04:10.727489-04:00",
+  "alert::news": "2026-09-02T14:44:37.208469-04:00",
   "alert::price": "2026-09-02T13:29:17.336333-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -95,7 +95,8 @@
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat",
     "why is uniqure (qure) up 17.5% since last earnings report? - yahoo finance",
     "uniqure submits bla to fda and maa to mhra for amt-130 in huntington\u2019s disease - tradingview",
-    "uniqure's embattled huntington's gene therapy clears a key hurdle"
+    "uniqure's embattled huntington's gene therapy clears a key hurdle",
+    "uniqure seeks fda accelerated nod for gene therapy (qure) - seekingalpha.com"
   ],
   "alerted_titles::RDDT": [
     "reddit (nyse: rddt) shares set for sale by sauerberg trust - stock titan",
@@ -171,7 +172,7 @@
   "hb::earnings_arm": "2026-09-02T04:47:22.540627-04:00",
   "hb::earnings_watch": "2026-09-02T14:25:34.144753-04:00",
   "hb::listener": "2026-09-02T14:34:58.320868-04:00",
-  "hb::monitor": "2026-09-02T14:43:39.597311-04:00",
+  "hb::monitor": "2026-09-02T14:44:37.528731-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-02",
@@ -329,7 +330,12 @@
       29798668
     ]
   ],
-  "seen_news_google::QURE": [],
+  "seen_news_google::QURE": [
+    [
+      "dbdeabd08c7e2e1e",
+      29806244
+    ]
+  ],
   "seen_news_google::RDDT": [
     [
       "0be521757fc7525c",
