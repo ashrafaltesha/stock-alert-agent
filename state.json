@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-09-02T08:13:36.614410-04:00",
+  "alert::news": "2026-09-02T12:03:21.464437-04:00",
   "alert::price": "2026-09-02T11:11:05.366160-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -94,7 +94,8 @@
   "alerted_titles::QURE": [
     "uniqure (nasdaq:qure) upgraded by wall street zen to \"hold\" rating - marketbeat",
     "why is uniqure (qure) up 17.5% since last earnings report? - yahoo finance",
-    "uniqure submits bla to fda and maa to mhra for amt-130 in huntington\u2019s disease - tradingview"
+    "uniqure submits bla to fda and maa to mhra for amt-130 in huntington\u2019s disease - tradingview",
+    "uniqure's embattled huntington's gene therapy clears a key hurdle"
   ],
   "alerted_titles::RDDT": [
     "reddit (nyse: rddt) shares set for sale by sauerberg trust - stock titan",
@@ -170,47 +171,47 @@
   "hb::earnings_arm": "2026-09-02T04:47:22.540627-04:00",
   "hb::earnings_watch": "2026-09-02T11:25:41.023893-04:00",
   "hb::listener": "2026-09-02T11:57:30.420571-04:00",
-  "hb::monitor": "2026-09-02T12:02:36.770967-04:00",
+  "hb::monitor": "2026-09-02T12:03:22.065298-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-02",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::BAK": {
     "date": "2026-09-02",
-    "max_step_up": 3,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 3
   },
   "price_ref::CENX": {
     "date": "2026-09-02",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::EVH": {
     "date": "2026-09-02",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::FOUR": {
     "date": "2026-09-02",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::GENI": {
     "date": "2026-09-02",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::HE": {
     "date": "2026-09-02",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::KEEL": {
     "date": "2026-09-02",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -219,28 +220,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-09-02",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::RDDT": {
     "date": "2026-09-02",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::UAVS": {
     "date": "2026-09-02",
-    "max_step_up": 2,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 2
   },
   "price_ref::WOLF": {
     "date": "2026-09-02",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::XPEV": {
     "date": "2026-09-02",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "seen_news::APP": [],
   "seen_news::BAK": [],
@@ -284,6 +285,10 @@
     [
       "a3efcba92852cd7e",
       29805959
+    ],
+    [
+      "9ce330908362e1eb",
+      29806083
     ]
   ],
   "seen_news::RDDT": [
