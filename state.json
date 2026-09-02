@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-09-02T14:44:37.208469-04:00",
+  "alert::news": "2026-09-02T16:45:30.183185-04:00",
   "alert::price": "2026-09-02T13:29:17.336333-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -109,7 +109,9 @@
   "alerted_titles::WOLF": [
     "wolfspeed (wolf) says ai data center revenue more than doubled. can it restore positive gross margins? - currently.com",
     "investor alert: pomerantz law firm investigates claims on behalf of investors of wolfspeed, inc. - wolf - pr newswire",
-    "wolfspeed: ai data-centre growth and improved liquidity offset persistent losses and revenue weakness - kalkine"
+    "wolfspeed: ai data-centre growth and improved liquidity offset persistent losses and revenue weakness - kalkine",
+    "coo\u2019s new grant lifts wolfspeed (wolf) stake to 156,151 shares - stock titan",
+    "wolfspeed (wolf) legal chief gets 19,835-share rsu award - stock titan"
   ],
   "alerted_titles::XPEV": [
     "xpeng inc. provides operating and revenue guidance for the third quarter of 2026 - marketscreener.com",
@@ -167,7 +169,7 @@
   "hb::earnings_arm": "2026-09-02T04:47:22.540627-04:00",
   "hb::earnings_watch": "2026-09-02T16:44:01.004543-04:00",
   "hb::listener": "2026-09-02T16:42:06.977925-04:00",
-  "hb::monitor": "2026-09-02T16:44:36.702822-04:00",
+  "hb::monitor": "2026-09-02T16:45:30.687468-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-02",
@@ -332,7 +334,16 @@
     ]
   ],
   "seen_news_google::UAVS": [],
-  "seen_news_google::WOLF": [],
+  "seen_news_google::WOLF": [
+    [
+      "ca3123846381f1bb",
+      29806365
+    ],
+    [
+      "ed950f1f8669c3b5",
+      29806365
+    ]
+  ],
   "seen_news_google::XPEV": [],
   "tg_update_offset": 785157324
 }
