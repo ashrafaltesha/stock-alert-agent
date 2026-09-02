@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-09-02T16:45:30.183185-04:00",
+  "alert::news": "2026-09-02T17:06:47.369849-04:00",
   "alert::price": "2026-09-02T13:29:17.336333-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -100,7 +100,8 @@
   ],
   "alerted_titles::RDDT": [
     "reddit (nyse: rddt) shares set for sale by sauerberg trust - stock titan",
-    "reddit (nyse: rddt) trustee readies new share sale after 5 recent trades - stock titan"
+    "reddit (nyse: rddt) trustee readies new share sale after 5 recent trades - stock titan",
+    "reddit rddt stock jumps as s&p 500 inclusion fuels momentum - stockstotrade"
   ],
   "alerted_titles::UAVS": [
     "uavs q2 loss narrows y/y, revenues fall 36% on drone sales slide - yahoo finance",
@@ -169,7 +170,7 @@
   "hb::earnings_arm": "2026-09-02T04:47:22.540627-04:00",
   "hb::earnings_watch": "2026-09-02T16:44:01.004543-04:00",
   "hb::listener": "2026-09-02T17:02:36.841429-04:00",
-  "hb::monitor": "2026-09-02T17:06:02.223812-04:00",
+  "hb::monitor": "2026-09-02T17:06:47.669329-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-02",
@@ -322,7 +323,12 @@
       29806344
     ]
   ],
-  "seen_news_google::RDDT": [],
+  "seen_news_google::RDDT": [
+    [
+      "0f8b486d8e5eb982",
+      29806386
+    ]
+  ],
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [
     [
