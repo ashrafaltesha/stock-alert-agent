@@ -171,47 +171,47 @@
   "hb::earnings_arm": "2026-09-02T04:47:22.540627-04:00",
   "hb::earnings_watch": "2026-09-02T13:21:11.726700-04:00",
   "hb::listener": "2026-09-02T14:02:49.787929-04:00",
-  "hb::monitor": "2026-09-02T14:04:56.831260-04:00",
+  "hb::monitor": "2026-09-02T14:05:39.065092-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-02",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::BAK": {
     "date": "2026-09-02",
-    "max_step_down": 0,
-    "max_step_up": 3
+    "max_step_up": 3,
+    "max_step_down": 0
   },
   "price_ref::CENX": {
     "date": "2026-09-02",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::EVH": {
     "date": "2026-09-02",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::FOUR": {
     "date": "2026-09-02",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::GENI": {
     "date": "2026-09-02",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::HE": {
     "date": "2026-09-02",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::KEEL": {
     "date": "2026-09-02",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -220,28 +220,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-09-02",
-    "max_step_down": 1,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 1
   },
   "price_ref::RDDT": {
     "date": "2026-09-02",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::UAVS": {
     "date": "2026-09-02",
-    "max_step_down": 0,
-    "max_step_up": 2
+    "max_step_up": 2,
+    "max_step_down": 0
   },
   "price_ref::WOLF": {
     "date": "2026-09-02",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::XPEV": {
     "date": "2026-09-02",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "seen_news::APP": [
     [
