@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-09-02T17:39:41.076520-04:00",
+  "alert::news": "2026-09-03T07:37:35.231487-04:00",
   "alert::price": "2026-09-02T13:29:17.336333-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -103,7 +103,8 @@
     "reddit (nyse: rddt) trustee readies new share sale after 5 recent trades - stock titan",
     "reddit rddt stock jumps as s&p 500 inclusion fuels momentum - stockstotrade",
     "reddit is one of today\u2019s top s&p 500 stocks. it has a lot to do with its google data deal.",
-    "reddit stock soars as s&p 500 inclusion ignites demand - timothysykes.com"
+    "reddit stock soars as s&p 500 inclusion ignites demand - timothysykes.com",
+    "reddit stock popped 9.31% yesterday on an ai licensing bet. here\u2019s the fuller picture. - tikr.com"
   ],
   "alerted_titles::UAVS": [
     "uavs q2 loss narrows y/y, revenues fall 36% on drone sales slide - yahoo finance",
@@ -173,7 +174,7 @@
   "hb::earnings_arm": "2026-09-03T04:48:04.795759-04:00",
   "hb::earnings_watch": "2026-09-02T16:44:01.004543-04:00",
   "hb::listener": "2026-09-03T07:31:54.427653-04:00",
-  "hb::monitor": "2026-09-03T07:36:29.658540-04:00",
+  "hb::monitor": "2026-09-03T07:37:35.441791-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-02",
@@ -321,6 +322,10 @@
     [
       "d4650f4b6c2afaef",
       29807129
+    ],
+    [
+      "798d072566ba51ae",
+      29807257
     ]
   ],
   "seen_news_google::UAVS": [],
