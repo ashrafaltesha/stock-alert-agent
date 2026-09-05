@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-09-05T01:58:33.101717-04:00",
+  "alert::news": "2026-09-05T03:22:31.016932-04:00",
   "alert::price": "2026-09-04T12:09:35.885750-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -100,7 +100,8 @@
     "uniqure's embattled huntington's gene therapy clears a key hurdle",
     "uniqure seeks fda accelerated nod for gene therapy (qure) - seekingalpha.com",
     "qure submits application for gene therapy for huntington's disease - yahoo finance",
-    "uniqure has huntington\u2019s gene therapy approval in its sights again - insights.citeline.com"
+    "uniqure has huntington\u2019s gene therapy approval in its sights again - insights.citeline.com",
+    "qure stock gains as uniqure moves closer to fda review for huntington\u2019s gene therapy - ad hoc news"
   ],
   "alerted_titles::RDDT": [
     "reddit (nyse: rddt) shares set for sale by sauerberg trust - stock titan",
@@ -180,7 +181,7 @@
   "hb::earnings_arm": "2026-09-04T18:42:26.921126-04:00",
   "hb::earnings_watch": "2026-09-02T16:44:01.004543-04:00",
   "hb::listener": "2026-09-05T03:20:14.165243-04:00",
-  "hb::monitor": "2026-09-05T03:21:27.482732-04:00",
+  "hb::monitor": "2026-09-05T03:22:31.212313-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-04",
@@ -313,7 +314,12 @@
       29798668
     ]
   ],
-  "seen_news_google::QURE": [],
+  "seen_news_google::QURE": [
+    [
+      "28b9dadd770048ea",
+      29809882
+    ]
+  ],
   "seen_news_google::RDDT": [],
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [
