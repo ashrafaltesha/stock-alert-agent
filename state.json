@@ -181,7 +181,7 @@
   "hb::earnings_arm": "2026-09-04T18:42:26.921126-04:00",
   "hb::earnings_watch": "2026-09-02T16:44:01.004543-04:00",
   "hb::listener": "2026-09-05T04:42:16.837860-04:00",
-  "hb::monitor": "2026-09-05T04:43:22.699616-04:00",
+  "hb::monitor": "2026-09-05T04:44:34.854519-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-04",
@@ -320,7 +320,12 @@
       29809882
     ]
   ],
-  "seen_news_google::RDDT": [],
+  "seen_news_google::RDDT": [
+    [
+      "96bc33fe9d118254",
+      29809964
+    ]
+  ],
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [
     [
