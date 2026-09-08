@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
-  "alert::news": "2026-09-05T09:34:38.685559-04:00",
+  "alert::news": "2026-09-08T16:52:38.526543-04:00",
   "alert::price": "2026-09-08T15:04:25.040637-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -49,7 +49,8 @@
     "keel stock holds key range as traders eye next move - stockstotrade",
     "should you invest in nvmi stock following healthy q2 results? - yahoo! finance canada",
     "five below (five) reports q2: everything you need to know ahead of earnings - yahoo! finance canada",
-    "why nvidia\u2019s hugging face acquisition signals ai\u2019s full ecosystem play - yahoo! finance canada"
+    "why nvidia\u2019s hugging face acquisition signals ai\u2019s full ecosystem play - yahoo! finance canada",
+    "keel stock grinds higher as traders track cash-rich turnaround - stockstotrade.com"
   ],
   "alerted_titles::META": [
     "meta reaches up to $17.1 billion multistate settlement over claims involving children, teens - wrnj radio",
@@ -188,7 +189,7 @@
   "hb::earnings_arm": "2026-09-08T04:49:04.232493-04:00",
   "hb::earnings_watch": "2026-09-02T16:44:01.004543-04:00",
   "hb::listener": "2026-09-08T16:48:22.422941-04:00",
-  "hb::monitor": "2026-09-08T16:51:28.071476-04:00",
+  "hb::monitor": "2026-09-08T16:52:39.123703-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-08",
@@ -320,6 +321,10 @@
     [
       "1881f236c6e01d3b",
       29814994
+    ],
+    [
+      "d07c18fe802420d9",
+      29815012
     ]
   ],
   "seen_news_google::HE": [],
@@ -327,6 +332,10 @@
     [
       "f6499f4b59f7d0b4",
       29815007
+    ],
+    [
+      "cdb735e98a613a86",
+      29815012
     ]
   ],
   "seen_news_google::META": [
@@ -348,5 +357,8 @@
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157335
+  "tg_update_offset": 785157335,
+  "alerted_titles::GENI": [
+    "genius sports partners with chris paul to launch sports media venture - investing.com"
+  ]
 }
