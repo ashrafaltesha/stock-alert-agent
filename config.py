@@ -53,12 +53,33 @@ WATCHLIST = _load_watchlist()
 # +15%, etc. from that SAME close each alert once per day).
 PRICE_CHANGE_THRESHOLD_PCT = 5.0
 
-# How far back to look for "new" news articles on each run (minutes).
-# Should be >= the longer of the two cron intervals (60 min, off-hours)
-# with a little buffer -- the 5-min market-hours cadence works fine with
-# this same window since duplicate alerts are prevented separately by the
-# seen-article-id dedup, not by this window.
-NEWS_LOOKBACK_MINUTES = 70
+# How old an article may be, when first seen, and still alert (minutes).
+#
+# This was 70, sized against the off-hours cron interval on the assumption
+# that the risk was missing something BETWEEN runs. That was the wrong
+# question. The monitor runs every minute; nothing is missed between runs.
+# What matters is how stale an item already is when the feed first surfaces
+# it, and Google News RSS ranks by RELEVANCE, not recency.
+#
+# Measured directly on 2026-09-08, reading the same queries the bot sends:
+#
+#   "XPeng Inc."             100 items   freshest 155 min   0 within 70 min
+#   "Meta Platforms, Inc."   100 items   freshest  89 min   0 within 70 min
+#   "Applovin Corporation"   101 items   freshest 153 min   0 within 70 min
+#
+# So for three days nothing cleared the gate, every run logged "0 candidate
+# article(s)", and the news path looked healthy while delivering nothing.
+# XPeng's humanoid-robot story sat at the top of its feed at 155 minutes old
+# and was never eligible.
+#
+# 360 sits at the natural break in that distribution: past the 89-155 minute
+# cluster of genuinely fresh items, before the jump to 6h+ where the rest of
+# the feed lives. This does NOT risk duplicate alerts -- an article alerts at
+# most once, enforced by the seen-id dedup, never by this window.
+#
+# The one thing it does change: the first run for a NEWLY added ticker can
+# now surface up to six hours of backlog rather than seventy minutes.
+NEWS_LOOKBACK_MINUTES = 360
 
 # Keyword filter for "material" news -- only headlines matching one of
 # these (case-insensitive substring match) get sent as alerts. Everything

@@ -865,8 +865,15 @@ def test_only_alertable_articles_are_remembered(monkeypatch):
     monkeypatch.setattr(monitor, "send_telegram_message", sent.append)
 
     state, key = {}, "seen_news_google::RDDT"
+    # Ages are expressed RELATIVE to the configured window. They used to be
+    # literals (5 and 200+) chosen against a 70-minute window, so widening the
+    # window to 360 turned the "old" articles into in-window ones and the test
+    # failed for a reason that had nothing to do with what it checks. The
+    # property here is "outside the window is not remembered", whatever the
+    # window happens to be.
+    stale = monitor.NEWS_LOOKBACK_MINUTES + 10
     feed = ([("fresh", 5, "Reddit signs $500 million cloud deal")]
-            + [(f"old{i}", 200 + i, f"Reddit older story {i}") for i in range(99)])
+            + [(f"old{i}", stale + i, f"Reddit older story {i}") for i in range(99)])
 
     def run(items):
         seen = monitor._load_seen(state, key)
