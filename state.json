@@ -174,11 +174,17 @@
   "ew_last_earnings::UAVS": "2026-08-14",
   "ew_last_earnings::WOLF": "2026-08-19",
   "ew_last_earnings::XPEV": "2026-08-25",
+  "ew_mark::BRZE": "0001888935-26-000025",
   "ew_mark::CRWD": "0000950103-26-012856",
   "ew_mark::GTLB": "0001628280-26-059943",
   "ew_mark::LI": "0001104659-26-099827",
   "ew_mark::NVDA": "0001045810-26-000075",
   "ew_mark::RBRK": "0001943896-26-000055",
+  "ew_seen::BRZE": "0001888935-26-000025",
+  "ew_watch::BRZE": {
+    "armed": "2026-09-08T16:03:26.790069-04:00",
+    "expires": "2026-09-09T16:03:26.790069-04:00"
+  },
   "hb::earnings_arm": "2026-09-08T04:49:04.232493-04:00",
   "hb::earnings_watch": "2026-09-02T16:44:01.004543-04:00",
   "hb::listener": "2026-09-08T15:53:41.371132-04:00",
@@ -325,5 +331,5 @@
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157334
+  "tg_update_offset": 785157335
 }
