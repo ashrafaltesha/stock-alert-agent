@@ -182,7 +182,7 @@
   "hb::earnings_arm": "2026-09-08T04:49:04.232493-04:00",
   "hb::earnings_watch": "2026-09-02T16:44:01.004543-04:00",
   "hb::listener": "2026-09-08T14:41:16.359232-04:00",
-  "hb::monitor": "2026-09-08T14:42:34.522982-04:00",
+  "hb::monitor": "2026-09-08T14:43:27.981513-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-08",
@@ -293,12 +293,7 @@
   "seen_news::UAVS": [],
   "seen_news::WOLF": [],
   "seen_news::XPEV": [],
-  "seen_news_google::APP": [
-    [
-      "7186cb554c354e60",
-      29814671
-    ]
-  ],
+  "seen_news_google::APP": [],
   "seen_news_google::BAK": [],
   "seen_news_google::CENX": [],
   "seen_news_google::EVH": [],
@@ -306,10 +301,6 @@
   "seen_news_google::GENI": [],
   "seen_news_google::HE": [],
   "seen_news_google::KEEL": [
-    [
-      "c774b58431831e88",
-      29814670
-    ],
     [
       "de751828acee5d6a",
       29814759
@@ -338,11 +329,6 @@
     ]
   ],
   "seen_news_google::WOLF": [],
-  "seen_news_google::XPEV": [
-    [
-      "20fc217cb6536e6c",
-      29814670
-    ]
-  ],
+  "seen_news_google::XPEV": [],
   "tg_update_offset": 785157333
 }
