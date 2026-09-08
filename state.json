@@ -44,6 +44,9 @@
     "fintech, payments firms outperform expectations amid solid consumer spending, rbc says",
     "shift4 payments, inc. stock 12\u2011month price target cut to $52.1, implies 15% upside - tradingview"
   ],
+  "alerted_titles::GENI": [
+    "genius sports partners with chris paul to launch sports media venture - investing.com"
+  ],
   "alerted_titles::KEEL": [
     "why keel infrastructure corp. stock surged yesterday - wealth awesome",
     "keel stock holds key range as traders eye next move - stockstotrade",
@@ -188,7 +191,7 @@
   },
   "hb::earnings_arm": "2026-09-08T04:49:04.232493-04:00",
   "hb::earnings_watch": "2026-09-02T16:44:01.004543-04:00",
-  "hb::listener": "2026-09-08T16:48:22.422941-04:00",
+  "hb::listener": "2026-09-08T16:58:40.791910-04:00",
   "hb::monitor": "2026-09-08T16:58:35.942085-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
@@ -361,8 +364,5 @@
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157335,
-  "alerted_titles::GENI": [
-    "genius sports partners with chris paul to launch sports media venture - investing.com"
-  ]
+  "tg_update_offset": 785157335
 }
