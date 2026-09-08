@@ -1,5 +1,5 @@
 {
-  "alert::earnings": "2026-08-27T16:07:12.514321-04:00",
+  "alert::earnings": "2026-09-08T16:08:24.680956-04:00",
   "alert::news": "2026-09-08T16:52:38.526543-04:00",
   "alert::price": "2026-09-08T15:04:25.040637-04:00",
   "alerted_titles::APP": [
@@ -166,6 +166,7 @@
   "company_name::UAVS": "AgEagle Aerial Systems, Inc.",
   "company_name::WOLF": "Wolfspeed, Inc.",
   "company_name::XPEV": "XPeng Inc.",
+  "ew_last_earnings::BRZE": "2026-09-08",
   "ew_last_earnings::CENX": "2026-08-06",
   "ew_last_earnings::EVH": "2026-08-06",
   "ew_last_earnings::FOUR": "2026-08-06",
@@ -178,19 +179,20 @@
   "ew_last_earnings::UAVS": "2026-08-14",
   "ew_last_earnings::WOLF": "2026-08-19",
   "ew_last_earnings::XPEV": "2026-08-25",
-  "ew_mark::BRZE": "0001888935-26-000025",
+  "ew_mark::BRZE": "0001676238-26-000039",
   "ew_mark::CRWD": "0000950103-26-012856",
   "ew_mark::GTLB": "0001628280-26-059943",
   "ew_mark::LI": "0001104659-26-099827",
   "ew_mark::NVDA": "0001045810-26-000075",
   "ew_mark::RBRK": "0001943896-26-000055",
-  "ew_seen::BRZE": "0001888935-26-000025",
+  "ew_seen::BRZE": "0001676238-26-000039",
   "ew_watch::BRZE": {
     "armed": "2026-09-08T16:03:26.790069-04:00",
-    "expires": "2026-09-09T16:03:26.790069-04:00"
+    "expires": "2026-09-09T16:03:26.790069-04:00",
+    "hit": true
   },
   "hb::earnings_arm": "2026-09-08T04:49:04.232493-04:00",
-  "hb::earnings_watch": "2026-09-02T16:44:01.004543-04:00",
+  "hb::earnings_watch": "2026-09-08T17:48:49.614542-04:00",
   "hb::listener": "2026-09-08T17:39:49.883710-04:00",
   "hb::monitor": "2026-09-08T17:48:30.810088-04:00",
   "news_id_scheme": "sha1-16",
