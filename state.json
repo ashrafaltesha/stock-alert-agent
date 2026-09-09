@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-08T17:49:20.340044-04:00",
-  "alert::news": "2026-09-09T13:51:00.560577-04:00",
+  "alert::news": "2026-09-09T13:51:52.373200-04:00",
   "alert::price": "2026-09-09T13:15:34.969857-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -212,7 +212,7 @@
   "hb::earnings_arm": "2026-09-09T09:07:48.161791-04:00",
   "hb::earnings_watch": "2026-09-09T13:47:40.957849-04:00",
   "hb::listener": "2026-09-09T13:48:34.479163-04:00",
-  "hb::monitor": "2026-09-09T13:51:01.103275-04:00",
+  "hb::monitor": "2026-09-09T13:51:53.000247-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-09",
@@ -352,14 +352,6 @@
   "seen_news_google::BAK": [],
   "seen_news_google::BRZE": [
     [
-      "116c625da92e2cd1",
-      29816060
-    ],
-    [
-      "c69dcb298d6d5568",
-      29816060
-    ],
-    [
       "0df6167ffbef7925",
       29816070
     ],
@@ -405,7 +397,7 @@
     ],
     [
       "ceb4129e7367b583",
-      29816270
+      29816271
     ]
   ],
   "seen_news_google::CENX": [],
