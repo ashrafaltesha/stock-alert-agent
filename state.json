@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-08T17:49:20.340044-04:00",
-  "alert::news": "2026-09-08T23:40:39.628038-04:00",
+  "alert::news": "2026-09-09T01:04:35.509429-04:00",
   "alert::price": "2026-09-08T15:04:25.040637-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -34,7 +34,8 @@
     "braskem stock trades at low levels as earnings highlight weak margins - ad hoc news"
   ],
   "alerted_titles::BRZE": [
-    "braze stock tumbles 10% on weak third quarter eps guidance by investing.com - investing.com australia"
+    "braze stock tumbles 10% on weak third quarter eps guidance by investing.com - investing.com australia",
+    "braze inc (brze) (q2 2027) earnings call highlights: record revenue and ai adoption drive growth - yahoo finance uk"
   ],
   "alerted_titles::CENX": [
     "freedom expects century aluminum shares to rise by more than a quarter - freedom broker"
@@ -199,7 +200,7 @@
   "hb::earnings_arm": "2026-09-08T18:44:17.651022-04:00",
   "hb::earnings_watch": "2026-09-08T20:08:49.064441-04:00",
   "hb::listener": "2026-09-09T00:56:05.038754-04:00",
-  "hb::monitor": "2026-09-09T01:03:36.672624-04:00",
+  "hb::monitor": "2026-09-09T01:04:36.152940-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-08",
@@ -323,7 +324,12 @@
   "seen_news::XPEV": [],
   "seen_news_google::APP": [],
   "seen_news_google::BAK": [],
-  "seen_news_google::BRZE": [],
+  "seen_news_google::BRZE": [
+    [
+      "fbb01e89ac24704c",
+      29815504
+    ]
+  ],
   "seen_news_google::CENX": [],
   "seen_news_google::EVH": [],
   "seen_news_google::FOUR": [],
