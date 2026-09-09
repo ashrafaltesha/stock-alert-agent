@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-08T17:49:20.340044-04:00",
-  "alert::news": "2026-09-09T12:40:43.871471-04:00",
+  "alert::news": "2026-09-09T13:51:00.560577-04:00",
   "alert::price": "2026-09-09T13:15:34.969857-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -46,7 +46,8 @@
     "braze sinks 12% as soft earnings guide overshadows beat and raise; klaviyo advances 3% - yahoo finance",
     "why is braze stock sinking wednesday? - benzinga",
     "brze q2 deep dive: market reacts to ai adoption, vendor consolidation, and competitive shifts",
-    "braze stock falls after strong q2 report: analysts still bullish - braze (nasdaq:brze) - benzinga"
+    "braze stock falls after strong q2 report: analysts still bullish - braze (nasdaq:brze) - benzinga",
+    "braze (brze) stock trades down, here is why - yahoo finance"
   ],
   "alerted_titles::CENX": [
     "freedom expects century aluminum shares to rise by more than a quarter - freedom broker"
@@ -211,52 +212,52 @@
   "hb::earnings_arm": "2026-09-09T09:07:48.161791-04:00",
   "hb::earnings_watch": "2026-09-09T13:47:40.957849-04:00",
   "hb::listener": "2026-09-09T13:48:34.479163-04:00",
-  "hb::monitor": "2026-09-09T13:50:13.605010-04:00",
+  "hb::monitor": "2026-09-09T13:51:01.103275-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-09",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::BAK": {
     "date": "2026-09-09",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::BRZE": {
     "date": "2026-09-09",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::CENX": {
     "date": "2026-09-09",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::EVH": {
     "date": "2026-09-09",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::FOUR": {
     "date": "2026-09-09",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::GENI": {
     "date": "2026-09-09",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::HE": {
     "date": "2026-09-09",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::KEEL": {
     "date": "2026-09-09",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -265,28 +266,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-09-09",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::RDDT": {
     "date": "2026-09-09",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::UAVS": {
     "date": "2026-09-09",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::WOLF": {
     "date": "2026-09-09",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::XPEV": {
     "date": "2026-09-09",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "seen_news::APP": [],
   "seen_news::BAK": [],
@@ -401,6 +402,10 @@
     [
       "f725c75f0e6b7168",
       29816250
+    ],
+    [
+      "ceb4129e7367b583",
+      29816270
     ]
   ],
   "seen_news_google::CENX": [],
