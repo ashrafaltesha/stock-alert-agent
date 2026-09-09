@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-08T17:49:20.340044-04:00",
-  "alert::news": "2026-09-09T06:12:31.278420-04:00",
+  "alert::news": "2026-09-09T06:34:33.674925-04:00",
   "alert::price": "2026-09-08T15:04:25.040637-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -37,7 +37,8 @@
     "braze stock tumbles 10% on weak third quarter eps guidance by investing.com - investing.com australia",
     "braze inc (brze) (q2 2027) earnings call highlights: record revenue and ai adoption drive growth - yahoo finance uk",
     "full transcript: braze q2 2027 earnings call - benzinga",
-    "braze (nasdaq: brze) posts 26% growth and positive cash flow but remains unprofitable - stock titan"
+    "braze (nasdaq: brze) posts 26% growth and positive cash flow but remains unprofitable - stock titan",
+    "canaccord raises braze stock price target on strong revenue growth by investing.com - investing.com canada"
   ],
   "alerted_titles::CENX": [
     "freedom expects century aluminum shares to rise by more than a quarter - freedom broker"
@@ -202,7 +203,7 @@
   "hb::earnings_arm": "2026-09-08T18:44:17.651022-04:00",
   "hb::earnings_watch": "2026-09-09T01:39:04.272768-04:00",
   "hb::listener": "2026-09-09T06:25:42.766699-04:00",
-  "hb::monitor": "2026-09-09T06:33:32.585541-04:00",
+  "hb::monitor": "2026-09-09T06:34:34.317108-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-08",
@@ -328,6 +329,10 @@
     [
       "44273398c28b4388",
       29815812
+    ],
+    [
+      "35c1d3bd55c377a7",
+      29815834
     ]
   ],
   "seen_news_google::CENX": [],
