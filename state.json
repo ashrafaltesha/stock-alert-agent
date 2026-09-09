@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-08T17:49:20.340044-04:00",
-  "alert::news": "2026-09-09T14:43:39.865697-04:00",
+  "alert::news": "2026-09-09T16:12:37.343239-04:00",
   "alert::price": "2026-09-09T15:42:25.709467-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -49,7 +49,8 @@
     "braze stock falls after strong q2 report: analysts still bullish - braze (nasdaq:brze) - benzinga",
     "braze (brze) stock trades down, here is why - yahoo finance",
     "braze shares fall after fiscal q2 results - marketscreener.com",
-    "update: braze shares fall after fiscal q2 results"
+    "update: braze shares fall after fiscal q2 results",
+    "braze earnings analysis: questions answered and next catalysts - investing.com"
   ],
   "alerted_titles::CENX": [
     "freedom expects century aluminum shares to rise by more than a quarter - freedom broker"
@@ -208,7 +209,7 @@
   "hb::earnings_arm": "2026-09-09T09:07:48.161791-04:00",
   "hb::earnings_watch": "2026-09-09T16:03:33.537528-04:00",
   "hb::listener": "2026-09-09T16:12:32.060931-04:00",
-  "hb::monitor": "2026-09-09T16:11:30.183798-04:00",
+  "hb::monitor": "2026-09-09T16:12:37.585739-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-09",
@@ -397,6 +398,10 @@
     [
       "e4a1eba86ea8a0d2",
       29816320
+    ],
+    [
+      "e7822a58d7efb0c0",
+      29816412
     ]
   ],
   "seen_news_google::CENX": [],
