@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-08T17:49:20.340044-04:00",
-  "alert::news": "2026-09-10T11:51:36.870065-04:00",
+  "alert::news": "2026-09-10T13:37:34.880980-04:00",
   "alert::price": "2026-09-10T11:51:28.627053-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -137,7 +137,8 @@
     "reddit is one of today\u2019s top s&p 500 stocks. it has a lot to do with its google data deal.",
     "reddit stock soars as s&p 500 inclusion ignites demand - timothysykes.com",
     "reddit stock popped 9.31% yesterday on an ai licensing bet. here\u2019s the fuller picture. - tikr.com",
-    "reddit\u2019s august user growth jumps 8% month-on-month, international users surge 29%: report - tradingview.com"
+    "reddit\u2019s august user growth jumps 8% month-on-month, international users surge 29%: report - tradingview.com",
+    "reddit gains as august user growth accelerates, piper says (rddt:nyse) - seeking alpha"
   ],
   "alerted_titles::UAVS": [
     "uavs q2 loss narrows y/y, revenues fall 36% on drone sales slide - yahoo finance",
@@ -212,7 +213,7 @@
   "hb::earnings_arm": "2026-09-10T09:06:07.937363-04:00",
   "hb::earnings_watch": "2026-09-09T16:03:33.537528-04:00",
   "hb::listener": "2026-09-10T13:36:56.454920-04:00",
-  "hb::monitor": "2026-09-10T13:36:46.360971-04:00",
+  "hb::monitor": "2026-09-10T13:37:35.056704-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-10",
@@ -406,6 +407,10 @@
     [
       "03e20fc26354e9b1",
       29817640
+    ],
+    [
+      "e68aba34dcf9ccc1",
+      29817697
     ]
   ],
   "seen_news_google::UAVS": [],
