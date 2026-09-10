@@ -214,7 +214,7 @@
   "hb::earnings_arm": "2026-09-10T09:06:07.937363-04:00",
   "hb::earnings_watch": "2026-09-09T16:03:33.537528-04:00",
   "hb::listener": "2026-09-10T14:40:11.272022-04:00",
-  "hb::monitor": "2026-09-10T14:41:32.990698-04:00",
+  "hb::monitor": "2026-09-10T14:42:33.909950-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-10",
@@ -308,7 +308,12 @@
   "seen_news::FOUR": [],
   "seen_news::GENI": [],
   "seen_news::HE": [],
-  "seen_news::KEEL": [],
+  "seen_news::KEEL": [
+    [
+      "661057dee01f23d1",
+      29817762
+    ]
+  ],
   "seen_news::META": [
     [
       "ddf703e4e429274c",
