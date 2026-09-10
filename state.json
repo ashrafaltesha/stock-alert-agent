@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-08T17:49:20.340044-04:00",
-  "alert::news": "2026-09-10T14:16:56.384260-04:00",
+  "alert::news": "2026-09-10T15:18:14.031652-04:00",
   "alert::price": "2026-09-10T14:12:45.869717-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -74,7 +74,8 @@
     "should you invest in nvmi stock following healthy q2 results? - yahoo! finance canada",
     "five below (five) reports q2: everything you need to know ahead of earnings - yahoo! finance canada",
     "why nvidia\u2019s hugging face acquisition signals ai\u2019s full ecosystem play - yahoo! finance canada",
-    "keel stock grinds higher as traders track cash-rich turnaround - stockstotrade.com"
+    "keel stock grinds higher as traders track cash-rich turnaround - stockstotrade.com",
+    "keel stock trades heavy as losses mount and cash piles up - stockstotrade.com"
   ],
   "alerted_titles::META": [
     "meta reaches up to $17.1 billion multistate settlement over claims involving children, teens - wrnj radio",
@@ -139,7 +140,8 @@
     "reddit stock popped 9.31% yesterday on an ai licensing bet. here\u2019s the fuller picture. - tikr.com",
     "reddit\u2019s august user growth jumps 8% month-on-month, international users surge 29%: report - tradingview.com",
     "reddit gains as august user growth accelerates, piper says (rddt:nyse) - seeking alpha",
-    "why is reddit stock surging on thursday? - benzinga"
+    "why is reddit stock surging on thursday? - benzinga",
+    "reddit rddt stock surges on surprise s&p 500 entry - stockstotrade.com"
   ],
   "alerted_titles::UAVS": [
     "uavs q2 loss narrows y/y, revenues fall 36% on drone sales slide - yahoo finance",
@@ -214,52 +216,52 @@
   "hb::earnings_arm": "2026-09-10T09:06:07.937363-04:00",
   "hb::earnings_watch": "2026-09-09T16:03:33.537528-04:00",
   "hb::listener": "2026-09-10T15:11:01.287161-04:00",
-  "hb::monitor": "2026-09-10T15:17:37.654012-04:00",
+  "hb::monitor": "2026-09-10T15:18:14.202247-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-10",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::BAK": {
     "date": "2026-09-10",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::BRZE": {
     "date": "2026-09-10",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::CENX": {
     "date": "2026-09-10",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::EVH": {
     "date": "2026-09-10",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::FOUR": {
     "date": "2026-09-10",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::GENI": {
     "date": "2026-09-10",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::HE": {
     "date": "2026-09-10",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::KEEL": {
     "date": "2026-09-10",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -268,28 +270,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-09-10",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "price_ref::RDDT": {
     "date": "2026-09-10",
-    "max_step_up": 1,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 1
   },
   "price_ref::UAVS": {
     "date": "2026-09-10",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::WOLF": {
     "date": "2026-09-10",
-    "max_step_up": 0,
-    "max_step_down": 1
+    "max_step_down": 1,
+    "max_step_up": 0
   },
   "price_ref::XPEV": {
     "date": "2026-09-10",
-    "max_step_up": 0,
-    "max_step_down": 0
+    "max_step_down": 0,
+    "max_step_up": 0
   },
   "seen_news::APP": [
     [
@@ -385,6 +387,10 @@
     [
       "9697552f0dfd9461",
       29817665
+    ],
+    [
+      "e786f909140829d9",
+      29817798
     ]
   ],
   "seen_news_google::META": [
@@ -418,6 +424,10 @@
     [
       "d45aacf02568c25f",
       29817736
+    ],
+    [
+      "b512858dd449ffd3",
+      29817798
     ]
   ],
   "seen_news_google::UAVS": [],
