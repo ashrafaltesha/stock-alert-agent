@@ -437,5 +437,11 @@
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
-  "tg_update_offset": 785157348
+  "tg_update_offset": 785157349,
+  "ew_watch::ORCL": {
+    "armed": "2026-09-10T16:02:03.937543-04:00",
+    "expires": "2026-09-11T16:02:03.937543-04:00"
+  },
+  "ew_mark::ORCL": "0001341439-26-000066",
+  "ew_seen::ORCL": "0001341439-26-000066"
 }
