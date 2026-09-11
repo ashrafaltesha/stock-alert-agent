@@ -154,6 +154,31 @@ def main():
         print("Set APCA_API_KEY_ID and APCA_API_SECRET_KEY first.")
         sys.exit(1)
 
+    # Preflight. A 401 from Alpaca arrives as a bare nginx HTML page with no
+    # hint as to which half is wrong, and the three usual causes -- swapped
+    # fields, pasted whitespace, and paper/live mismatch -- are impossible to
+    # tell apart from the error alone.
+    #
+    # These checks reveal nothing: two lengths, a yes/no on whitespace, and a
+    # two-character prefix that is one of exactly two published values.
+    # Alpaca key IDs begin PK for paper and AK for live.
+    env = {"paper": "PK", "live": "AK"}
+    prefix = key[:2].upper()
+    kind = next((n for n, p in env.items() if p == prefix), "UNRECOGNISED")
+    print("credential preflight")
+    print(f"  key id : {len(key)} chars, prefix {prefix!r} -> {kind} key")
+    print(f"  secret : {len(secret)} chars")
+    if key != key.strip() or secret != secret.strip():
+        print("  WARNING: leading/trailing whitespace in a value -- re-paste "
+              "the secret without a trailing newline.")
+    if len(key) > len(secret):
+        print("  WARNING: the key id is LONGER than the secret, which is "
+              "backwards. The two values are probably swapped.")
+    if kind == "UNRECOGNISED":
+        print("  WARNING: not a Trading API key id. Broker API and OAuth "
+              "credentials will not work against data.alpaca.markets.")
+    print()
+
     symbols = _tickers()
     if not symbols:
         print("No tickers found -- run this from inside the repo.")
