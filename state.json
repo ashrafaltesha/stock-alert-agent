@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-10T15:18:14.031652-04:00",
+  "alert::news": "2026-09-10T21:09:05.491988-04:00",
   "alert::price": "2026-09-10T14:12:45.869717-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -13,7 +13,8 @@
     "applovin (app) stock plunges 54% ytd as wall street slashes price targets - blockonomi",
     "applovin stock has already taken a shock-sized fall without a shock",
     "can applovin's 53% revenue surge keep its growth streak alive? - yahoo finance",
-    "applovin (app) down 6.6% since last earnings report: can it rebound? - finance.yahoo.com"
+    "applovin (app) down 6.6% since last earnings report: can it rebound? - finance.yahoo.com",
+    "why is applovin stock trading near its low while revenue keeps growing?"
   ],
   "alerted_titles::BAK": [
     "braskem (nyse: bak) prepares court-led process for $10.9b unsecured debt - stock titan",
@@ -224,7 +225,7 @@
   "hb::earnings_arm": "2026-09-10T20:29:22.847031-04:00",
   "hb::earnings_watch": "2026-09-10T21:04:14.763819-04:00",
   "hb::listener": "2026-09-10T21:08:07.362493-04:00",
-  "hb::monitor": "2026-09-10T21:08:24.599637-04:00",
+  "hb::monitor": "2026-09-10T21:09:05.892510-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-10",
@@ -301,7 +302,12 @@
     "max_step_down": 0,
     "max_step_up": 0
   },
-  "seen_news::APP": [],
+  "seen_news::APP": [
+    [
+      "3f6534d64c3a3509",
+      29818148
+    ]
+  ],
   "seen_news::BAK": [],
   "seen_news::BRZE": [
     [
