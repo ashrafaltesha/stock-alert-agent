@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-10T23:50:36.603965-04:00",
+  "alert::news": "2026-09-11T15:10:40.391221-04:00",
   "alert::price": "2026-09-11T14:35:28.398860-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -77,7 +77,8 @@
     "five below (five) reports q2: everything you need to know ahead of earnings - yahoo! finance canada",
     "why nvidia\u2019s hugging face acquisition signals ai\u2019s full ecosystem play - yahoo! finance canada",
     "keel stock grinds higher as traders track cash-rich turnaround - stockstotrade.com",
-    "keel stock trades heavy as losses mount and cash piles up - stockstotrade.com"
+    "keel stock trades heavy as losses mount and cash piles up - stockstotrade.com",
+    "keel stock holds gains as cash pile offsets heavy losses - stockstotrade"
   ],
   "alerted_titles::META": [
     "meta reaches up to $17.1 billion multistate settlement over claims involving children, teens - wrnj radio",
@@ -226,7 +227,7 @@
   "hb::earnings_arm": "2026-09-11T08:59:44.065766-04:00",
   "hb::earnings_watch": "2026-09-11T13:43:42.685315-04:00",
   "hb::listener": "2026-09-10T23:12:19.872969-04:00",
-  "hb::monitor": "2026-09-11T15:05:43.707926-04:00",
+  "hb::monitor": "2026-09-11T15:10:40.923133-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-11",
@@ -305,10 +306,6 @@
   },
   "seen_news::APP": [
     [
-      "3f6534d64c3a3509",
-      29818149
-    ],
-    [
       "706f759458ccb1db",
       29818180
     ],
@@ -366,10 +363,6 @@
   ],
   "seen_news::QURE": [],
   "seen_news::RDDT": [
-    [
-      "f8012ca75f94c6bb",
-      29818148
-    ],
     [
       "05d9a0c78fd81b7e",
       29818171
@@ -445,6 +438,10 @@
     [
       "8a13355f21dbb688",
       29818171
+    ],
+    [
+      "b48f76682b522e78",
+      29819230
     ]
   ],
   "seen_news_google::META": [
