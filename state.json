@@ -225,7 +225,7 @@
   "hb::earnings_arm": "2026-09-10T20:29:22.847031-04:00",
   "hb::earnings_watch": "2026-09-10T21:04:14.763819-04:00",
   "hb::listener": "2026-09-10T21:28:31.581379-04:00",
-  "hb::monitor": "2026-09-10T21:30:37.835905-04:00",
+  "hb::monitor": "2026-09-10T21:31:31.316187-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-10",
@@ -308,7 +308,16 @@
       29818149
     ]
   ],
-  "seen_news::BAK": [],
+  "seen_news::BAK": [
+    [
+      "9cd8bf234d0b95e1",
+      29818171
+    ],
+    [
+      "d1dc99ebea110b0d",
+      29818171
+    ]
+  ],
   "seen_news::BRZE": [
     [
       "3d4fa18fca883120",
@@ -352,12 +361,25 @@
     [
       "f8012ca75f94c6bb",
       29818148
+    ],
+    [
+      "05d9a0c78fd81b7e",
+      29818171
+    ],
+    [
+      "a3bab5989fffec79",
+      29818171
     ]
   ],
   "seen_news::UAVS": [],
   "seen_news::WOLF": [],
   "seen_news::XPEV": [],
-  "seen_news_google::APP": [],
+  "seen_news_google::APP": [
+    [
+      "d5f4453986587720",
+      29818171
+    ]
+  ],
   "seen_news_google::BAK": [],
   "seen_news_google::BRZE": [],
   "seen_news_google::CENX": [],
@@ -370,7 +392,12 @@
   ],
   "seen_news_google::GENI": [],
   "seen_news_google::HE": [],
-  "seen_news_google::KEEL": [],
+  "seen_news_google::KEEL": [
+    [
+      "8a13355f21dbb688",
+      29818171
+    ]
+  ],
   "seen_news_google::META": [
     [
       "ae2fe7c095689a20",
@@ -386,7 +413,12 @@
     ]
   ],
   "seen_news_google::QURE": [],
-  "seen_news_google::RDDT": [],
+  "seen_news_google::RDDT": [
+    [
+      "dcd6f0df432223e1",
+      29818171
+    ]
+  ],
   "seen_news_google::UAVS": [],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [],
