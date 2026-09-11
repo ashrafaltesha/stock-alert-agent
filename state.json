@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-10T21:09:50.350353-04:00",
+  "alert::news": "2026-09-10T23:50:36.603965-04:00",
   "alert::price": "2026-09-10T14:12:45.869717-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -67,7 +67,8 @@
     "shift4 payments, inc. stock 12\u2011month price target cut to $52.1, implies 15% upside - tradingview"
   ],
   "alerted_titles::GENI": [
-    "genius sports partners with chris paul to launch sports media venture - investing.com"
+    "genius sports partners with chris paul to launch sports media venture - investing.com",
+    "stackadapt buyers gain genius sports moment triggers via equativ deals - ppc land"
   ],
   "alerted_titles::KEEL": [
     "why keel infrastructure corp. stock surged yesterday - wealth awesome",
@@ -225,7 +226,7 @@
   "hb::earnings_arm": "2026-09-10T20:29:22.847031-04:00",
   "hb::earnings_watch": "2026-09-10T21:04:14.763819-04:00",
   "hb::listener": "2026-09-10T23:12:19.872969-04:00",
-  "hb::monitor": "2026-09-10T23:45:38.499617-04:00",
+  "hb::monitor": "2026-09-10T23:50:38.534401-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-10",
@@ -398,7 +399,12 @@
       29818093
     ]
   ],
-  "seen_news_google::GENI": [],
+  "seen_news_google::GENI": [
+    [
+      "a231fcc1dfb09516",
+      29818310
+    ]
+  ],
   "seen_news_google::HE": [],
   "seen_news_google::KEEL": [
     [
