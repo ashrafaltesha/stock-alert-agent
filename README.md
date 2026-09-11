@@ -11,6 +11,8 @@ that would change your mind, or an earnings release.
 things live. [`OVERVIEW.md`](OVERVIEW.md) explains how the whole system works
 and why it's built this way. [`EARNINGS.md`](EARNINGS.md) is the deep dive on
 earnings detection, which is the most involved part.
+[`NEWS.md`](NEWS.md) is the equivalent for news — how the three filter stages
+work, the four ways the path has failed, and what to fix next.
 
 ---
 
