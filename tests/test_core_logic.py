@@ -924,6 +924,121 @@ def test_status_flags_stale_components_and_spares_the_idle_watcher():
     assert rows["earnings_watch"] is True, "never-run watcher is not a fault"
 
 
+# --- Overlapping runs must not both alert -------------------------------
+#
+# The APP duplicate of 2026-09-11, from the logs:
+#
+#   01:08:01  run A starts, checks out dcdd713   (11 alerted titles)
+#   01:09:01  run B starts, checks out dcdd713   (same snapshot)
+#   01:09:05  run A sends                         alert::news = 21:09:05
+#   01:09:07  run A pushes 212101a                (12 titles)
+#   01:09:50  run B sends THE SAME STORY          alert::news = 21:09:50
+#   01:09:52  run B pushes 7ca9034                (still 12 titles)
+#
+# The merge was never wrong -- exactly one copy of the title survived. Both
+# DECISIONS were made against a read that predated the other run's write, so
+# no amount of merging on push could have prevented the second message.
+
+STORY = "Why is AppLovin stock trading near its low while revenue keeps growing?"
+
+
+def _alerting_monkeypatch(monkeypatch, sent):
+    monkeypatch.setattr(monitor, "send_telegram_message", sent.append)
+    monkeypatch.setattr(news_filter, "classify",
+                        lambda arts: [{"subject": True, "impact": "high",
+                                       "event": "guidance", "why": "x"}] * len(arts))
+    monkeypatch.setattr(news_filter, "source_allowed", lambda s, t: True)
+
+
+def test_the_second_of_two_overlapping_runs_does_not_resend(monkeypatch):
+    sent = []
+    _alerting_monkeypatch(monkeypatch, sent)
+    article = {"ticker": "APP", "title": STORY, "source": "Reuters", "link": "u"}
+
+    # Run A: nothing alerted yet anywhere.
+    origin = {"alerted_titles::APP": []}
+    run_a = {"alerted_titles::APP": []}
+    monkeypatch.setattr(monitor, "refresh_alerted_titles",
+                        lambda st: _pull(st, origin))
+    monitor.process_news_candidates([dict(article)], run_a)
+    assert len(sent) == 1, "run A is the one that should send"
+    origin["alerted_titles::APP"] = list(run_a["alerted_titles::APP"])  # A pushes
+
+    # Run B checked out BEFORE A pushed, so its own copy is still empty.
+    run_b = {"alerted_titles::APP": []}
+    monitor.process_news_candidates([dict(article)], run_b)
+    assert len(sent) == 1, (
+        "run B refreshed from origin and must not re-send the same story")
+
+
+def _pull(state, origin):
+    """Stand-in for refresh_alerted_titles: union origin's lists into ours."""
+    for key, titles in origin.items():
+        ours = state.get(key, [])
+        state[key] = list(dict.fromkeys(list(titles) + list(ours)))[-40:]
+    return True
+
+
+def test_refresh_unions_rather_than_replaces(monkeypatch):
+    """Adopting the remote copy wholesale is the mirror-image bug -- it would
+    discard what this run has already collected, which is how pruned keys
+    once came back from the dead."""
+    import repo_commit
+    from state_utils import STATE_FILE
+    import json as _json
+    import tempfile, os, pathlib
+
+    tmp = tempfile.mkdtemp()
+    path = pathlib.Path(tmp) / "state.json"
+    path.write_text(_json.dumps({
+        "alerted_titles::APP": ["remote story"],
+        "alerted_titles::WOLF": ["wolf story"],
+        "seen_news::APP": {"remote-id": 1},
+    }))
+    monkeypatch.setattr(monitor, "STATE_FILE", str(path), raising=False)
+    monkeypatch.setattr("state_utils.STATE_FILE", str(path), raising=False)
+    monkeypatch.setattr(repo_commit, "refresh_from_origin", lambda p, cwd=None: True)
+
+    state = {"alerted_titles::APP": ["our story"],
+             "seen_news::APP": {"our-id": 2},
+             "hb::monitor": "ours"}
+    monitor.refresh_alerted_titles(state)
+
+    assert set(state["alerted_titles::APP"]) == {"remote story", "our story"}
+    assert state["alerted_titles::WOLF"] == ["wolf story"], "remote-only keys adopted"
+    assert state["seen_news::APP"] == {"our-id": 2}, \
+        "only alerted_titles is taken from the refresh"
+    assert state["hb::monitor"] == "ours", "this run's other work is untouched"
+
+
+def test_a_failed_refresh_is_not_fatal(monkeypatch):
+    """Degrading to today's behaviour is acceptable; crashing the monitor or
+    silently sending nothing is not."""
+    import repo_commit
+    sent = []
+    _alerting_monkeypatch(monkeypatch, sent)
+    monkeypatch.setattr(repo_commit, "refresh_from_origin",
+                        lambda p, cwd=None: False)
+    state = {}
+    monitor.process_news_candidates(
+        [{"ticker": "APP", "title": STORY, "source": "Reuters", "link": "u"}], state)
+    assert len(sent) == 1
+    assert state["alerted_titles::APP"] == [STORY.lower().strip()]
+
+
+def test_refresh_is_skipped_when_nothing_could_be_sent(monkeypatch):
+    """A git fetch every minute for a run whose candidates are all listicles
+    is pure cost -- and the monitor runs ~1,400 times a day."""
+    calls = []
+    monkeypatch.setattr(monitor, "refresh_alerted_titles",
+                        lambda st: calls.append(1) or True)
+    monkeypatch.setattr(news_filter, "source_allowed", lambda s, t: False)
+    monkeypatch.setattr(monitor, "send_telegram_message", lambda m: None)
+    monitor.process_news_candidates(
+        [{"ticker": "APP", "title": "5 stocks to watch", "source": "x", "link": "u"}], {})
+    assert calls == [], "no candidate survived stage 1; no reason to fetch"
+
+
 def test_status_handles_missing_and_malformed_timestamps():
     assert health._age_minutes(None) is None
     assert health._age_minutes("not-a-date") is None

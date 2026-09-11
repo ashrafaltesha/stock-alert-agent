@@ -34,6 +34,7 @@ the repo.
 
 import difflib
 import hashlib
+import json
 import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -76,12 +77,28 @@ def process_news_candidates(candidates, state):
     if not candidates:
         return
 
-    kept = []
+    # Stage 1 first, because it needs no network and usually empties the
+    # list -- there is no reason to fetch from origin for a run whose only
+    # candidates are listicles.
+    surviving = []
     for article in candidates:
         if not news_filter.source_allowed(article.get("source"), article["title"]):
             print(f"  [{article['ticker']}] source/shape filtered: "
                   f"{article['title'][:70]}")
             continue
+        surviving.append(article)
+
+    if not surviving:
+        return
+
+    # Something might actually be sent, so make the dedup decision against
+    # the newest state rather than this run's checkout. See
+    # refresh_alerted_titles: overlapping runs otherwise both decide from
+    # the same stale snapshot and both send.
+    refresh_alerted_titles(state)
+
+    kept = []
+    for article in surviving:
         seen = state.get(f"alerted_titles::{article['ticker']}", [])
         if _is_duplicate_headline(article["title"], seen):
             continue
@@ -364,6 +381,67 @@ def _record_headline(ticker: str, title: str, state: dict) -> None:
     titles = state.get(key, [])
     titles.append(title.lower().strip())
     state[key] = titles[-40:]
+
+
+def refresh_alerted_titles(state: dict) -> bool:
+    """Re-read origin/main's alerted_titles before deciding to send.
+
+    A run reads state.json at CHECKOUT and sends alerts ~40 seconds later.
+    With runs starting more often than they finish, the next run checks out
+    before the previous one pushes, so both decide against the same snapshot
+    and both send.
+
+    Measured on 2026-09-11, the APP duplicate:
+
+        01:08:01  run A starts, checks out dcdd713   (11 titles)
+        01:09:01  run B starts, checks out dcdd713   (same snapshot)
+        01:09:05  run A sends
+        01:09:07  run A pushes 212101a               (12 titles)
+        01:09:50  run B sends THE SAME STORY
+        01:09:52  run B pushes 7ca9034               (still 12 titles)
+
+    Note the data was never wrong -- the merge kept exactly one copy of the
+    title. Only the DECISION was made against a stale read, which is why
+    merging harder could never have fixed this.
+
+    So the dedup lists are re-read from origin at the moment of decision,
+    narrowing the window from ~40 seconds to the length of one fetch. Only
+    `alerted_titles::` keys are taken from the refreshed copy, and they are
+    unioned rather than replaced: adopting the whole remote state would
+    discard what this run has already collected, which is the mirror-image
+    bug that once resurrected pruned keys.
+
+    Returns True if the refresh succeeded. A failure is non-fatal -- falling
+    back to the in-memory copy is exactly today's behaviour, no worse.
+    """
+    import repo_commit
+    from state_utils import STATE_FILE
+
+    if not repo_commit.refresh_from_origin(STATE_FILE):
+        print("Could not refresh state from origin; "
+              "deduping against this run's copy only.")
+        return False
+
+    try:
+        with open(STATE_FILE) as f:
+            remote = json.load(f)
+    except (OSError, ValueError) as e:
+        print(f"Refreshed state unreadable ({e}); using this run's copy.")
+        return False
+
+    merged = 0
+    for key, remote_titles in remote.items():
+        if not key.startswith("alerted_titles::") or not isinstance(remote_titles, list):
+            continue
+        ours = state.get(key, [])
+        union = list(dict.fromkeys(list(remote_titles) + list(ours)))
+        if len(union) != len(ours):
+            merged += len(union) - len(ours)
+        state[key] = union[-40:]
+    if merged:
+        print(f"Refreshed dedup state: {merged} headline(s) alerted by an "
+              f"overlapping run.")
+    return True
 
 
 def check_yahoo_news(ticker: str, state: dict, candidates: list) -> None:
