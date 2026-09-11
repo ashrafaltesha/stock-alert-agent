@@ -1,0 +1,33 @@
+name: Alpaca coverage probe (manual, throwaway)
+
+# Answers ONE question: does Alpaca/Benzinga actually carry news for the
+# tickers in this portfolio, or only for the large caps?
+#
+# It exists as a workflow rather than a local script so the API key can live
+# in repository secrets like every other credential here. Nothing needs to
+# see the key to read the answer -- the result is in the run log.
+#
+# Delete this workflow and alpaca_probe.py once the question is answered.
+# A probe left lying around eventually gets mistaken for part of the system.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      # No setup-python and no pip install: alpaca_probe.py is standard
+      # library only, so the runner's own Python is enough.
+      - name: Compare Alpaca coverage against Google News
+        env:
+          APCA_API_KEY_ID: ${{ secrets.ALPACA_API_KEY_ID }}
+          APCA_API_SECRET_KEY: ${{ secrets.ALPACA_API_SECRET_KEY }}
+          PYTHONUNBUFFERED: "1"
+        run: python3 alpaca_probe.py
