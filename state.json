@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-11T15:10:40.391221-04:00",
+  "alert::news": "2026-09-14T11:45:39.869547-04:00",
   "alert::price": "2026-09-14T09:30:46.455192-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -149,7 +149,8 @@
   "alerted_titles::UAVS": [
     "uavs q2 loss narrows y/y, revenues fall 36% on drone sales slide - yahoo finance",
     "can ageagle aerial systems stock sustain rebound as buyer support drives gains? - traders union",
-    "will ageagle stock break $1.17 resistance as altum-pt pro sensor with flir boson 640r launch drives momentum? - traders union"
+    "will ageagle stock break $1.17 resistance as altum-pt pro sensor with flir boson 640r launch drives momentum? - traders union",
+    "agilis air, inc. announced that it has received funding from ageagle aerial systems, inc., north coast ventures, vici capital partners, llc and other investors - marketscreener.com"
   ],
   "alerted_titles::WOLF": [
     "wolfspeed (wolf) says ai data center revenue more than doubled. can it restore positive gross margins? - currently.com",
@@ -221,52 +222,52 @@
   "hb::earnings_arm": "2026-09-14T11:13:38.829167-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-14T11:43:04.194382-04:00",
-  "hb::monitor": "2026-09-14T11:40:38.985200-04:00",
+  "hb::monitor": "2026-09-14T11:45:40.045987-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-14",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::BAK": {
     "date": "2026-09-14",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::BRZE": {
     "date": "2026-09-14",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::CENX": {
     "date": "2026-09-14",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::EVH": {
     "date": "2026-09-14",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::FOUR": {
     "date": "2026-09-14",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::GENI": {
     "date": "2026-09-14",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::HE": {
     "date": "2026-09-14",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::KEEL": {
     "date": "2026-09-14",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -275,28 +276,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-09-14",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::RDDT": {
     "date": "2026-09-14",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::UAVS": {
     "date": "2026-09-14",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::WOLF": {
     "date": "2026-09-14",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::XPEV": {
     "date": "2026-09-14",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "seen_news::APP": [
     [
@@ -446,6 +447,10 @@
     [
       "50505d12899774f4",
       29823190
+    ],
+    [
+      "2f2183b2581a341b",
+      29823345
     ]
   ],
   "seen_news_google::WOLF": [],
