@@ -221,7 +221,7 @@
   "hb::earnings_arm": "2026-09-13T20:22:47.402597-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-14T09:09:26.036226-04:00",
-  "hb::monitor": "2026-09-14T09:05:33.765439-04:00",
+  "hb::monitor": "2026-09-14T09:10:39.825889-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-11",
@@ -298,7 +298,12 @@
     "max_step_down": 0,
     "max_step_up": 0
   },
-  "seen_news::APP": [],
+  "seen_news::APP": [
+    [
+      "38ff678dbe3bdb26",
+      29823190
+    ]
+  ],
   "seen_news::BAK": [],
   "seen_news::BRZE": [],
   "seen_news::CENX": [],
@@ -425,7 +430,12 @@
       29822910
     ]
   ],
-  "seen_news_google::UAVS": [],
+  "seen_news_google::UAVS": [
+    [
+      "50505d12899774f4",
+      29823190
+    ]
+  ],
   "seen_news_google::WOLF": [],
   "seen_news_google::XPEV": [
     [
