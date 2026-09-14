@@ -1039,6 +1039,70 @@ def test_refresh_is_skipped_when_nothing_could_be_sent(monkeypatch):
     assert calls == [], "no candidate survived stage 1; no reason to fetch"
 
 
+# --- The listener must start its successor before it exits ---------------
+#
+# Measured on 2026-09-14: the 05:51 listener ran its full 331 minutes and
+# ended at 11:21:56; the next did not start until 11:57:39. Thirty-six
+# minutes of unanswered messages, and that was the GOOD case -- the hourly
+# cron is best-effort and mostly does not fire, so coverage rested entirely
+# on the monitor's 5-minute watchdog plus its 8-minute cooldown.
+#
+# The fix is a baton pass, not parallelism: Telegram allows exactly one
+# getUpdates connection per bot, so two live listeners would earn a 409. The
+# incoming run cancels the outgoing one via cancel-in-progress.
+
+def test_handover_lead_exceeds_this_workflow_startup():
+    """The successor must be dispatched far enough ahead that it is UP before
+    the incumbent's deadline. This job does two checkouts, setup-python and a
+    pip install -- 40-60s measured. A lead shorter than that reintroduces the
+    gap silently."""
+    import telegram_commands as tc
+    assert tc.HANDOVER_LEAD_SECONDS >= 120, (
+        "lead is under two minutes; the successor may not be listening before "
+        "the incumbent exits")
+    assert tc.HANDOVER_LEAD_SECONDS < tc.LOOP_MINUTES * 60 / 2, (
+        "lead is a large fraction of the loop; runs would thrash")
+
+
+def test_handover_fires_once_near_the_deadline_and_not_before(monkeypatch):
+    """Dispatch exactly one successor, and only in the final window."""
+    import telegram_commands as tc
+    dispatched = []
+    monkeypatch.setattr("workflow_trigger.restart_listener",
+                        lambda: dispatched.append(1) or True)
+
+    lead = tc.HANDOVER_LEAD_SECONDS
+    handed_over = False
+    # Walk a whole loop in one-minute steps, oldest first.
+    for remaining in range(tc.LOOP_MINUTES * 60, -60, -60):
+        if not handed_over and remaining <= lead:
+            handed_over = True
+            from workflow_trigger import restart_listener
+            restart_listener()
+        if remaining > lead:
+            assert not dispatched, (
+                f"dispatched with {remaining}s left -- far too early")
+
+    assert len(dispatched) == 1, "exactly one successor per run"
+
+
+def test_the_loop_actually_wires_the_handover(monkeypatch):
+    """Guards against the constant existing while nothing calls it -- the
+    shape of several past bugs in this project."""
+    import inspect
+    import telegram_commands as tc
+    src = inspect.getsource(tc.listen)
+    assert "HANDOVER_LEAD_SECONDS" in src, "listen() never consults the lead"
+    assert "restart_listener" in src, "listen() never dispatches a successor"
+    assert "handed_over" in src, "no guard against dispatching repeatedly"
+    # It must keep listening afterwards rather than returning, so a failed
+    # dispatch still leaves this run covering its full deadline.
+    after = src.split("HANDOVER_LEAD_SECONDS", 1)[1].split("_code_has_changed", 1)[0]
+    assert "return" not in after, (
+        "listen() returns right after handing over; if the successor fails to "
+        "start, that reopens the gap this closes")
+
+
 def test_status_handles_missing_and_malformed_timestamps():
     assert health._age_minutes(None) is None
     assert health._age_minutes("not-a-date") is None

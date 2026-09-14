@@ -128,6 +128,15 @@ POLL_TIMEOUT_SECONDS = 25
 # the existing listener just keeps going. GitHub caps a job at six hours.
 LOOP_MINUTES = 330
 
+# How long before the deadline to start the successor.
+#
+# Must comfortably exceed this workflow's startup: two checkouts (the public
+# repo and the private data repo), setup-python and a pip install, measured
+# at roughly 40-60 seconds. Four minutes leaves room for a slow runner queue
+# without wasting meaningful overlap -- and the overlap costs nothing, since
+# the incoming run cancels this one as soon as it is ready.
+HANDOVER_LEAD_SECONDS = 4 * 60
+
 # A long loop runs stale code until it ends. Checked every N long-poll cycles
 # (25s each), so roughly every ten minutes.
 UPDATE_CHECK_EVERY_N_CYCLES = 24
@@ -1220,6 +1229,7 @@ def listen() -> None:
           f"(long poll {POLL_TIMEOUT_SECONDS}s), offset={session.offset}.")
 
     idle_backoff = 0
+    handed_over = False
 
     while time.monotonic() < deadline:
         try:
@@ -1249,6 +1259,40 @@ def listen() -> None:
             health.record(session.state, "listener")
             session.state_changed = True
             session.flush()
+
+        # Hand the baton over BEFORE this run ends, not after.
+        #
+        # The loop used to simply fall out at the deadline and exit, leaving
+        # nothing listening until the watchdog or the hourly cron noticed.
+        # Measured on 2026-09-14: the 05:51 run ended 11:21:56 and its
+        # successor did not start until 11:57:39 -- 36 minutes of unanswered
+        # messages, and that is the good case. The hourly cron is best-effort
+        # and mostly does not fire (runs reach their full 331 minutes), so
+        # coverage depended entirely on the monitor's five-minute watchdog
+        # plus its eight-minute cooldown.
+        #
+        # This is NOT genuine parallelism, which would be a bug: Telegram
+        # permits exactly one getUpdates connection per bot and a second one
+        # earns a 409. It is a baton pass. Because the workflow sets
+        # cancel-in-progress: true, the incoming run cancels this one the
+        # moment it starts, so the changeover costs a single HTTP round trip
+        # rather than half an hour.
+        #
+        # We keep listening after dispatching rather than exiting: if the
+        # successor never arrives, this run still covers its full deadline
+        # and the watchdog remains the backstop it always was.
+        if not handed_over and (deadline - time.monotonic()) <= HANDOVER_LEAD_SECONDS:
+            handed_over = True
+            print(f"{HANDOVER_LEAD_SECONDS // 60} min left -- starting the "
+                  f"successor now; it will take over when it comes up.")
+            if session.dirty:
+                session.flush()
+            try:
+                from workflow_trigger import restart_listener
+                restart_listener()
+            except Exception as e:
+                # Non-fatal by design. Worst case is the old behaviour.
+                print(f"Handover dispatch failed: {type(e).__name__}: {e}")
 
         # Roughly every ten minutes of idling.
         if cycles % UPDATE_CHECK_EVERY_N_CYCLES == 0 and _code_has_changed():
