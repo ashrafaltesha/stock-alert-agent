@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-14T11:45:39.869547-04:00",
+  "alert::news": "2026-09-14T12:50:46.802897-04:00",
   "alert::price": "2026-09-14T12:20:28.072412-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -150,7 +150,8 @@
     "uavs q2 loss narrows y/y, revenues fall 36% on drone sales slide - yahoo finance",
     "can ageagle aerial systems stock sustain rebound as buyer support drives gains? - traders union",
     "will ageagle stock break $1.17 resistance as altum-pt pro sensor with flir boson 640r launch drives momentum? - traders union",
-    "agilis air, inc. announced that it has received funding from ageagle aerial systems, inc., north coast ventures, vici capital partners, llc and other investors - marketscreener.com"
+    "agilis air, inc. announced that it has received funding from ageagle aerial systems, inc., north coast ventures, vici capital partners, llc and other investors - marketscreener.com",
+    "army units can now buy agilis air\u2019s $1,250 drone - stock titan"
   ],
   "alerted_titles::WOLF": [
     "wolfspeed (wolf) says ai data center revenue more than doubled. can it restore positive gross margins? - currently.com",
@@ -222,7 +223,7 @@
   "hb::earnings_arm": "2026-09-14T11:13:38.829167-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-14T12:44:24.163247-04:00",
-  "hb::monitor": "2026-09-14T12:45:43.315254-04:00",
+  "hb::monitor": "2026-09-14T12:50:47.137475-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-14",
@@ -451,6 +452,10 @@
     [
       "2f2183b2581a341b",
       29823345
+    ],
+    [
+      "56eafdf2090f218a",
+      29823410
     ]
   ],
   "seen_news_google::WOLF": [],
