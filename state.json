@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-15T08:25:41.272381-04:00",
+  "alert::news": "2026-09-15T11:50:47.096795-04:00",
   "alert::price": "2026-09-15T11:35:23.612202-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -144,7 +144,8 @@
     "reddit\u2019s august user growth jumps 8% month-on-month, international users surge 29%: report - tradingview.com",
     "reddit gains as august user growth accelerates, piper says (rddt:nyse) - seeking alpha",
     "why is reddit stock surging on thursday? - benzinga",
-    "reddit rddt stock surges on surprise s&p 500 entry - stockstotrade.com"
+    "reddit rddt stock surges on surprise s&p 500 entry - stockstotrade.com",
+    "q2 social networking earnings: reddit (nyse:rddt) earns top marks"
   ],
   "alerted_titles::UAVS": [
     "uavs q2 loss narrows y/y, revenues fall 36% on drone sales slide - yahoo finance",
@@ -224,7 +225,7 @@
   "hb::earnings_arm": "2026-09-15T09:50:48.618382-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-15T11:50:26.864627-04:00",
-  "hb::monitor": "2026-09-15T11:45:40.640861-04:00",
+  "hb::monitor": "2026-09-15T11:50:47.500421-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-15",
@@ -358,6 +359,10 @@
     [
       "86442b7a9f28d4cf",
       29824705
+    ],
+    [
+      "f7313209627cb0f9",
+      29824790
     ]
   ],
   "seen_news::UAVS": [],
@@ -446,6 +451,11 @@
     ]
   ],
   "seen_news_google::WOLF": [],
-  "seen_news_google::XPEV": [],
+  "seen_news_google::XPEV": [
+    [
+      "f8ed452f9b20fcc6",
+      29824790
+    ]
+  ],
   "tg_update_offset": 785157364
 }
