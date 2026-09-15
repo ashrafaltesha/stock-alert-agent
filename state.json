@@ -1,7 +1,7 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-15T11:50:47.096795-04:00",
-  "alert::price": "2026-09-15T14:20:31.637075-04:00",
+  "alert::news": "2026-09-15T15:10:43.331224-04:00",
+  "alert::price": "2026-09-15T15:10:35.125775-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
     "united asset strategies inc. acquires new shares in applovin corporation $app - marketbeat",
@@ -78,7 +78,8 @@
     "why nvidia\u2019s hugging face acquisition signals ai\u2019s full ecosystem play - yahoo! finance canada",
     "keel stock grinds higher as traders track cash-rich turnaround - stockstotrade.com",
     "keel stock trades heavy as losses mount and cash piles up - stockstotrade.com",
-    "keel stock holds gains as cash pile offsets heavy losses - stockstotrade"
+    "keel stock holds gains as cash pile offsets heavy losses - stockstotrade",
+    "keel stock grinds lower as weak margins test bulls - stockstotrade"
   ],
   "alerted_titles::META": [
     "meta reaches up to $17.1 billion multistate settlement over claims involving children, teens - wrnj radio",
@@ -225,52 +226,52 @@
   "hb::earnings_arm": "2026-09-15T09:50:48.618382-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-15T15:07:52.468339-04:00",
-  "hb::monitor": "2026-09-15T15:05:38.406616-04:00",
+  "hb::monitor": "2026-09-15T15:10:43.650879-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-15",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::BAK": {
     "date": "2026-09-15",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::BRZE": {
     "date": "2026-09-15",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::CENX": {
     "date": "2026-09-15",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::EVH": {
     "date": "2026-09-15",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::FOUR": {
     "date": "2026-09-15",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::GENI": {
     "date": "2026-09-15",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::HE": {
     "date": "2026-09-15",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::KEEL": {
     "date": "2026-09-15",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -279,28 +280,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-09-15",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::RDDT": {
     "date": "2026-09-15",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::UAVS": {
     "date": "2026-09-15",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::WOLF": {
     "date": "2026-09-15",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::XPEV": {
     "date": "2026-09-15",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "seen_news::APP": [],
   "seen_news::BAK": [],
@@ -406,7 +407,12 @@
   "seen_news_google::FOUR": [],
   "seen_news_google::GENI": [],
   "seen_news_google::HE": [],
-  "seen_news_google::KEEL": [],
+  "seen_news_google::KEEL": [
+    [
+      "efaab332d4bab8c2",
+      29824990
+    ]
+  ],
   "seen_news_google::META": [
     [
       "ae2fe7c095689a20",
@@ -427,7 +433,12 @@
       29824755
     ]
   ],
-  "seen_news_google::RDDT": [],
+  "seen_news_google::RDDT": [
+    [
+      "afda5d5824a794e8",
+      29824990
+    ]
+  ],
   "seen_news_google::UAVS": [
     [
       "1246de065383b914",
