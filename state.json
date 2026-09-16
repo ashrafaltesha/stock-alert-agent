@@ -228,7 +228,7 @@
   "hb::earnings_arm": "2026-09-16T09:42:42.005852-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-16T11:09:43.787568-04:00",
-  "hb::monitor": "2026-09-16T11:10:42.706154-04:00",
+  "hb::monitor": "2026-09-16T11:15:37.818481-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-16",
@@ -323,12 +323,7 @@
   "seen_news::BRZE": [],
   "seen_news::CENX": [],
   "seen_news::EVH": [],
-  "seen_news::FOUR": [
-    [
-      "f4249e29fdfc352b",
-      29825110
-    ]
-  ],
+  "seen_news::FOUR": [],
   "seen_news::GENI": [],
   "seen_news::HE": [],
   "seen_news::KEEL": [],
