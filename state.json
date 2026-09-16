@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-15T15:10:43.331224-04:00",
+  "alert::news": "2026-09-16T04:10:36.826195-04:00",
   "alert::price": "2026-09-15T15:10:35.125775-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -133,7 +133,8 @@
     "uniqure has huntington\u2019s gene therapy approval in its sights again - insights.citeline.com",
     "qure stock gains as uniqure moves closer to fda review for huntington\u2019s gene therapy - ad hoc news",
     "uniqure submits bla for gene therapy in hd, aan, ahs issue updated guideline on migraine prevention, cte prevalence, brain donation findings in former nfl players - neurology live",
-    "uniqure (qure) submitted amt-130 for accelerated approval in huntington\u2019s disease. can externally controlled data support the application? - yahoo finance"
+    "uniqure (qure) submitted amt-130 for accelerated approval in huntington\u2019s disease. can externally controlled data support the application? - yahoo finance",
+    "avoiding lag: real-time signals in (qure) movement - stock traders daily"
   ],
   "alerted_titles::RDDT": [
     "reddit (nyse: rddt) shares set for sale by sauerberg trust - stock titan",
@@ -226,7 +227,7 @@
   "hb::earnings_arm": "2026-09-15T20:44:47.392527-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-16T04:05:00.866489-04:00",
-  "hb::monitor": "2026-09-16T04:05:31.667394-04:00",
+  "hb::monitor": "2026-09-16T04:10:37.081655-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-15",
@@ -389,10 +390,6 @@
   "seen_news::XPEV": [],
   "seen_news_google::APP": [
     [
-      "797853c69e11493c",
-      29824685
-    ],
-    [
       "e310186107efefd9",
       29824690
     ],
@@ -454,6 +451,10 @@
     [
       "a3c26bed22fac6c9",
       29824755
+    ],
+    [
+      "3c81ed69b1e81e8e",
+      29825770
     ]
   ],
   "seen_news_google::RDDT": [
