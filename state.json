@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-16T18:00:41.049541-04:00",
+  "alert::news": "2026-09-16T19:25:33.558198-04:00",
   "alert::price": "2026-09-16T15:25:32.376838-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -166,7 +166,8 @@
     "wolfspeed: ai data-centre growth and improved liquidity offset persistent losses and revenue weakness - kalkine",
     "coo\u2019s new grant lifts wolfspeed (wolf) stake to 156,151 shares - stock titan",
     "wolfspeed (wolf) legal chief gets 19,835-share rsu award - stock titan",
-    "wolfspeed stock steadies after merger and capital move - ad hoc news"
+    "wolfspeed stock steadies after merger and capital move - ad hoc news",
+    "wolfspeed unveils pro forma results after emergence, $2.6b enterprise value and $757.1m equity - tradingview"
   ],
   "alerted_titles::XPEV": [
     "xpeng inc. provides operating and revenue guidance for the third quarter of 2026 - marketscreener.com",
@@ -230,7 +231,7 @@
   "hb::earnings_arm": "2026-09-16T09:42:42.005852-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-16T19:17:24.122208-04:00",
-  "hb::monitor": "2026-09-16T19:23:18.969849-04:00",
+  "hb::monitor": "2026-09-16T19:25:33.804672-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-16",
@@ -490,7 +491,12 @@
       29825710
     ]
   ],
-  "seen_news_google::WOLF": [],
+  "seen_news_google::WOLF": [
+    [
+      "74f36f463bb3d510",
+      29826685
+    ]
+  ],
   "seen_news_google::XPEV": [],
   "tg_update_offset": 785157377
 }
