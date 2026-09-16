@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-16T13:15:42.347272-04:00",
+  "alert::news": "2026-09-16T18:00:41.049541-04:00",
   "alert::price": "2026-09-16T15:25:32.376838-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -57,7 +57,8 @@
     "braze (brze) q2 2027 earnings call transcript - the globe and mail"
   ],
   "alerted_titles::CENX": [
-    "freedom expects century aluminum shares to rise by more than a quarter - freedom broker"
+    "freedom expects century aluminum shares to rise by more than a quarter - freedom broker",
+    "century aluminum: more production could make earnings more durable (nasdaq:cenx) - seeking alpha"
   ],
   "alerted_titles::EVH": [
     "truist financial cuts evolent health (nyse:evh) price target to $6.00 - marketbeat",
@@ -229,7 +230,7 @@
   "hb::earnings_arm": "2026-09-16T09:42:42.005852-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-16T17:55:36.989568-04:00",
-  "hb::monitor": "2026-09-16T17:55:34.847755-04:00",
+  "hb::monitor": "2026-09-16T18:00:41.219344-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-16",
@@ -416,6 +417,10 @@
     [
       "7df06c96cd05c119",
       29826425
+    ],
+    [
+      "9f7d8aea855e686e",
+      29826600
     ]
   ],
   "seen_news_google::BAK": [
@@ -433,7 +438,12 @@
     ]
   ],
   "seen_news_google::BRZE": [],
-  "seen_news_google::CENX": [],
+  "seen_news_google::CENX": [
+    [
+      "f830d474353b8a50",
+      29826600
+    ]
+  ],
   "seen_news_google::EVH": [],
   "seen_news_google::FOUR": [],
   "seen_news_google::GENI": [
