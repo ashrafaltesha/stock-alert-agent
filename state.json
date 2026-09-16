@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-16T09:25:45.862541-04:00",
+  "alert::news": "2026-09-16T13:15:42.347272-04:00",
   "alert::price": "2026-09-16T10:50:34.348357-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -60,7 +60,8 @@
     "freedom expects century aluminum shares to rise by more than a quarter - freedom broker"
   ],
   "alerted_titles::EVH": [
-    "truist financial cuts evolent health (nyse:evh) price target to $6.00 - marketbeat"
+    "truist financial cuts evolent health (nyse:evh) price target to $6.00 - marketbeat",
+    "q2 healthcare technology for providers earnings: evolent health (nyse:evh) impresses"
   ],
   "alerted_titles::FOUR": [
     "shift4 payments (four) could be 26% undervalued on cut guidance - simplywall.st",
@@ -228,52 +229,52 @@
   "hb::earnings_arm": "2026-09-16T09:42:42.005852-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-16T13:13:16.586044-04:00",
-  "hb::monitor": "2026-09-16T13:10:35.252427-04:00",
+  "hb::monitor": "2026-09-16T13:15:42.660665-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-16",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::BAK": {
     "date": "2026-09-16",
-    "max_step_down": 2,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 2
   },
   "price_ref::BRZE": {
     "date": "2026-09-16",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::CENX": {
     "date": "2026-09-16",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::EVH": {
     "date": "2026-09-16",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::FOUR": {
     "date": "2026-09-16",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::GENI": {
     "date": "2026-09-16",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::HE": {
     "date": "2026-09-16",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::KEEL": {
     "date": "2026-09-16",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -282,28 +283,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-09-16",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::RDDT": {
     "date": "2026-09-16",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::UAVS": {
     "date": "2026-09-16",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::WOLF": {
     "date": "2026-09-16",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::XPEV": {
     "date": "2026-09-16",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "seen_news::APP": [
     [
@@ -322,7 +323,12 @@
   "seen_news::BAK": [],
   "seen_news::BRZE": [],
   "seen_news::CENX": [],
-  "seen_news::EVH": [],
+  "seen_news::EVH": [
+    [
+      "e9116d2fca1575e3",
+      29826315
+    ]
+  ],
   "seen_news::FOUR": [],
   "seen_news::GENI": [],
   "seen_news::HE": [],
