@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-16T19:25:33.558198-04:00",
+  "alert::news": "2026-09-17T08:05:32.139803-04:00",
   "alert::price": "2026-09-16T15:25:32.376838-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -71,7 +71,9 @@
   ],
   "alerted_titles::GENI": [
     "genius sports partners with chris paul to launch sports media venture - investing.com",
-    "stackadapt buyers gain genius sports moment triggers via equativ deals - ppc land"
+    "stackadapt buyers gain genius sports moment triggers via equativ deals - ppc land",
+    "a new site compares future-event predictions across platforms. it tracks changing chances as games unfold. - stock titan",
+    "genius sports launches prediction.com to compare event contracts - streetinsider"
   ],
   "alerted_titles::KEEL": [
     "why keel infrastructure corp. stock surged yesterday - wealth awesome",
@@ -231,7 +233,7 @@
   "hb::earnings_arm": "2026-09-16T20:51:20.944803-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-17T07:56:19.967915-04:00",
-  "hb::monitor": "2026-09-17T08:00:43.187671-04:00",
+  "hb::monitor": "2026-09-17T08:05:32.301843-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-16",
@@ -450,6 +452,14 @@
     [
       "4128d1dcd6715ffd",
       29826805
+    ],
+    [
+      "69a0472f2eb9c0a9",
+      29827445
+    ],
+    [
+      "9ad3164abade763b",
+      29827445
     ]
   ],
   "seen_news_google::HE": [],
