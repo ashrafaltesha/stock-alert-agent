@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-17T15:25:37.593823-04:00",
+  "alert::news": "2026-09-17T15:35:38.043889-04:00",
   "alert::price": "2026-09-17T09:56:11.036320-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -18,7 +18,8 @@
     "applovin: sequential growth reacceleration and consumer scaling should drive meaningful upside (nasdaq:app) - seeking alpha",
     "applovin stock has fallen 55% from its high. here\u2019s where the stock could go - tikr.com",
     "securities class action filed against applovin corporation \u2013 app investors encouraged to contact kirby mcinerney llp - business wire",
-    "investor notice: robbins llp informs investors of the applovin corporation class action lawsuit - business wire"
+    "investor notice: robbins llp informs investors of the applovin corporation class action lawsuit - business wire",
+    "class action lawsuit filed against applovin ove... - pluang"
   ],
   "alerted_titles::BAK": [
     "braskem (nyse: bak) prepares court-led process for $10.9b unsecured debt - stock titan",
@@ -242,7 +243,7 @@
   "hb::earnings_arm": "2026-09-17T09:45:21.883679-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-17T15:28:32.129234-04:00",
-  "hb::monitor": "2026-09-17T15:30:45.089555-04:00",
+  "hb::monitor": "2026-09-17T15:35:38.350956-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-17",
@@ -439,6 +440,10 @@
     [
       "375d07f85ece445c",
       29827865
+    ],
+    [
+      "b597352935d9572c",
+      29827895
     ]
   ],
   "seen_news_google::BAK": [
