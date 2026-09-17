@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-17T15:50:45.330997-04:00",
+  "alert::news": "2026-09-17T16:35:42.608848-04:00",
   "alert::price": "2026-09-17T09:56:11.036320-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -40,7 +40,8 @@
     "braskem s.a.(bovespa: brkm5) dropped from s&p global bmi index - marketscreener.com",
     "braskem (nyse: bak) has 90 days to prove creditor quorum in court reorg - stock titan",
     "braskem stock trades at low levels as earnings highlight weak margins - ad hoc news",
-    "braskem stock falls as ubs cuts adr rating to sell and slashes target - ad-hoc-news.de"
+    "braskem stock falls as ubs cuts adr rating to sell and slashes target - ad-hoc-news.de",
+    "braskem creditors shun debt plan, push owners to inject cash - bloomberg.com"
   ],
   "alerted_titles::BRZE": [
     "braze stock tumbles 10% on weak third quarter eps guidance by investing.com - investing.com australia",
@@ -245,7 +246,7 @@
   "hb::earnings_arm": "2026-09-17T09:45:21.883679-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-17T16:32:58.030206-04:00",
-  "hb::monitor": "2026-09-17T16:30:40.391999-04:00",
+  "hb::monitor": "2026-09-17T16:35:42.823303-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-17",
@@ -460,6 +461,10 @@
     [
       "a0c961c19b352957",
       29827855
+    ],
+    [
+      "e377c1214962cf62",
+      29827955
     ]
   ],
   "seen_news_google::BRZE": [],
