@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-17T12:15:48.547946-04:00",
+  "alert::news": "2026-09-17T13:22:58.640214-04:00",
   "alert::price": "2026-09-17T09:56:11.036320-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -196,7 +196,8 @@
     "xpeng q2fy26 results: net loss widens 179% yoy on forex hits - scanx.trade",
     "a new car is set for 64 markets. xpeng\u2019s global launch is scheduled for oct. 12 in paris. - stocktitan.net",
     "xpeng launches its next-gen ai flagship suv g9l in china, with global launch set for oct 12 at the paris motor show \u2013 company announcement - ft.com - financial times",
-    "xpeng to offer tech systems to foreign parties to fund robotics, robotaxi ambitions -- reuters (xpev:nyse) - seeking alpha"
+    "xpeng to offer tech systems to foreign parties to fund robotics, robotaxi ambitions -- reuters (xpev:nyse) - seeking alpha",
+    "xpeng inc. launches next-gen ai flagship suv g9l in china and announces global launch at paris motor show - marketscreener.com"
   ],
   "company_name::APP": "Applovin Corporation",
   "company_name::BAK": "Braskem SA",
@@ -237,7 +238,7 @@
   "hb::earnings_arm": "2026-09-17T09:45:21.883679-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-17T13:14:58.101821-04:00",
-  "hb::monitor": "2026-09-17T13:20:36.804728-04:00",
+  "hb::monitor": "2026-09-17T13:22:58.891848-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-17",
@@ -527,6 +528,10 @@
     [
       "66fe3ac79aed139c",
       29827695
+    ],
+    [
+      "41a16176946fecc6",
+      29827762
     ]
   ],
   "tg_update_offset": 785157377
