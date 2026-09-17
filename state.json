@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-17T15:35:38.043889-04:00",
+  "alert::news": "2026-09-17T15:50:45.330997-04:00",
   "alert::price": "2026-09-17T09:56:11.036320-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -19,7 +19,9 @@
     "applovin stock has fallen 55% from its high. here\u2019s where the stock could go - tikr.com",
     "securities class action filed against applovin corporation \u2013 app investors encouraged to contact kirby mcinerney llp - business wire",
     "investor notice: robbins llp informs investors of the applovin corporation class action lawsuit - business wire",
-    "class action lawsuit filed against applovin ove... - pluang"
+    "class action lawsuit filed against applovin ove... - pluang",
+    "app investors have opportunity to lead applovin corporation securities fraud lawsuit - morningstar",
+    "app investors have opportunity to lead applovin corporation securities fraud lawsuit - pr newswire"
   ],
   "alerted_titles::BAK": [
     "braskem (nyse: bak) prepares court-led process for $10.9b unsecured debt - stock titan",
@@ -243,52 +245,52 @@
   "hb::earnings_arm": "2026-09-17T09:45:21.883679-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-17T15:49:04.901612-04:00",
-  "hb::monitor": "2026-09-17T15:45:38.954866-04:00",
+  "hb::monitor": "2026-09-17T15:50:45.601448-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::BAK": {
     "date": "2026-09-17",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::BRZE": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::CENX": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::EVH": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::FOUR": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::GENI": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::HE": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::KEEL": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -297,28 +299,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::RDDT": {
     "date": "2026-09-17",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::UAVS": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::WOLF": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::XPEV": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "seen_news::APP": [
     [
@@ -398,6 +400,10 @@
     [
       "30c51466b1243f4b",
       29827755
+    ],
+    [
+      "0d9434b44f0945bb",
+      29827910
     ]
   ],
   "seen_news_google::APP": [
@@ -440,6 +446,14 @@
     [
       "b597352935d9572c",
       29827895
+    ],
+    [
+      "5ff97bb5ca8cf587",
+      29827910
+    ],
+    [
+      "743c613468c3b1b4",
+      29827910
     ]
   ],
   "seen_news_google::BAK": [
