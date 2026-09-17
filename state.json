@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-17T14:55:41.047347-04:00",
+  "alert::news": "2026-09-17T15:25:37.593823-04:00",
   "alert::price": "2026-09-17T09:56:11.036320-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -88,7 +88,8 @@
     "keel stock grinds higher as traders track cash-rich turnaround - stockstotrade.com",
     "keel stock trades heavy as losses mount and cash piles up - stockstotrade.com",
     "keel stock holds gains as cash pile offsets heavy losses - stockstotrade",
-    "keel stock grinds lower as weak margins test bulls - stockstotrade"
+    "keel stock grinds lower as weak margins test bulls - stockstotrade",
+    "bitcoin miners hold over $100 billion in ai contracts, yet annual revenue is just $1.1 billion - finance.biggo.com"
   ],
   "alerted_titles::META": [
     "meta reaches up to $17.1 billion multistate settlement over claims involving children, teens - wrnj radio",
@@ -241,7 +242,7 @@
   "hb::earnings_arm": "2026-09-17T09:45:21.883679-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-17T15:18:14.729814-04:00",
-  "hb::monitor": "2026-09-17T15:20:39.025351-04:00",
+  "hb::monitor": "2026-09-17T15:25:37.859309-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-17",
@@ -489,6 +490,14 @@
     [
       "0f2038ad86d0edc7",
       29827880
+    ],
+    [
+      "72a88230a1a38d8c",
+      29827885
+    ],
+    [
+      "f4e13af05d478cda",
+      29827885
     ]
   ],
   "seen_news_google::META": [
