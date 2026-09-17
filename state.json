@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-17T11:35:36.207683-04:00",
+  "alert::news": "2026-09-17T12:15:48.547946-04:00",
   "alert::price": "2026-09-17T09:56:11.036320-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -195,7 +195,8 @@
     "xpeng announces vehicle delivery results for august 2026 - stock titan",
     "xpeng q2fy26 results: net loss widens 179% yoy on forex hits - scanx.trade",
     "a new car is set for 64 markets. xpeng\u2019s global launch is scheduled for oct. 12 in paris. - stocktitan.net",
-    "xpeng launches its next-gen ai flagship suv g9l in china, with global launch set for oct 12 at the paris motor show \u2013 company announcement - ft.com - financial times"
+    "xpeng launches its next-gen ai flagship suv g9l in china, with global launch set for oct 12 at the paris motor show \u2013 company announcement - ft.com - financial times",
+    "xpeng to offer tech systems to foreign parties to fund robotics, robotaxi ambitions -- reuters (xpev:nyse) - seeking alpha"
   ],
   "company_name::APP": "Applovin Corporation",
   "company_name::BAK": "Braskem SA",
@@ -236,52 +237,52 @@
   "hb::earnings_arm": "2026-09-17T09:45:21.883679-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-17T12:11:39.081377-04:00",
-  "hb::monitor": "2026-09-17T12:10:37.766514-04:00",
+  "hb::monitor": "2026-09-17T12:15:48.826202-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::BAK": {
     "date": "2026-09-17",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::BRZE": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::CENX": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::EVH": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::FOUR": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::GENI": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::HE": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::KEEL": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -290,28 +291,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::RDDT": {
     "date": "2026-09-17",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::UAVS": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::WOLF": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::XPEV": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "seen_news::APP": [
     [
@@ -518,6 +519,10 @@
     [
       "33e3c1e46f67f17a",
       29827645
+    ],
+    [
+      "66fe3ac79aed139c",
+      29827695
     ]
   ],
   "tg_update_offset": 785157377
