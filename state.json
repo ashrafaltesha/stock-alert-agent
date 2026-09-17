@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-17T09:55:41.008490-04:00",
+  "alert::news": "2026-09-17T11:35:36.207683-04:00",
   "alert::price": "2026-09-17T09:56:11.036320-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -15,7 +15,8 @@
     "can applovin's 53% revenue surge keep its growth streak alive? - yahoo finance",
     "applovin (app) down 6.6% since last earnings report: can it rebound? - finance.yahoo.com",
     "why is applovin stock trading near its low while revenue keeps growing?",
-    "applovin: sequential growth reacceleration and consumer scaling should drive meaningful upside (nasdaq:app) - seeking alpha"
+    "applovin: sequential growth reacceleration and consumer scaling should drive meaningful upside (nasdaq:app) - seeking alpha",
+    "applovin stock has fallen 55% from its high. here\u2019s where the stock could go - tikr.com"
   ],
   "alerted_titles::BAK": [
     "braskem (nyse: bak) prepares court-led process for $10.9b unsecured debt - stock titan",
@@ -235,52 +236,52 @@
   "hb::earnings_arm": "2026-09-17T09:45:21.883679-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-17T11:30:50.100093-04:00",
-  "hb::monitor": "2026-09-17T11:30:39.366115-04:00",
+  "hb::monitor": "2026-09-17T11:35:36.502222-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::BAK": {
     "date": "2026-09-17",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::BRZE": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::CENX": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::EVH": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::FOUR": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::GENI": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::HE": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::KEEL": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -289,28 +290,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::RDDT": {
     "date": "2026-09-17",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::UAVS": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::WOLF": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::XPEV": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "seen_news::APP": [
     [
@@ -416,6 +417,10 @@
     [
       "b7c511df8b241c26",
       29827430
+    ],
+    [
+      "cd3d4d4c3580332c",
+      29827655
     ]
   ],
   "seen_news_google::BAK": [
