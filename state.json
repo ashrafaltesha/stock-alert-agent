@@ -235,52 +235,52 @@
   "hb::earnings_arm": "2026-09-17T09:45:21.883679-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-17T11:10:28.379266-04:00",
-  "hb::monitor": "2026-09-17T11:10:35.574537-04:00",
+  "hb::monitor": "2026-09-17T11:15:46.260534-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::BAK": {
     "date": "2026-09-17",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::BRZE": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::CENX": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::EVH": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::FOUR": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::GENI": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::HE": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::KEEL": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -289,28 +289,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::RDDT": {
     "date": "2026-09-17",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::UAVS": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::WOLF": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::XPEV": {
     "date": "2026-09-17",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "seen_news::APP": [
     [
@@ -392,6 +392,10 @@
     [
       "32360aba99dce696",
       29827585
+    ],
+    [
+      "968aab1821390176",
+      29827635
     ]
   ],
   "seen_news::UAVS": [],
@@ -435,10 +439,6 @@
   "seen_news_google::EVH": [],
   "seen_news_google::FOUR": [],
   "seen_news_google::GENI": [
-    [
-      "21105cc7b6053494",
-      29826550
-    ],
     [
       "4128d1dcd6715ffd",
       29826805
@@ -515,6 +515,10 @@
     [
       "3d4f2046e30059ef",
       29827580
+    ],
+    [
+      "54567573ba038c69",
+      29827635
     ]
   ],
   "tg_update_offset": 785157377
