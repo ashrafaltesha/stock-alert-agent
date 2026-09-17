@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-17T16:35:42.608848-04:00",
+  "alert::news": "2026-09-17T19:40:36.406486-04:00",
   "alert::price": "2026-09-17T09:56:11.036320-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -21,7 +21,8 @@
     "investor notice: robbins llp informs investors of the applovin corporation class action lawsuit - business wire",
     "class action lawsuit filed against applovin ove... - pluang",
     "app investors have opportunity to lead applovin corporation securities fraud lawsuit - morningstar",
-    "app investors have opportunity to lead applovin corporation securities fraud lawsuit - pr newswire"
+    "app investors have opportunity to lead applovin corporation securities fraud lawsuit - pr newswire",
+    "applovin corporation (app) investor alert investors with - globenewswire"
   ],
   "alerted_titles::BAK": [
     "braskem (nyse: bak) prepares court-led process for $10.9b unsecured debt - stock titan",
@@ -246,7 +247,7 @@
   "hb::earnings_arm": "2026-09-17T09:45:21.883679-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-17T19:34:34.099727-04:00",
-  "hb::monitor": "2026-09-17T19:35:36.566060-04:00",
+  "hb::monitor": "2026-09-17T19:40:36.623596-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-17",
@@ -459,6 +460,10 @@
     [
       "ce4508675209a8d0",
       29827980
+    ],
+    [
+      "6f452534bb3878bc",
+      29828140
     ]
   ],
   "seen_news_google::BAK": [
