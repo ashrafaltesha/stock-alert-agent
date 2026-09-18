@@ -1,7 +1,7 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-18T09:57:23.030960-04:00",
-  "alert::price": "2026-09-18T12:05:35.119584-04:00",
+  "alert::news": "2026-09-18T12:21:15.213827-04:00",
+  "alert::price": "2026-09-18T12:21:08.841003-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
     "united asset strategies inc. acquires new shares in applovin corporation $app - marketbeat",
@@ -23,7 +23,8 @@
     "app investors have opportunity to lead applovin corporation securities fraud lawsuit - morningstar",
     "app investors have opportunity to lead applovin corporation securities fraud lawsuit - pr newswire",
     "applovin corporation (app) investor alert investors with - globenewswire",
-    "app deadline alert: faruqi & faruqi, llp reminds applovin (nasdaq: app) investors of securities class action lawsuit deadline on november 16, 2026 - news-press now"
+    "app deadline alert: faruqi & faruqi, llp reminds applovin (nasdaq: app) investors of securities class action lawsuit deadline on november 16, 2026 - news-press now",
+    "bronstein, gewirtz & grossman llc urges applovin - globenewswire"
   ],
   "alerted_titles::BAK": [
     "braskem (nyse: bak) prepares court-led process for $10.9b unsecured debt - stock titan",
@@ -252,7 +253,7 @@
   "hb::earnings_arm": "2026-09-18T09:08:09.987666-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-18T12:11:13.587395-04:00",
-  "hb::monitor": "2026-09-18T12:15:38.208806-04:00",
+  "hb::monitor": "2026-09-18T12:21:15.410884-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-18",
@@ -296,7 +297,7 @@
   },
   "price_ref::KEEL": {
     "date": "2026-09-18",
-    "max_step_up": 0,
+    "max_step_up": 1,
     "max_step_down": 0
   },
   "price_ref::META": {
@@ -424,6 +425,10 @@
     [
       "40d363cf75428262",
       29829035
+    ],
+    [
+      "40e4bc398c6e692c",
+      29829141
     ]
   ],
   "seen_news_google::BAK": [
