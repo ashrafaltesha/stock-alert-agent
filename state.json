@@ -1,6 +1,6 @@
 {
   "alert::earnings": "2026-09-10T16:48:55.878422-04:00",
-  "alert::news": "2026-09-18T12:55:34.707666-04:00",
+  "alert::news": "2026-09-18T13:55:35.385553-04:00",
   "alert::price": "2026-09-18T12:21:08.841003-04:00",
   "alerted_titles::APP": [
     "applovin (nasdaq:app) trading down 4.7% on analyst downgrade - marketbeat.com",
@@ -24,7 +24,8 @@
     "app investors have opportunity to lead applovin corporation securities fraud lawsuit - pr newswire",
     "applovin corporation (app) investor alert investors with - globenewswire",
     "app deadline alert: faruqi & faruqi, llp reminds applovin (nasdaq: app) investors of securities class action lawsuit deadline on november 16, 2026 - news-press now",
-    "bronstein, gewirtz & grossman llc urges applovin - globenewswire"
+    "bronstein, gewirtz & grossman llc urges applovin - globenewswire",
+    "rosen, skilled investor counsel, encourages applovin - globenewswire"
   ],
   "alerted_titles::BAK": [
     "braskem (nyse: bak) prepares court-led process for $10.9b unsecured debt - stock titan",
@@ -254,52 +255,52 @@
   "hb::earnings_arm": "2026-09-18T09:08:09.987666-04:00",
   "hb::earnings_watch": "2026-09-11T16:02:17.558914-04:00",
   "hb::listener": "2026-09-18T13:52:41.750185-04:00",
-  "hb::monitor": "2026-09-18T13:50:39.804965-04:00",
+  "hb::monitor": "2026-09-18T13:55:35.614512-04:00",
   "news_id_scheme": "sha1-16",
   "price_ref::APP": {
     "date": "2026-09-18",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::BAK": {
     "date": "2026-09-18",
-    "max_step_down": 1,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 1
   },
   "price_ref::BRZE": {
     "date": "2026-09-18",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::CENX": {
     "date": "2026-09-18",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::EVH": {
     "date": "2026-09-18",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::FOUR": {
     "date": "2026-09-18",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::GENI": {
     "date": "2026-09-18",
-    "max_step_down": 2,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 2
   },
   "price_ref::HE": {
     "date": "2026-09-18",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::KEEL": {
     "date": "2026-09-18",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::META": {
     "date": "2026-08-27",
@@ -308,28 +309,28 @@
   },
   "price_ref::QURE": {
     "date": "2026-09-18",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::RDDT": {
     "date": "2026-09-18",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::UAVS": {
     "date": "2026-09-18",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "price_ref::WOLF": {
     "date": "2026-09-18",
-    "max_step_down": 0,
-    "max_step_up": 1
+    "max_step_up": 1,
+    "max_step_down": 0
   },
   "price_ref::XPEV": {
     "date": "2026-09-18",
-    "max_step_down": 0,
-    "max_step_up": 0
+    "max_step_up": 0,
+    "max_step_down": 0
   },
   "seen_news::APP": [
     [
@@ -434,6 +435,10 @@
     [
       "ff05d69ff60f7bab",
       29829220
+    ],
+    [
+      "9b7ecc794b155213",
+      29829235
     ]
   ],
   "seen_news_google::BAK": [
